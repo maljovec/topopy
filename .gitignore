@@ -1,0 +1,8 @@
+deprecated/*
+extra/*
+.vscode/*
+build/*
+*_wrap.cpp
+*.csv
+*.png
+*.dot
