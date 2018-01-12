@@ -6,3 +6,4 @@ build/*
 *.csv
 *.png
 *.dot
+topology.py
