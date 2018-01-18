@@ -51,28 +51,6 @@ import scipy
 
 from .topology import AMSCFloat, vectorFloat, vectorString, vectorInt
 
-def WeightedLinearModel(X,y,w):
-  """ A wrapper for playing with the linear regression used per segment. The
-      benefit of having this out here is that we do not have to adjust it in
-      several places in the MorseSmaleComplex class, since it can build linear
-      models for an arbitrary subset of dimensions, as well.
-      @ In, X, a matrix of input samples
-      @ In, y, a vector of output responses corresponding to the input samples
-      @ In, w, a vector of weights corresponding to the input samples
-      @ Out, a tuple consisting of the fits y-intercept and the the list of
-        linear coefficients.
-  """
-  ## Using scipy directly to do weighted linear regression on non-centered data
-  Xw = np.ones((X.shape[0],X.shape[1]+1))
-  Xw[:,1:] = X
-  Xw = Xw * np.sqrt(w)[:, None]
-  yw = y * np.sqrt(w)
-  results = scipy.linalg.lstsq(Xw, yw)[0]
-  yIntercept = results[0]
-  betaHat = results[1:]
-
-  return (yIntercept,betaHat)
-
 class MorseSmaleComplex(object):
     """ A wrapper class for the C++ approximate Morse-Smale complex Object that
         also communicates with the UI via Qt's signal interface
