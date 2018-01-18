@@ -1,4 +1,4 @@
- ##############################################################################
+##############################################################################
  # Software License Agreement (BSD License)                                   #
  #                                                                            #
  # Copyright 2018 University of Utah                                          #
@@ -33,37 +33,33 @@
  # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.          #
  ##############################################################################
 """
-      Setup script for topopy
+    This module will test the basic functionalities of topopy.MorseSmaleComplex
 """
-from distutils.core import setup, Extension
-from distutils.command.build import build
+from unittest import TestCase
 
-FILES = ['UnionFind.cpp', 'MergeTree.cpp', 'AMSC.cpp', 'utils.cpp']
-VERSION = '0'
+import topopy
 
-## Consult here: https://packaging.python.org/tutorials/distributing-packages/
-setup(name='topopy',
-      packages=['topopy'],
-      version=VERSION,
-      description='A library for computing topological data structures',
-      long_description='Given a set of arbitrarily arranged points in any '
-                  + 'dimension, this library is able to construct approximate '
-                  + 'topological structures using a neighborhood graph.',
-      author='Dan Maljovec',
-      author_email='maljovec002@gmail.com',
-      license='BSD',
-      test_suite='topopy.tests',
-      url='https://github.com/maljovec/topopy',
-      # download_url = 'https://github.com/maljovec/topopy/archive/'+VERSION+'.tar.gz',
-      ## Consult here: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-      classifiers=['Development Status :: 3 - Alpha',
-                   'Intended Audience :: Science/Research',
-                   'License :: OSI Approved :: BSD License',
-                   'Programming Language :: C++',
-                   'Programming Language :: Python :: 2',
-                   'Programming Language :: Python :: 3',
-                   'Topic :: Scientific/Engineering :: Mathematics'],
-      install_requires=['pyerg', 'networkx', 'numpy', 'scipy', 'scikit-learn'],
-      python_requires='>=2.7, <4',
-      # package_dir={'':'src/'},
-      ext_modules=[Extension('_topology', FILES)])
+class TestMSC(TestCase):
+    """
+    Class for testing the Morse-Smale Complex
+    """
+
+    def setup(self):
+        """
+        Setup function will create a fixed point set and parameter settings for
+        testing different aspects of this library.
+        """
+
+        self.points = [[]]
+        self.edges = []
+
+    def test_blank(self):
+        """
+        Blank function serving as a template
+        """
+        self.setup()
+
+        topopy.MorseSmaleComplex(self.points, [], gradient='steepest',
+                                 persistence='difference', edges=None)
+
+        self.assertEqual(False, False)

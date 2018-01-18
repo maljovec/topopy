@@ -39,24 +39,6 @@ import time
 import os
 import itertools
 import collections
-
-####################################################
-# This is tenuous at best, if the the directory structure of RAVEN changes, this
-# will need to be updated, make sure you add this to the beginning of the search
-# path, so that you try to grab the locally built one before relying on an
-# installed version
-myPath = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0,myPath)
-try:
-  import topology as topo
-except ImportError as e:
-  makeFilePath = os.path.realpath(os.path.join(myPath,'..','..','..','topology.mk'))
-  sys.stderr.write('It appears the topology library is not available. Try '
-                   + 'running the following command:' + os.linesep
-                   + '\tmake -f ' + makeFilePath + os.linesep)
-  sys.exit(1)
-################################################################################
-
 import sklearn.neighbors
 import sklearn.linear_model
 import sklearn.preprocessing
@@ -64,6 +46,8 @@ import sklearn.preprocessing
 import scipy.optimize
 import scipy.stats
 import scipy
+
+from .topology import AMSCFloat, vectorFloat, vectorString, vectorInt
 
 def WeightedLinearModel(X,y,w):
   """ A wrapper for playing with the linear regression used per segment. The
@@ -254,15 +238,16 @@ class MorseSmaleComplex(object):
 
     self.names = names
     self.normalization = normalization
+    self.gradient = gradient
 
     if self.X is None or self.Y is None:
-      print('There is no data to process, what would the Maker have me do?')
+      # print('There is no data to process, what would the Maker have me do?')
       self.SetEmptySettings()
       return
 
     if self.names is None:
       self.names = []
-      for d in xrange(self.GetDimensionality()):
+      for d in range(self.GetDimensionality()):
         self.names.append('x%d' % d)
       self.names.append('y')
 
@@ -301,8 +286,8 @@ class MorseSmaleComplex(object):
         sys.stderr.write('%f s\n' % (end-start))
 
       pairs = []                              # prevent duplicates with this guy
-      for e1 in xrange(0,edges.shape[0]):
-        for col in xrange(0,edges.shape[1]):
+      for e1 in range(0,edges.shape[0]):
+        for col in range(0,edges.shape[1]):
           e2 = edges.item(e1,col)
           if e1 != e2:
             pairs.append((e1,e2))
@@ -314,10 +299,10 @@ class MorseSmaleComplex(object):
     seen = set()
     pairs = [ x for x in pairs if not (x in seen or x[::-1] in seen
                                        or seen.add(x))]
-    edgesToPrune = []
+    edgeList = []
     for edge in pairs:
-      edgesToPrune.append(edge[0])
-      edgesToPrune.append(edge[1])
+      edgeList.append(edge[0])
+      edgeList.append(edge[1])
 
     if debug:
       end = time.clock()
@@ -325,20 +310,21 @@ class MorseSmaleComplex(object):
       sys.stderr.write('Decomposition: ')
       start = time.clock()
 
-    self.__amsc = topo.AMSCFloat(topo.vectorFloat(self.Xnorm.flatten()),
-                                 topo.vectorFloat(self.Y),
-                                 topo.vectorString(self.names),
-                                 str(graph), str(gradient), int(knn),
-                                 float(beta), str(persistence),
-                                 topo.vectorFloat(self.w),
-                                 topo.vectorInt(edgesToPrune))
+    self.__amsc = AMSCFloat(vectorFloat(self.Xnorm.flatten()),
+                            vectorFloat(self.Y),
+                            vectorString(self.names),
+                            str(self.gradient),
+                            str(persistence),
+                            vectorFloat(self.w),
+                            vectorInt(edgeList),
+                            debug)
 
     if debug:
       end = time.clock()
       sys.stderr.write('%f s\n' % (end-start))
 
     hierarchy = self.__amsc.PrintHierarchy().strip().split(' ')
-
+    self.hierarchy = hierarchy
     self.persistences = []
     self.mergeSequence = {}
     for line in hierarchy:
@@ -352,11 +338,28 @@ class MorseSmaleComplex(object):
         self.persistences.append(p)
 
     self.persistences = sorted(list(set(self.persistences)))
+    
+    # P Save starts here.
 
-    partitions = self.Partitions(self.persistences[0])
-    cellIdxs = np.array(partitions.keys())
+    Pinter = 0#input('Input Persistence of Interest: ')
+    Idx_interest = -1
+    for idx in range(0,len(self.persistences)):
+      if float(Pinter)<= self.persistences[idx]:
+        Idx_interest = idx
+        break
+
+    partitions = self.Partitions(self.persistences[Idx_interest])
+    cellIdxs = np.array(list(partitions.keys()))
     self.minIdxs = np.unique(cellIdxs[:,0])
     self.maxIdxs = np.unique(cellIdxs[:,1])
+    for min_max_pair in list(partitions.keys()):
+
+        if type(min_max_pair)==tuple:
+            partitions[str(min_max_pair[0])+', '+str(min_max_pair[1])] = partitions[min_max_pair]
+            del partitions[min_max_pair]
+
+    self.base_partitions = partitions
+
 
   def SetWeights(self, w=None):
     """ Sets the weights associated to the m input samples
@@ -442,7 +445,7 @@ class MorseSmaleComplex(object):
     if self.segmentFits is None or len(self.segmentFits) == 0:
       self.BuildModels(self.persistence)
     coefficients = {}
-    for key,fit in self.segmentFits.iteritems():
+    for key,fit in self.segmentFits.items():
       coefficients[key] = fit[1:]
       # coefficients[key] = fit[:]
     return coefficients
@@ -459,7 +462,7 @@ class MorseSmaleComplex(object):
     if self.segmentFits is None or len(self.segmentFits) == 0:
       self.BuildModels(self.persistence)
     rSquared = {}
-    for key,fitness in self.segmentFitnesses.iteritems():
+    for key,fitness in self.segmentFitnesses.items():
       rSquared[key] = fitness
     return rSquared
 
@@ -476,7 +479,7 @@ class MorseSmaleComplex(object):
     if self.segmentFits is None or len(self.segmentFits) == 0:
       self.BuildModels(self.persistence)
     pearson = {}
-    for key,fit in self.pearson.iteritems():
+    for key,fit in self.pearson.items():
       pearson[key] = fit[:]
     return pearson
 
@@ -493,7 +496,7 @@ class MorseSmaleComplex(object):
     if self.segmentFits is None or len(self.segmentFits) == 0:
       self.BuildModels(self.persistence)
     spearman = {}
-    for key,fit in self.spearman.iteritems():
+    for key,fit in self.spearman.items():
       spearman[key] = fit[:]
     return spearman
 
@@ -508,10 +511,10 @@ class MorseSmaleComplex(object):
           filter criterion.
     """
     if indices is None:
-      indices = list(xrange(0,self.GetSampleSize()))
+      indices = list(range(0,self.GetSampleSize()))
 
     mask = np.ones(len(indices), dtype=bool)
-    for header,bounds in self.filters.iteritems():
+    for header,bounds in self.filters.items():
       if header in self.names:
         idx = self.names.index(header)
         if idx >= 0 and idx < len(self.names)-1:
@@ -653,7 +656,7 @@ class MorseSmaleComplex(object):
     """
     partitions = self.Partitions(persistence)
 
-    for key,items in partitions.iteritems():
+    for key,items in partitions.items():
       X = self.Xnorm[np.array(items),:]
       y = np.array(self.Y[np.array(items)])
       w = self.w[np.array(items)]
@@ -685,9 +688,9 @@ class MorseSmaleComplex(object):
           parameters.
     """
     if rows is None:
-      rows = list(xrange(0,self.GetSampleSize()))
+      rows = list(range(0,self.GetSampleSize()))
     if cols is None:
-      cols = list(xrange(0,self.GetDimensionality()))
+      cols = list(range(0,self.GetDimensionality()))
 
     if applyFilters:
       rows = self.GetMask(rows)
@@ -706,9 +709,9 @@ class MorseSmaleComplex(object):
           values filtered by the three input parameters.
     """
     if rows is None:
-      rows = list(xrange(0,self.GetSampleSize()))
+      rows = list(range(0,self.GetSampleSize()))
     if cols is None:
-      cols = list(xrange(0,self.GetDimensionality()))
+      cols = list(range(0,self.GetDimensionality()))
 
     rows = sorted(list(set(rows)))
     if applyFilters:
@@ -729,7 +732,7 @@ class MorseSmaleComplex(object):
           values filtered by the two input parameters.
     """
     if indices is None:
-      indices = list(xrange(0,self.GetSampleSize()))
+      indices = list(range(0,self.GetSampleSize()))
     else:
       indices = sorted(list(set(indices)))
 
@@ -749,7 +752,7 @@ class MorseSmaleComplex(object):
           index of the specified rows.
     """
     if indices is None:
-      indices = list(xrange(0,self.GetSampleSize()))
+      indices = list(range(0,self.GetSampleSize()))
     elif isinstance(indices,collections.Iterable):
       indices = sorted(list(set(indices)))
     else:
@@ -782,7 +785,7 @@ class MorseSmaleComplex(object):
           to the input data rows filtered by the two input parameters.
     """
     if indices is None:
-      indices = list(xrange(0,self.GetSampleSize()))
+      indices = list(range(0,self.GetSampleSize()))
     else:
       indices = sorted(list(set(indices)))
 
@@ -829,7 +832,7 @@ class MorseSmaleComplex(object):
 
     predictedY = np.zeros(self.GetSampleSize())
     if fit == 'linear':
-      for key,items in partitions.iteritems():
+      for key,items in partitions.items():
         beta_hat = self.segmentFits[key][1:]
         y_intercept = self.segmentFits[key][0]
         for idx in items:
@@ -838,7 +841,7 @@ class MorseSmaleComplex(object):
     ## go here
 
     if indices is None:
-      indices = list(xrange(0,self.GetSampleSize()))
+      indices = list(range(0,self.GetSampleSize()))
     if applyFilters:
       indices = self.GetMask(indices)
     indices = np.array(sorted(list(set(indices))))
@@ -859,7 +862,7 @@ class MorseSmaleComplex(object):
           filtered by the three input parameters.
     """
     if indices is None:
-      indices = list(xrange(0,self.GetSampleSize()))
+      indices = list(range(0,self.GetSampleSize()))
     else:
       indices = sorted(list(set(indices)))
     if applyFilters:
@@ -969,14 +972,14 @@ class MorseSmaleComplex(object):
 
     self.pearson = {}
     self.spearman = {}
-    for key,items in partitions.iteritems():
+    for key,items in partitions.items():
       X = self.Xnorm[np.array(items),:]
       y = self.Y[np.array(items)]
 
       self.pearson[key] = []
       self.spearman[key] = []
 
-      for col in xrange(0,X.shape[1]):
+      for col in range(0,X.shape[1]):
         sigmaXcol = np.std(X[:,col])
         self.pearson[key].append(scipy.stats.pearsonr(X[:,col], y)[0])
         self.spearman[key].append(scipy.stats.spearmanr(X[:,col], y)[0])
@@ -993,245 +996,4 @@ class MorseSmaleComplex(object):
         @ In, an integer specifying the query point
         @ Out, a integer list of neighbors indices
     """
-    return self.__amsc.Neighbors(idx)
-
-
-try:
-  import PySide.QtCore
-  import colors
-
-  class QMorseSmaleComplex(MorseSmaleComplex,PySide.QtCore.QObject):
-    ## Paul Tol's colorblind safe colors
-    colorList = itertools.cycle(colors.TolColors)
-
-    sigPersistenceChanged = PySide.QtCore.Signal()
-    sigSelectionChanged = PySide.QtCore.Signal()
-    sigFilterChanged = PySide.QtCore.Signal()
-    sigDataChanged = PySide.QtCore.Signal()
-    sigModelsChanged = PySide.QtCore.Signal()
-    sigWeightsChanged = PySide.QtCore.Signal()
-
-    def Reinitialize(self, X, Y, w=None, names=None, graph='beta skeleton',
-                     gradient='steepest', knn=-1, beta=1.0, normalization=None,
-                     persistence='difference', edges=None, debug=False):
-      """ Allows the caller to basically start over with a new dataset.
-          @ In, X, an m-by-n array of values specifying m n-dimensional samples
-          @ In, Y, a m vector of values specifying the output responses
-            corresponding to the m samples specified by X
-          @ In, w, an optional m vector of values specifying the weights
-            associated to each of the m samples used. Default of None means all
-            points will be equally weighted
-          @ In, names, an optional list of strings that specify the names to
-            associate to the n input dimensions and 1 output dimension. Default of
-            None means input variables will be x0,x1...,x(n-1) and the output will
-            be y
-          @ In, graph, an optional string specifying the type of neighborhood
-            graph to use. Default is 'beta skeleton,' but other valid types are:
-            'delaunay,' 'relaxed beta skeleton,' or 'approximate knn'
-          @ In, gradient, an optional string specifying the type of gradient
-            estimator
-            to use. Currently the only available option is 'steepest'
-          @ In, knn, an optional integer value specifying the maximum number of
-            k-nearest neighbors used to begin a neighborhood search. In the case
-            of graph='[relaxed] beta skeleton', we will begin with the specified
-            approximate knn graph and prune edges that do not satisfy the empty
-            region criteria.
-          @ In, beta, an optional floating point value between 0 and 2. This
-            value is only used when graph='[relaxed] beta skeleton' and specifies
-            the radius for the empty region graph computation (1=Gabriel graph,
-            2=Relative neighbor graph)
-          @ In, normalization, an optional string specifying whether the
-            inputs/output should be scaled before computing. Currently, two modes
-            are supported 'zscore' and 'feature'. 'zscore' will ensure the data
-            has a mean of zero and a standard deviation of 1 by subtracting the
-            mean and dividing by the variance. 'feature' scales the data into the
-            unit hypercube.
-          @ In, persistence, an optional string specifying how we will compute
-            the persistence hierarchy. Currently, three modes are supported
-            'difference', 'probability' and 'count'. 'difference' will take the
-            function value difference of the extrema and its closest function
-            valued neighboring saddle, 'probability' will augment this value by
-            multiplying the probability of the extremum and its saddle, and count
-            will make the larger point counts more persistent.
-      """
-      super(QMorseSmaleComplex,self).Reinitialize(X, Y, w, names, graph,
-                                                  gradient, knn, beta,
-                                                  normalization, persistence,
-                                                  edges, debug)
-      self.sigDataChanged.emit()
-
-    def Persistence(self, p=None):
-      """ Sets or returns the persistence simplfication level to be used for
-          representing this Morse-Smale complex
-          @ In, p, a floating point value that will set the persistence value,
-            if this value is set to None, then this function will return the
-            current persistence leve.
-          @ Out, if no p value is supplied then this function will return the
-            current persistence setting. If a p value is supplied, it will be
-            returned as it will be the new persistence setting of this object.
-      """
-      if p is None:
-        return self.persistence
-      pers = super(QMorseSmaleComplex,self).Persistence(p)
-      self.sigPersistenceChanged.emit()
-      return pers
-
-    def SetWeights(self, w=None):
-      """ Sets the weights associated to the m input samples
-          @ In, w, optional m vector specifying the new weights to use for the
-            data points. Default is None and resets the weights to be uniform.
-      """
-      super(QMorseSmaleComplex,self).SetWeights(w)
-      self.sigWeightsChanged.emit()
-
-    def BuildModels(self,persistence=None):
-      """ Forces the construction of linear fits per Morse-Smale segment and
-          Gaussian fits per stable/unstable manifold for the user-specified
-          persistence level.
-          @ In, persistence, a floating point value specifying the simplification
-            level to use, if this value is None, then we will build models based
-            on the internally set persistence level for this Morse-Smale object.
-      """
-      super(QMorseSmaleComplex,self).BuildModels(persistence)
-      self.sigModelsChanged.emit()
-
-    def SetSelection(self, selectionList, cross_inclusion=False):
-      """ Sets the currently selected items of this instance
-          @ In, selectionList, a mixed list of 2-tuples and integers representing
-            min-max index pairs and extremum indices, respectively
-          @ In, cross_inclusion, a boolean that will ensure if you select all of
-            the segments attached to an extermum get selected and vice versa
-      """
-      partitions = self.Partitions(self.persistence)
-
-      self.selectedSegments = []
-      self.selectedExtrema = []
-
-      for idx in selectionList:
-        ## Here are a few alternatives to do the same thing, I think I like the
-        ## not an int test the best because it is less likely to change than the
-        ## representation of the pair
-        #if isinstance(label, tuple):
-        #if hasattr(label, '__len__'):
-        if isinstance(idx,int):
-          self.selectedExtrema.append(idx)
-          #If you select an extremum, also select all of its attached segments
-          if cross_inclusion:
-            for minMax in partitions.keys():
-              if idx in minMax:
-                self.selectedSegments.append(minMax)
-        else:
-          self.selectedSegments.append(idx)
-          #If you select an segment, also select all of its attached extrema
-          if cross_inclusion:
-            self.selectedExtrema.extend(list(idx))
-
-      self.selectedSegments = list(set(self.selectedSegments))
-      self.selectedExtrema = list(set(self.selectedExtrema))
-
-      self.sigSelectionChanged.emit()
-
-    def ClearFilter(self):
-      """ Erases all currently set filters on any dimension.
-      """
-      self.filters = {}
-      self.sigSelectionChanged.emit()
-
-    def SetFilter(self,name,bounds):
-      """ Sets the bounds of the selected dimension as a filter
-          @ In, name, a string denoting the variable to which this filter will be
-            applied.
-          @ In, bounds, a list of two values specifying a lower and upper bound on
-            the dimension specified by name.
-      """
-      if bounds is None:
-        self.filters.pop(name,None)
-      else:
-        self.filters[name] = bounds
-      self.sigSelectionChanged.emit()
-
-    def GetFilter(self,name):
-      """ Returns the currently set filter for a particular dimension specified.
-          @ In, name, a string denoting the variable for which one wants to
-            retrieve filtered information.
-          @ Out, a list consisting of two values that specify the filter
-            boundaries of the queried dimension.
-      """
-      if name in self.filters.keys():
-        return self.filters[name]
-      else:
-        return None
-
-    def Select(self, idx):
-      """ Add a segment or extremum to the list of currently selected items
-          @ In, idx, either an non-negative integer or a 2-tuple of non-negative
-            integers specifying the index of an extremum or a min-max index pair.
-      """
-      if isinstance(idx,int):
-        if idx not in self.selectedExtrema:
-          self.selectedExtrema.append(idx)
-      else:
-        if idx not in self.sectedSegments:
-          self.selectedSegments.append(idx)
-
-        self.sigSelectionChanged.emit()
-
-    def Deselect(self, idx):
-      """ Remove a segment or extremum from the list of currently selected items
-          @ In, idx, either an non-negative integer or a 2-tuple of non-negative
-            integers specifying the index of an extremum or a min-max index pair.
-      """
-      if isinstance(idx,int):
-        if idx in self.selectedExtrema:
-          self.selectedExtrema.remove(idx)
-      else:
-        if idx in self.sectedSegments:
-          self.selectedSegments.remove(idx)
-
-        self.sigSelectionChanged.emit()
-
-    def ClearSelection(self):
-      """ Empties the list of selected items.
-      """
-      self.selectedSegments = []
-      self.selectedExtrema = []
-      self.sigSelectionChanged.emit()
-
-    def GetSelectedIndices(self,segmentsOnly=True):
-      """ Returns a mixed list of extremum indices and min-max index pairs
-          specifying all of the segments selected.
-          @ In, segmentsOnly, a boolean variable that will filter the results to
-            only return min-max index pairs.
-          @ Out, a list of non-negative integers and 2-tuples consisting of
-            non-negative integers.
-      """
-      partitions = self.Partitions(self.persistence)
-      indices = []
-      for extPair,indexSet in partitions.iteritems():
-        if extPair in self.selectedSegments \
-        or extPair[0] in self.selectedExtrema \
-        or extPair[1] in self.selectedExtrema:
-          indices.extend(indexSet)
-
-      indices = self.GetMask(indices)
-      return list(indices)
-
-    def FitsSynced(self):
-      """ Returns whether the segment and extremum fits are built for the
-          currently selected level of persistence.
-          @ Out, a boolean that reports True if everything is synced and False,
-            otherwise.
-      """
-      fitKeys = self.segmentFits.keys()
-      rSquaredKeys = self.segmentFitnesses.keys()
-
-      if sorted(fitKeys) != sorted(rSquaredKeys) \
-      or sorted(fitKeys) != sorted(self.GetCurrentLabels()) \
-      or self.segmentFits is None or len(self.segmentFits) == 0:
-        return False
-
-      return True
-
-except ImportError as e:
-  sys.stderr.write('')
-  pass
+    return self.__amsc.Neighbors(int(idx))
