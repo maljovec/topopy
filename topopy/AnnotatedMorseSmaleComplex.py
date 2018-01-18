@@ -33,23 +33,9 @@
  # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.          #
  ##############################################################################
 
-import sys
-import re
-import time
-import os
-import itertools
-import collections
-
 import numpy as np
-import sklearn.neighbors
-import sklearn.linear_model
-import sklearn.preprocessing
-
-import scipy.optimize
-import scipy.stats
-import scipy
-
-from .topology import AMSCFloat, vectorFloat, vectorString, vectorInt
+from scipy import stats
+from scipy import linalg
 
 def WeightedLinearModel(X,y,w):
   """ A wrapper for playing with the linear regression used per segment. The
@@ -67,7 +53,7 @@ def WeightedLinearModel(X,y,w):
   Xw[:,1:] = X
   Xw = Xw * np.sqrt(w)[:, None]
   yw = y * np.sqrt(w)
-  results = scipy.linalg.lstsq(Xw, yw)[0]
+  results = linalg.lstsq(Xw, yw)[0]
   yIntercept = results[0]
   betaHat = results[1:]
 
@@ -530,5 +516,5 @@ class AnnotatedMorseSmaleComplex(MorseSmaleComplex):
 
             for col in range(0,X.shape[1]):
                     sigmaXcol = np.std(X[:,col])
-                    self.pearson[key].append(scipy.stats.pearsonr(X[:,col], y)[0])
-                    self.spearman[key].append(scipy.stats.spearmanr(X[:,col], y)[0])
+                    self.pearson[key].append(stats.pearsonr(X[:,col], y)[0])
+                    self.spearman[key].append(stats.spearmanr(X[:,col], y)[0])
