@@ -36,124 +36,69 @@
 import sys
 import re
 import time
-import os
-import itertools
 import collections
 
 import numpy as np
-import sklearn.neighbors
-import sklearn.linear_model
 import sklearn.preprocessing
 
-import scipy.optimize
-import scipy.stats
-import scipy
+import pyerg
 
 from .topology import AMSCFloat, vectorFloat, vectorString, vectorInt
 
 class MorseSmaleComplex(object):
-    """ A wrapper class for the C++ approximate Morse-Smale complex Object that
-        also communicates with the UI via Qt's signal interface
+    """ A wrapper class for the C++ approximate Morse-Smale complex Object
     """
-    def __init__(self, X, Y, w=None, names=None, graph='beta skeleton',
-                 gradient='steepest', knn=-1, beta=1.0, normalization=None,
-                 persistence='difference', edges=None, debug=False):
-        """ Initialization method that takes at minimum a set of input points and
-            corresponding output responses.
-            @ In, X, an m-by-n array of values specifying m n-dimensional samples
-            @ In, Y, a m vector of values specifying the output responses
-            corresponding to the m samples specified by X
-            @ In, w, an optional m vector of values specifying the weights
-            associated to each of the m samples used. Default of None means all
-            points will be equally weighted
-            @ In, names, an optional list of strings that specify the names to
-            associate to the n input dimensions and 1 output dimension. Default of
-            None means input variables will be x0,x1...,x(n-1) and the output will
-            be y
+    def __init__(self, graph='beta skeleton', gradient='steepest',
+                 max_neighbors=-1, beta=1.0, normalization=None,
+                 simplification='difference', debug=False):
+        """ Initialization method that takes at minimum a set of input points
+            and corresponding output responses.
             @ In, graph, an optional string specifying the type of neighborhood
             graph to use. Default is 'beta skeleton,' but other valid types are:
             'delaunay,' 'relaxed beta skeleton,' 'none', or 'approximate knn'
             @ In, gradient, an optional string specifying the type of gradient
-            estimator
-            to use. Currently the only available option is 'steepest'
-            @ In, knn, an optional integer value specifying the maximum number of
-            k-nearest neighbors used to begin a neighborhood search. In the case
-            of graph='[relaxed] beta skeleton', we will begin with the specified
-            approximate knn graph and prune edges that do not satisfy the empty
-            region criteria.
+            estimator to use. Currently the only available option is 'steepest'
+            @ In, max_neighbors, an optional integer value specifying the
+            maximum number of k-nearest neighbors used to begin a neighborhood
+            search. In the case of graph='[relaxed] beta skeleton', we will
+            begin with the specified approximate knn graph and prune edges that
+            do not satisfy the empty region criteria.
             @ In, beta, an optional floating point value between 0 and 2. This
-            value is only used when graph='[relaxed] beta skeleton' and specifies
-            the radius for the empty region graph computation (1=Gabriel graph,
-            2=Relative neighbor graph)
+            value is only used when graph='[relaxed] beta skeleton' and
+            specifies the radius for the empty region graph computation
+            (1=Gabriel graph, 2=Relative neighbor graph)
             @ In, normalization, an optional string specifying whether the
-            inputs/output should be scaled before computing. Currently, two modes
-            are supported 'zscore' and 'feature'. 'zscore' will ensure the data
-            has a mean of zero and a standard deviation of 1 by subtracting the
-            mean and dividing by the variance. 'feature' scales the data into the
-            unit hypercube.
-            @ In, persistence, an optional string specifying how we will compute
-            the persistence hierarchy. Currently, three modes are supported
-            'difference', 'probability' and 'count'. 'difference' will take the
-            function value difference of the extrema and its closest function
-            valued neighboring saddle, 'probability' will augment this value by
-            multiplying the probability of the extremum and its saddle, and count
-            will make the larger point counts more persistent.
-            @ In, edges, an optional list of custom edges to use as a starting point
-            for pruning, or in place of a computed graph.
+            inputs/output should be scaled before computing. Currently, two
+            modes are supported 'zscore' and 'feature'. 'zscore' will ensure the
+            data has a mean of zero and a standard deviation of 1 by subtracting
+            the mean and dividing by the variance. 'feature' scales the data
+            into the unit hypercube.
+            @ In, simplification, an optional string specifying how we will
+            compute the simplification hierarchy. Currently, three modes are
+            supported 'difference', 'probability' and 'count'. 'difference' will
+            take the function value difference of the extrema and its closest
+            function valued neighboring saddle (standard persistence
+            simplification), 'probability' will augment this value by
+            multiplying the probability of the extremum and its saddle, and
+            count will order the simplification by the size (number of points)
+            in each manifold such that smaller features will be absorbed into
+            neighboring larger features first.
             @ In, debug, an optional boolean flag for whether debugging output
             should be enabled.
         """
         super(MorseSmaleComplex,self).__init__()
-        if X is not None and len(X) > 1:
-            self.Build(X, Y, w, names, graph, gradient, knn, beta, normalization,
-                        persistence, edges, debug)
-        else:
-            # Set some reasonable defaults
-            self.SetEmptySettings()
+        self.Reset()
 
-    def loadData(self, filename):
-        """ Opens a file and reads the data into an array, sets the data as
-            an nparray and list of dimnames
-            @ In, filename, string representing the data file
-        """
-        # Open file and read the data into an array
-        # save data as nparray and list of dimnames
-        fin = open(myFile)
-        firstLine = fin.readline().strip()
-        names = re.split(',|;| |\t', firstLine)
-        data = []
-        numCols = len(names)
-        lineNumber = 1
-        for line in fin:
-            line = line.strip()
-            lineNumber += 1
-            if len(line) == 0:
-                continue
-            tokens = re.split(',|;| |\t', line)
-            if numCols != len(tokens):
-                errorMessage = 'Data size is inconsistent.\n\n' \
-                                + 'Header line: ' + str(numCols) + ' Columns vs. ' \
-                                + 'Line ' + str(lineNumber) + ': ' \
-                                + str(len(tokens)) + ' Columns\n\nBad line:\n' + line
-                print(errorMessage)
-                throw ValueError
-            dataRow = []
-            for token in tokens:
-                value = float(token)
-                dataRow.append(value)
-            if len(dataRow) == numCols:
-                data.append(dataRow)
-            else:
-                errorMessage = 'Bad data encountered at line ' + str(lineNumber) \
-                                + ':\n\nBad line:\n' + line
-                print(errorMessage)
-                throw ValueError
-        fin.close()
-        self.data = np.array(data)
-        self.names = names
-        ##return self.PrepareSegmentation(names, np.array(data))
+        self.graph = graph
+        self.gradient = gradient
+        self.max_neighbors = max_neighbors
+        self.beta = beta
+        self.simplification = simplification
+        self.normalization = normalization
+        self.gradient = gradient
+        self.debug = debug
 
-    def SetEmptySettings(self):
+    def Reset(self):
         """
             Empties all internal storage containers
         """
@@ -181,48 +126,25 @@ class MorseSmaleComplex(object):
         self.__amsc = None
         self.hierarchy = None
 
-    def Build(self, X, Y, w=None, names=None, graph='beta skeleton', gradient='steepest', knn=-1, beta=1.0, normalization=None, persistence='difference', edges=None, debug=False):
+    def Build(self, X, Y, w=None, names=None, edges=None):
         """ Allows the caller to basically start over with a new dataset.
-            @ In, X, an m-by-n array of values specifying m n-dimensional samples
+            @ In, X, an m-by-n array of values specifying m n-dimensional
+            samples
             @ In, Y, a m vector of values specifying the output responses
             corresponding to the m samples specified by X
             @ In, w, an optional m vector of values specifying the weights
             associated to each of the m samples used. Default of None means all
             points will be equally weighted
             @ In, names, an optional list of strings that specify the names to
-            associate to the n input dimensions and 1 output dimension. Default of
-            None means input variables will be x0,x1...,x(n-1) and the output will
-            be y
-            @ In, graph, an optional string specifying the type of neighborhood
-            graph to use. Default is 'beta skeleton,' but other valid types are:
-            'delaunay,' 'relaxed beta skeleton,' or 'approximate knn'
-            @ In, gradient, an optional string specifying the type of gradient
-            estimator
-            to use. Currently the only available option is 'steepest'
-            @ In, knn, an optional integer value specifying the maximum number of
-            k-nearest neighbors used to begin a neighborhood search. In the case
-            of graph='[relaxed] beta skeleton', we will begin with the specified
-            approximate knn graph and prune edges that do not satisfy the empty
-            region criteria.
-            @ In, beta, an optional floating point value between 0 and 2. This
-            value is only used when graph='[relaxed] beta skeleton' and specifies
-            the radius for the empty region graph computation (1=Gabriel graph,
-            2=Relative neighbor graph)
-            @ In, normalization, an optional string specifying whether the
-            inputs/output should be scaled before computing. Currently, two modes
-            are supported 'zscore' and 'feature'. 'zscore' will ensure the data
-            has a mean of zero and a standard deviation of 1 by subtracting the
-            mean and dividing by the variance. 'feature' scales the data into the
-            unit hypercube.
-            @ In, persistence, an optional string specifying how we will compute
-            the persistence hierarchy. Currently, three modes are supported
-            'difference', 'probability' and 'count'. 'difference' will take the
-            function value difference of the extrema and its closest function
-            valued neighboring saddle, 'probability' will augment this value by
-            multiplying the probability of the extremum and its saddle, and count
-            will make the larger point counts more persistent.
+            associate to the n input dimensions and 1 output dimension. Default
+            of None means input variables will be x0,x1...,x(n-1) and the output
+            will be y
+            @ In, edges, an optional list of custom edges to use as a starting
+            point for pruning, or in place of a computed graph.
         """
-        self.SetEmptySettings()
+        self.Reset()
+        if X is None or Y is None:
+            return
 
         self.X = X
         self.Y = Y
@@ -232,13 +154,6 @@ class MorseSmaleComplex(object):
             self.w = np.ones(len(Y))*1.0/float(len(Y))
 
         self.names = names
-        self.normalization = normalization
-        self.gradient = gradient
-
-        if self.X is None or self.Y is None:
-            # print('There is no data to process, what would the Maker have me do?')
-            self.SetEmptySettings()
-            return
 
         if self.names is None:
             self.names = []
@@ -246,13 +161,13 @@ class MorseSmaleComplex(object):
                 self.names.append('x%d' % d)
             self.names.append('y')
 
-        if normalization == 'feature':
+        if self.normalization == 'feature':
             # This doesn't work with one-dimensional arrays on older versions of
             #  sklearn
             min_max_scaler = sklearn.preprocessing.MinMaxScaler()
             self.Xnorm = min_max_scaler.fit_transform(np.atleast_2d(self.X))
             self.Ynorm = min_max_scaler.fit_transform(np.atleast_2d(self.Y))
-        elif normalization == 'zscore':
+        elif self.normalization == 'zscore':
             self.Xnorm = sklearn.preprocessing.scale(self.X, axis=0, with_mean=True,
                                                     with_std=True, copy=True)
             self.Ynorm = sklearn.preprocessing.scale(self.Y, axis=0, with_mean=True,
@@ -261,45 +176,13 @@ class MorseSmaleComplex(object):
             self.Xnorm = np.array(self.X)
             self.Ynorm = np.array(self.Y)
 
-        if knn <= 0:
-            knn = len(self.Xnorm)-1
-
-        if debug:
+        if self.debug:
             sys.stderr.write('Graph Preparation: ')
             start = time.clock()
 
-        if knn <= 0:
-            knn = len(self.Y)-1
+        graph_rep = pyerg.Graph(self.Xnorm, self.graph, self.max_neighbors, self.beta)
 
-        if edges is None:
-            knnAlgorithm = sklearn.neighbors.NearestNeighbors(n_neighbors=knn,
-                                                                algorithm='kd_tree')
-            knnAlgorithm.fit(self.Xnorm)
-            edges = knnAlgorithm.kneighbors(self.Xnorm, return_distance=False)
-            if debug:
-                end = time.clock()
-                sys.stderr.write('%f s\n' % (end-start))
-
-            pairs = []                              # prevent duplicates with this guy
-            for e1 in range(0,edges.shape[0]):
-                    for col in range(0,edges.shape[1]):
-                        e2 = edges.item(e1,col)
-                        if e1 != e2:
-                            pairs.append((e1,e2))
-        else:
-            pairs = edges
-
-        # As seen here:
-        #  http://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-in-python-whilst-preserving-order
-        seen = set()
-        pairs = [ x for x in pairs if not (x in seen or x[::-1] in seen
-                                        or seen.add(x))]
-        edgeList = []
-        for edge in pairs:
-            edgeList.append(edge[0])
-            edgeList.append(edge[1])
-
-        if debug:
+        if self.debug:
             end = time.clock()
             sys.stderr.write('%f s\n' % (end-start))
             sys.stderr.write('Decomposition: ')
@@ -309,12 +192,12 @@ class MorseSmaleComplex(object):
                                 vectorFloat(self.Y),
                                 vectorString(self.names),
                                 str(self.gradient),
-                                str(persistence),
+                                str(self.simplification),
                                 vectorFloat(self.w),
-                                vectorInt(edgeList),
-                                debug)
+                                graph_rep.FullGraph(),
+                                self.debug)
 
-        if debug:
+        if self.debug:
             end = time.clock()
             sys.stderr.write('%f s\n' % (end-start))
 
@@ -357,6 +240,73 @@ class MorseSmaleComplex(object):
 
         self.base_partitions = partitions
         ########################################################################
+
+    def LoadData(self, filename):
+        """ Opens a file and reads the data into an array, sets the data as
+            an nparray and list of dimnames
+            @ In, filename, string representing the data file
+        """
+        # Open file and read the data into an array
+        # save data as nparray and list of dimnames
+        fin = open(myFile)
+        firstLine = fin.readline().strip()
+        names = re.split(',|;| |\t', firstLine)
+        data = []
+        numCols = len(names)
+        lineNumber = 1
+        for line in fin:
+            line = line.strip()
+            lineNumber += 1
+            if len(line) == 0:
+                continue
+            tokens = re.split(',|;| |\t', line)
+            if numCols != len(tokens):
+                errorMessage = 'Data size is inconsistent.\n\n' \
+                                + 'Header line: ' + str(numCols) + ' Columns vs. ' \
+                                + 'Line ' + str(lineNumber) + ': ' \
+                                + str(len(tokens)) + ' Columns\n\nBad line:\n' + line
+                raise IOError(errorMessage)
+            dataRow = []
+            for token in tokens:
+                value = float(token)
+                dataRow.append(value)
+            if len(dataRow) == numCols:
+                data.append(dataRow)
+            else:
+                errorMessage = 'Bad data encountered at line ' + str(lineNumber) \
+                                + ':\n\nBad line:\n' + line
+                raise IOError(errorMessage)
+        fin.close()
+        data = np.array(data)
+        self.X = data[:, 0:-1]
+        self.Y = data[:, -1]
+
+        self.names = names
+        ##return self.PrepareSegmentation(names, np.array(data))
+
+    def Save(self, hierarchyFilename=None, partitionFilename=None):
+        """ Saves a constructed Morse-Smale Complex in json file
+            @ In, hierarchyFilename, a filename for storing the hierarchical
+            merging of features
+            @ In, partitionFilename, a filename for storing the base level
+            partitions in the data
+        """
+        if partitionFilename is None:
+            partitionFilename = 'Base_Partition.json'
+        with open(partitionFilename, 'w') as fp:
+            json.dump(self.amsc.base_partitions, fp)
+            fp.close()
+            
+        if hierarchyFilename is None:
+            hierarchyFilename = 'Hierarchy.csv'
+        with open(hierarchyFilename, 'w') as modified:
+            for line in self.amsc.hierarchy:
+                tokens = line.split(',')
+                if (tokens[0]=='Maxima'):
+                    modified.write(tokens[1]+','+'1'+','+ tokens[2]+','+tokens[3]+'\n')
+                else:
+                    modified.write(tokens[1]+','+'0'+','+ tokens[2]+','+tokens[3]+'\n')
+            modified.close()
 
     def SetWeights(self, w=None):
         """ Sets the weights associated to the m input samples

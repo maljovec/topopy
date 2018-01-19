@@ -39,6 +39,10 @@ from unittest import TestCase
 
 import topopy
 
+from .testFunctions import gerber
+import numpy as np
+from itertools import product
+
 class TestMSC(TestCase):
     """
     Class for testing the Morse-Smale Complex
@@ -53,13 +57,18 @@ class TestMSC(TestCase):
         self.points = [[]]
         self.edges = []
 
-    def test_blank(self):
+    def test_default(self):
         """
         Blank function serving as a template
         """
         self.setup()
 
-        topopy.MorseSmaleComplex(self.points, [], gradient='steepest',
-                                 persistence='difference', edges=None)
+        x, y = np.mgrid[0:1:20j, 0:1:20j]
+        X = np.vstack([x.ravel(), y.ravel()]).T
+        Y = gerber(X)
 
-        self.assertEqual(False, False)
+        msc = topopy.MorseSmaleComplex()
+        msc.Build(X, Y)
+        len(msc.base_partitions.keys())
+
+        self.assertEqual(len(msc.base_partitions.keys()), 16)
