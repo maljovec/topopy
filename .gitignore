@@ -7,3 +7,4 @@ build/*
 *.png
 *.dot
 topology.py
+topopy.egg-info/*
