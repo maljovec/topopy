@@ -8,3 +8,5 @@ build/*
 *.dot
 topology.py
 topopy.egg-info/*
+*.so
+*pyc
