@@ -38,7 +38,7 @@
 from setuptools import setup, Extension
 
 FILES = ['UnionFind.cpp', 'MergeTree.cpp', 'AMSC.cpp', 'utils.cpp', 'topology_wrap.cpp']
-VERSION = '0.0.0'
+VERSION = '0.0.2'
 
 ## Consult here: https://packaging.python.org/tutorials/distributing-packages/
 setup(name='topopy',
@@ -62,7 +62,7 @@ setup(name='topopy',
                    'Programming Language :: Python :: 2',
                    'Programming Language :: Python :: 3',
                    'Topic :: Scientific/Engineering :: Mathematics'],
-      install_requires=['pyerg', 'numpy', 'scipy', 'scikit-learn'],
+      install_requires=['pyerg', 'numpy', 'scipy', 'scikit-learn', 'networkx'],
       python_requires='>=2.7, <4',
       # package_dir={'':'src/'},
       ext_modules=[Extension('_topology', FILES)])
