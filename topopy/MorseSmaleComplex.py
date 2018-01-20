@@ -37,6 +37,7 @@ import sys
 import re
 import time
 import collections
+import json
 
 import numpy as np
 import sklearn.preprocessing
@@ -278,10 +279,9 @@ class MorseSmaleComplex(object):
                 raise IOError(errorMessage)
         fin.close()
         data = np.array(data)
-        self.X = data[:, 0:-1]
-        self.Y = data[:, -1]
-
-        self.names = names
+        X = data[:, 0:-1]
+        Y = data[:, -1]
+        self.Build(X=X, Y=Y, names=names)
         ##return self.PrepareSegmentation(names, np.array(data))
 
     def Save(self, hierarchyFilename=None, partitionFilename=None):
