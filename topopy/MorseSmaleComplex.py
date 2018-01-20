@@ -249,7 +249,7 @@ class MorseSmaleComplex(object):
         """
         # Open file and read the data into an array
         # save data as nparray and list of dimnames
-        fin = open(myFile)
+        fin = open(filename)
         firstLine = fin.readline().strip()
         names = re.split(',|;| |\t', firstLine)
         data = []
