@@ -63,11 +63,11 @@ class AnnotatedMorseSmaleComplex(MorseSmaleComplex):
     """ A wrapper class for the C++ approximate Morse-Smale complex Object that
         also communicates with the UI via Qt's signal interface
     """
-    def SetEmptySettings(self):
+    def Reset(self):
         """
             Empties all internal storage containers
         """
-        super(AnnotatedMorseSmaleComplex, self).SetEmptySettings()
+        super(AnnotatedMorseSmaleComplex, self).Reset()
 
         self.segmentFits = {}
         self.extremumFits = {}
