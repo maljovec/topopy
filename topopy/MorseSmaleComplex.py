@@ -294,13 +294,13 @@ class MorseSmaleComplex(object):
         if partitionFilename is None:
             partitionFilename = 'Base_Partition.json'
         with open(partitionFilename, 'w') as fp:
-            json.dump(self.amsc.base_partitions, fp)
+            json.dump(self.base_partitions, fp)
             fp.close()
             
         if hierarchyFilename is None:
             hierarchyFilename = 'Hierarchy.csv'
         with open(hierarchyFilename, 'w') as modified:
-            for line in self.amsc.hierarchy:
+            for line in self.hierarchy:
                 tokens = line.split(',')
                 if (tokens[0]=='Maxima'):
                     modified.write(tokens[1]+','+'1'+','+ tokens[2]+','+tokens[3]+'\n')
