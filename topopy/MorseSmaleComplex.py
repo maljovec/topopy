@@ -34,9 +34,9 @@
  ##############################################################################
 
 import sys
-import re
 import time
 import collections
+import re
 import json
 
 import numpy as np
@@ -222,14 +222,13 @@ class MorseSmaleComplex(object):
         # P Save starts here.
         p_interest = 0
         # p_interest = input('Input Persistence of Interest: ')
+        # idx_interest = -1
+        # for idx in range(0,len(self.persistences)):
+        #     if float(p_interest)<= self.persistences[idx]:
+        #         idx_interest = idx
+        #         break
 
-        idx_interest = -1
-        for idx in range(0,len(self.persistences)):
-            if float(p_interest)<= self.persistences[idx]:
-                idx_interest = idx
-                break
-
-        partitions = self.Partitions(self.persistences[idx_interest])
+        partitions = self.Partitions(p_interest)
         cellIdxs = np.array(list(partitions.keys()))
         self.minIdxs = np.unique(cellIdxs[:,0])
         self.maxIdxs = np.unique(cellIdxs[:,1])

@@ -63,6 +63,12 @@ void DebugTimerStart(time_t &t0, std::string text);
 void DebugTimerStop(time_t &t0, std::string text="");
 
 /**
+ * Method for turning on or off the verbosity
+ * @param on boolean representing the new state of the globalVerbosity variable
+ */
+void ToggleVerbosity(bool on);
+
+/**
  * Helper method that creates a pair of integers in sorted order from two
  * arbitrarily sorted incoming values
  * @param a integer to order 

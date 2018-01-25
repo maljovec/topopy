@@ -2,6 +2,11 @@
 #include <iostream>
 #include <sstream>
 
+void ToggleVerbosity(bool on)
+{
+  globalVerbosity = on;
+}
+
 void DebugPrint(std::string text)
 {
   if(!globalVerbosity)

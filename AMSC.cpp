@@ -932,6 +932,8 @@ AMSC<T>::AMSC(std::vector<T> &Xin,
 {
   this->persistenceType = persistenceType;
   globalVerbosity = verbosity;
+  ToggleVerbosity(verbosity);
+
   time_t myTime;
   DebugTimerStart(myTime, "\rInitializing...");
 
