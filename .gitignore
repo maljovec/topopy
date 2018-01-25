@@ -10,3 +10,4 @@ topology.py
 topopy.egg-info/*
 *.so
 *pyc
+.eggs/*
