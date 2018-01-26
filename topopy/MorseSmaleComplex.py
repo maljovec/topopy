@@ -42,7 +42,7 @@ import json
 import numpy as np
 import sklearn.preprocessing
 
-import pyerg
+import nglpy
 
 from .topology import AMSCFloat, vectorFloat, vectorString, vectorInt
 
@@ -179,7 +179,7 @@ class MorseSmaleComplex(object):
             sys.stderr.write('Graph Preparation: ')
             start = time.clock()
 
-        graph_rep = pyerg.Graph(self.Xnorm, self.graph, self.max_neighbors, self.beta)
+        graph_rep = nglpy.Graph(self.Xnorm, self.graph, self.max_neighbors, self.beta)
 
         if self.debug:
             end = time.clock()
