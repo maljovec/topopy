@@ -118,8 +118,6 @@ class MorseSmaleComplex(object):
         self.Y = []
         self.w = []
 
-        self.normalization = None
-
         self.names = []
         self.Xnorm = []
         self.Ynorm = []
