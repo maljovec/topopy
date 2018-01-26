@@ -38,7 +38,7 @@
 from setuptools import setup, Extension
 
 FILES = ['UnionFind.cpp', 'MergeTree.cpp', 'AMSC.cpp', 'utils.cpp', 'topology_wrap.cpp']
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 ## Consult here: https://packaging.python.org/tutorials/distributing-packages/
 setup(name='topopy',
@@ -53,7 +53,10 @@ setup(name='topopy',
       license='BSD',
       test_suite='topopy.tests',
       url='https://github.com/maljovec/topopy',
-      # download_url = 'https://github.com/maljovec/topopy/archive/'+VERSION+'.tar.gz',
+      download_url = 'https://github.com/maljovec/topopy/archive/'+VERSION+'.tar.gz',
+      keywords = ['topological data analysis', 'computational topology', 'Morse theory',
+                  'merge tree', 'contour tree', 'extremum graph',
+                  'Morse-Smale complex', 'Morse complex'],
       ## Consult here: https://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=['Development Status :: 3 - Alpha',
                    'Intended Audience :: Science/Research',

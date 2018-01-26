@@ -42,6 +42,7 @@
 #include <sstream>
 #include <list>
 #include <iostream>
+#include <iterator>
 
 /**
  * Merge data structure

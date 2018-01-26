@@ -11,3 +11,7 @@ topopy.egg-info/*
 *.so
 *pyc
 .eggs/*
+.cache/*
+*.log
+*.txt
+*tar.gz
