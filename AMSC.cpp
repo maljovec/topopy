@@ -1137,11 +1137,13 @@ std::string AMSC<T>::PrintHierarchy()
 
   for(it  = minHierarchy.begin(); it != minHierarchy.end(); it++)
     stream << "Minima" << sep << it->second.persistence << sep
-           << it->first << sep << it->second.parent << ' ';
+           << it->first << sep << it->second.parent << sep << it->second.saddle
+           << ' ';
 
   for(it = maxHierarchy.begin(); it != maxHierarchy.end(); it++)
     stream << "Maxima" << sep << it->second.persistence << sep
-           << it->first << sep << it->second.parent << ' ';
+           << it->first << sep << it->second.parent << sep << it->second.saddle
+           << ' ';
 
   return stream.str();
 }
