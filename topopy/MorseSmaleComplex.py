@@ -301,9 +301,9 @@ class MorseSmaleComplex(object):
             for line in self.hierarchy:
                 tokens = line.split(',')
                 if (tokens[0]=='Maxima'):
-                    modified.write(tokens[1]+','+'1'+','+ tokens[2]+','+tokens[3]+'\n')
+                    modified.write(tokens[1]+','+'1'+','+ tokens[2]+','+tokens[3]+','+tokens[4]+'\n')
                 else:
-                    modified.write(tokens[1]+','+'0'+','+ tokens[2]+','+tokens[3]+'\n')
+                    modified.write(tokens[1]+','+'0'+','+ tokens[2]+','+tokens[3]+','+tokens[4]+'\n')
             modified.close()
 
     def SetWeights(self, w=None):

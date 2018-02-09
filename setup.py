@@ -38,7 +38,7 @@
 from setuptools import setup, Extension
 
 FILES = ['UnionFind.cpp', 'MergeTree.cpp', 'AMSC.cpp', 'utils.cpp', 'topology_wrap.cpp']
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 
 ## Consult here: https://packaging.python.org/tutorials/distributing-packages/
 setup(name='topopy',
