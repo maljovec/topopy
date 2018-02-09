@@ -210,8 +210,9 @@ class MorseSmaleComplex(object):
                 p = float(tokens[1])
                 dyingIndex = int(tokens[2])
                 parentIndex = int(tokens[3])
+                saddleIndex = int(tokens[4])
 
-                self.mergeSequence[dyingIndex] = (parentIndex,p)
+                self.mergeSequence[dyingIndex] = (p, parentIndex, saddleIndex)
                 self.persistences.append(p)
 
         self.persistences = sorted(list(set(self.persistences)))
@@ -319,8 +320,8 @@ class MorseSmaleComplex(object):
         """ Returns a data structure holding the ordered merge sequence of extrema
             simplification
             @ Out, a dictionary of tuples where the key is the dying extrema and the
-            tuple is the parent index and the persistence associated to the dying
-            index, in that order.
+            tuple is the the persistence, parent index, and the saddle index
+            associated to the dying index, in that order.
         """
         return self.mergeSequence
 
