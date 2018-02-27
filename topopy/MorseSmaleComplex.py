@@ -238,6 +238,11 @@ class MorseSmaleComplex(object):
                 del partitions[min_max_pair]
 
         self.base_partitions = partitions
+
+        if(self.ValidCheck() >2 ):
+            raise ValueError('Partitions do not merge a single connected component, Value k needs to be increased to resolve this issue')
+        elif(self.ValidCheck()<2):
+            raise ValueError('Hierarchy may not work due to degeneracy')
         ########################################################################
 
     def LoadData(self, filename):
@@ -557,3 +562,18 @@ class MorseSmaleComplex(object):
             @ Out, a integer list of neighbors indices
         """
         return self.__amsc.Neighbors(int(idx))
+
+    def ValidCheck(self):
+        hierarchy = [None] * len(self.hierarchy)#np.asarray(self.hierarchy)
+        for i in range(len(self.hierarchy)):
+            tokens = self.hierarchy[i].split(',')
+            if (tokens[0] == 'Maxima'):
+                #print(tokens)
+                hierarchy[i] = [float(i) for i in tokens[1:]] ##float(tokens[1] + ',' + '1' + ',' + tokens[2] + ',' + tokens[3] + ',' + tokens[4]
+            else:
+                hierarchy[i] = [float(i) for i in tokens[1:]] #modified.write(tokens[1] + ',' + '0' + ',' + tokens[2] + ',' + tokens[3] + ',' + tokens[4] + '\n')
+        check = np.asarray(hierarchy)
+        hierarchy_sorted = check[np.argsort(check[:, 0])]
+        p_max = hierarchy_sorted[-1, 0]
+        total = len(check[:, 0][check[:, 0] == p_max])
+        return total
