@@ -411,9 +411,9 @@ class MorseSmaleComplex(object):
             filtered by the three input parameters.
         """
         if rows is None:
-            rows = list(range(0, self.GetSampleSize()))
+            rows = list(range(0, self.get_sample_size()))
         if cols is None:
-            cols = list(range(0, self.GetDimensionality()))
+            cols = list(range(0, self.get_dimensionality()))
 
         if applyFilters:
             rows = self.GetMask(rows)
@@ -430,10 +430,12 @@ class MorseSmaleComplex(object):
             input data values filtered by the two input parameters.
         """
         if rows is None:
-            rows = list(range(0, self.GetSampleSize()))
+            rows = list(range(0, self.get_sample_size()))
         if cols is None:
-            cols = list(range(0, self.GetDimensionality()))
+            cols = list(range(0, self.get_dimensionality()))
 
+        if not hasattr(rows, '__iter__'):
+            rows = [rows]
         rows = sorted(list(set(rows)))
 
         retValue = self.X[rows, :]
@@ -449,7 +451,7 @@ class MorseSmaleComplex(object):
             data values filtered by the indices input parameter.
         """
         if indices is None:
-            indices = list(range(0, self.GetSampleSize()))
+            indices = list(range(0, self.get_sample_size()))
         else:
             indices = sorted(list(set(indices)))
 
@@ -465,7 +467,7 @@ class MorseSmaleComplex(object):
             maximum index of the specified rows.
         """
         if indices is None:
-            indices = list(range(0, self.GetSampleSize()))
+            indices = list(range(0, self.get_sample_size()))
         elif isinstance(indices, collections.Iterable):
             indices = sorted(list(set(indices)))
         else:
@@ -495,7 +497,7 @@ class MorseSmaleComplex(object):
             indices input parameter.
         """
         if indices is None:
-            indices = list(range(0, self.GetSampleSize()))
+            indices = list(range(0, self.get_sample_size()))
         else:
             indices = sorted(list(set(indices)))
 
