@@ -196,7 +196,7 @@ class MorseSmaleComplex(object):
                                 str(self.gradient),
                                 str(self.simplification),
                                 vectorFloat(self.w),
-                                graph_rep.FullGraph(),
+                                graph_rep.full_graph(),
                                 self.debug)
 
         if self.debug:
@@ -219,7 +219,7 @@ class MorseSmaleComplex(object):
                 self.persistences.append(p)
 
         self.persistences = sorted(list(set(self.persistences)))
-        
+
         ########################################################################
         # P Save starts here.
         p_interest = 0
@@ -299,7 +299,7 @@ class MorseSmaleComplex(object):
         with open(partitionFilename, 'w') as fp:
             json.dump(self.base_partitions, fp)
             fp.close()
-            
+
         if hierarchyFilename is None:
             hierarchyFilename = 'Hierarchy.csv'
         with open(hierarchyFilename, 'w') as modified:
@@ -574,7 +574,7 @@ class MorseSmaleComplex(object):
         unique_xs = len(np.unique(self.X, axis=0))
 
         if len(self.Y) != unique_ys:
-            warnings.warn('Range space has duplicates. Simulation of ' + 
+            warnings.warn('Range space has duplicates. Simulation of ' +
                           'simplicity may help, but artificial noise may ' +
                           'occur in flat regions of the domain. Sample size:' +
                           '{} vs. Unique Records: {}'.format(len(self.Y),
@@ -612,6 +612,6 @@ class MorseSmaleComplex(object):
             warnings.warn('Partitions do not merge to a single connected ' +
                           'component. Increasing k or changing to a more ' +
                           'relaxed graph structure can ensure the graph is ' +
-                          'more connected.') 
+                          'more connected.')
         if total < 2:
             raise ValueError('Hierarchy may not work due to degeneracy')
