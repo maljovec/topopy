@@ -2,6 +2,7 @@ deprecated/*
 extra/*
 .vscode/*
 build/*
+htmlcov/*
 *_wrap.cpp
 *.csv
 *.png
