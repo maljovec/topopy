@@ -134,9 +134,9 @@ class MorseSmaleComplex(object):
         self.__amsc = None
         self.hierarchy = None
 
-    def build(self, X, Y, w=None, names=None, edges=None):
-        """ Allows the caller to basically start over with a new
-            dataset.
+    def __set_data(self, X, Y, w=None, names=None):
+        """ Internally assigns the input data and normalizes it
+            according to the user's specifications
             @ In, X, an m-by-n array of values specifying m
             n-dimensional samples
             @ In, Y, a m vector of values specifying the output
@@ -148,13 +148,7 @@ class MorseSmaleComplex(object):
             names to associate to the n input dimensions and 1 output
             dimension. Default of None means input variables will be x0,
             x1, ..., x(n-1) and the output will be y
-            @ In, edges, an optional list of custom edges to use as a
-            starting point for pruning, or in place of a computed graph.
         """
-        self.reset()
-        if X is None or Y is None:
-            return
-
         self.X = X
         self.Y = Y
         if w is not None:
@@ -191,6 +185,30 @@ class MorseSmaleComplex(object):
             self.Xnorm = np.array(self.X)
             self.Ynorm = np.array(self.Y)
 
+    def build(self, X, Y, w=None, names=None, edges=None):
+        """ Assigns data to this object and builds the Morse-Smale
+            Complex
+            @ In, X, an m-by-n array of values specifying m
+            n-dimensional samples
+            @ In, Y, a m vector of values specifying the output
+            responses corresponding to the m samples specified by X
+            @ In, w, an optional m vector of values specifying the
+            weights associated to each of the m samples used. Default of
+            None means all points will be equally weighted
+            @ In, names, an optional list of strings that specify the
+            names to associate to the n input dimensions and 1 output
+            dimension. Default of None means input variables will be x0,
+            x1, ..., x(n-1) and the output will be y
+            @ In, edges, an optional list of custom edges to use as a
+            starting point for pruning, or in place of a computed graph.
+        """
+        self.reset()
+
+        if X is None or Y is None:
+            return
+
+        self.__set_data(X, Y, w, names)
+
         if self.debug:
             sys.stderr.write('Graph Preparation: ')
             start = time.clock()
@@ -210,7 +228,7 @@ class MorseSmaleComplex(object):
                                 str(self.gradient),
                                 str(self.simplification),
                                 vectorFloat(self.w),
-                                graph_rep.FullGraph(),
+                                graph_rep.full_graph(),
                                 self.debug)
 
         if self.debug:
@@ -248,19 +266,20 @@ class MorseSmaleComplex(object):
         cellIdxs = np.array(list(partitions.keys()))
         self.minIdxs = np.unique(cellIdxs[:, 0])
         self.maxIdxs = np.unique(cellIdxs[:, 1])
-        for min_max_pair in list(partitions.keys()):
 
-            if type(min_max_pair) == tuple:
-                new_key = str(min_max_pair[0])+', '+str(min_max_pair[1])
-                partitions[new_key] = partitions[min_max_pair]
-                del partitions[min_max_pair]
+        # Does this need to be stored as a string? This seems excessive.
+        for min_max_pair in list(partitions.keys()):
+            new_key = str(min_max_pair[0])+', '+str(min_max_pair[1])
+            partitions[new_key] = partitions[min_max_pair]
+            del partitions[min_max_pair]
 
         self.base_partitions = partitions
         ################################################################
 
     def load_data_and_build(self, filename, delimiter=','):
-        """ Opens a file and reads the data into an array, sets the data
-            as an nparray and list of dimnames
+        """ Convenience function for directly working with a data file.
+            This opens a file and reads the data into an array, sets the
+            data as an nparray and list of dimnames
             @ In, filename, string representing the data file
         """
         data = np.genfromtxt(filename, dtype=float, delimiter=delimiter,
@@ -299,16 +318,20 @@ class MorseSmaleComplex(object):
                                    tokens[3] + ',' + tokens[4] + '\n')
             modified.close()
 
-    def set_weights(self, w=None):
-        """ Sets the weights associated to the m input samples
-            @ In, w, optional m vector specifying the new weights to
-            use for the data points. Default is None and resets the
-            weights to be uniform.
-        """
-        if w is not None:
-            self.w = np.array(w)
-        elif len(self.Y) > 0:
-            self.w = np.ones(len(self.Y))*1.0/float(len(self.Y))
+    # Depending on the persistence simplification strategy, this could
+    # alter the hierarchy, so let's remove this feature until further
+    # notice, also the weighting feature is still pretty experimental:
+
+    # def set_weights(self, w=None):
+    #     """ Sets the weights associated to the m input samples
+    #         @ In, w, optional m vector specifying the new weights to
+    #         use for the data points. Default is None and resets the
+    #         weights to be uniform.
+    #     """
+    #     if w is not None:
+    #         self.w = np.array(w)
+    #     elif len(self.Y) > 0:
+    #         self.w = np.ones(len(self.Y))*1.0/float(len(self.Y))
 
     def get_merge_sequence(self):
         """ Returns a data structure holding the ordered merge sequence
@@ -344,6 +367,7 @@ class MorseSmaleComplex(object):
                 minMax = tuple(map(int, strMinMax.split(',')))
                 tupleKeyedPartitions[minMax] = indices
             self.partitions[persistence] = tupleKeyedPartitions
+            # self.partitions[persistence] = partitions
         return self.partitions[persistence]
 
     def get_stable_manifolds(self, persistence=None):
@@ -400,14 +424,12 @@ class MorseSmaleComplex(object):
         """
         return self.names
 
-    def get_normed_x(self, rows=None, cols=None, applyFilters=False):
+    def get_normed_x(self, rows=None, cols=None):
         """ Returns the normalized input data requested by the user
             @ In, rows, a list of non-negative integers specifying the
             row indices to return
             @ In, cols, a list of non-negative integers specifying the
             column indices to return
-            @ In, applyFilters, a boolean specifying whether data
-            filters should be used to prune the results
             @ Out, a matrix of floating point values specifying the
             normalized data values used in internal computations
             filtered by the three input parameters.
@@ -417,8 +439,10 @@ class MorseSmaleComplex(object):
         if cols is None:
             cols = list(range(0, self.get_dimensionality()))
 
-        if applyFilters:
-            rows = self.GetMask(rows)
+        if not hasattr(rows, '__iter__'):
+            rows = [rows]
+        rows = sorted(list(set(rows)))
+
         retValue = self.Xnorm[rows, :]
         return retValue[:, cols]
 
@@ -449,12 +473,14 @@ class MorseSmaleComplex(object):
         """ Returns the output data requested by the user
             @ In, indices, a list of non-negative integers specifying
             the row indices to return
-            @ Out, a list of floating point values specifying the output
+            @ Out, an nparray of floating point values specifying the output
             data values filtered by the indices input parameter.
         """
         if indices is None:
             indices = list(range(0, self.get_sample_size()))
         else:
+            if not hasattr(indices, '__iter__'):
+                indices = [indices]
             indices = sorted(list(set(indices)))
 
         if len(indices) == 0:
@@ -477,7 +503,7 @@ class MorseSmaleComplex(object):
 
         if len(indices) == 0:
             return []
-        partitions = self.__amsc.get_partitions(self.persistence)
+        partitions = self.__amsc.GetPartitions(self.persistence)
         labels = self.X.shape[0]*[None]
         for strMinMax in partitions.keys():
             partIndices = partitions[strMinMax]
