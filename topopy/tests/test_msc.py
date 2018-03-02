@@ -44,6 +44,7 @@ import topopy
 from .testFunctions import gerber
 import sklearn
 import os
+import json
 
 
 class TestMSC(TestCase):
@@ -138,9 +139,12 @@ class TestMSC(TestCase):
 
         self.assertEqual((0, 410), self.msc.get_label(0), 'The label of a ' +
                          'single index should be retrievable.')
-        self.assertListEqual([(0, 410), (0, 410)], self.msc.get_label([0, 1]),
-                             'The label of a multiple indices should be ' +
-                             'retrievable.')
+
+        gold_labels = np.array([[0, 410], [0, 410]])
+        test_labels = np.array(self.msc.get_label([0, 1]).flatten().tolist())
+        np.testing.assert_array_equal(gold_labels, test_labels,
+                                      'The label of a multiple indices ' +
+                                      'should be retrievable.')
 
     def test_get_merge_sequence(self):
         """ Testing the ability to succinctly report the merge hierarchy
@@ -440,17 +444,44 @@ class TestMSC(TestCase):
         """ Testing the save feature correctly dumps to a json file.
         """
         self.setup()
-        self.msc.save('test.json')
+        self.msc.save('test.csv', 'test.json')
 
+        with open('gold.csv', 'r') as data_file:
+            gold_csv = data_file.read()
         with open('gold.json', 'r') as data_file:
-            gold = data_file.read()
+            gold_json = data_file.read()
+            gold_json = json.loads(gold_json)
 
+        with open('test.csv', 'r') as data_file:
+            test_csv = data_file.read()
         with open('test.json', 'r') as data_file:
-            test = data_file.read()
-        os.remove('test.json')
+            test_json = data_file.read()
+            test_json = json.loads(test_json)
 
-        self.assertMultiLineEqual(gold, test, 'save does not reproduce the ' +
-                                  'same results as the gold file.')
+        self.assertDictEqual(gold_json, test_json,
+                             'save does not reproduce the same results ' +
+                             'as the gold custom json file.')
+        self.assertMultiLineEqual(gold_csv, test_csv,
+                                  'save does not reproduce the same results ' +
+                                  'as the gold custom csv file.')
+        os.remove('test.json')
+        os.remove('test.csv')
+
+        self.msc.save()
+        with open('Base_Partition.json', 'r') as data_file:
+            test_json = data_file.read()
+            test_json = json.loads(test_json)
+        with open('Hierarchy.csv', 'r') as data_file:
+            test_csv = data_file.read()
+
+        self.assertDictEqual(gold_json, test_json,
+                             'save does not reproduce the same results ' +
+                             'as the gold default json file.')
+        self.assertMultiLineEqual(gold_csv, test_csv,
+                                  'save does not reproduce the same results ' +
+                                  'as the gold default csv file.')
+        os.remove('Base_Partition.json')
+        os.remove('Hierarchy.csv')
 
     def test_shape_functions(self):
         """ Test the get_dimensionality and get_sample_size functions

@@ -16,3 +16,5 @@ topopy.egg-info/*
 *.log
 *.txt
 *tar.gz
+*.json
+.coverage
