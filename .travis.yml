@@ -1,4 +1,5 @@
 language: python
+install: make && pip install coveralls
 python:
   - "2.7"
   - "3.2"
@@ -11,4 +12,6 @@ python:
   - "pypy2.7"
   - "pypy3.5"
 # command to install dependencies
-script: python setup.py test
+script: coverage run --source topopy setup.py test
+after_success:
+  - coveralls
