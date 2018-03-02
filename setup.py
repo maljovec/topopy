@@ -86,7 +86,7 @@ setup(name='topopy',
                    'Programming Language :: Python :: 2',
                    'Programming Language :: Python :: 3',
                    'Topic :: Scientific/Engineering :: Mathematics'],
-      install_requires=['nglpy', 'numpy', 'scipy', 'scikit-learn', 'networkx'],
+      install_requires=['nglpy>=1.0.1', 'numpy', 'scipy', 'scikit-learn', 'networkx'],
       python_requires='>=2.7, <4',
       # package_dir={'':'src/'},
       ext_modules=[Extension('_topology', FILES)])

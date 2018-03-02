@@ -39,6 +39,7 @@ import sys
 import time
 import collections
 import json
+import warnings
 
 import numpy as np
 import sklearn.preprocessing
@@ -151,6 +152,8 @@ class MorseSmaleComplex(object):
         """
         self.X = X
         self.Y = Y
+        self.check_duplicates()
+
         if w is not None:
             self.w = np.array(w)
         else:
@@ -274,7 +277,10 @@ class MorseSmaleComplex(object):
             del partitions[min_max_pair]
 
         self.base_partitions = partitions
+
         ################################################################
+
+        self.check_single_connected_component()
 
     def load_data_and_build(self, filename, delimiter=','):
         """ Convenience function for directly working with a data file.
@@ -594,3 +600,56 @@ class MorseSmaleComplex(object):
             @ Out, a integer list of neighbors indices
         """
         return self.__amsc.Neighbors(int(idx))
+
+    def check_duplicates(self):
+        """ Function to test whether duplicates exist in the input or
+            output space. Will raise a warning if they exist in the
+            output space. Will raise a ValueError if they exist in the
+            input space.
+            @Out, None
+        """
+        unique_ys = len(np.unique(self.Y, axis=0))
+        unique_xs = len(np.unique(self.X, axis=0))
+
+        if len(self.Y) != unique_ys:
+            warnings.warn('Range space has duplicates. Simulation of ' +
+                          'simplicity may help, but artificial noise may ' +
+                          'occur in flat regions of the domain. Sample size:' +
+                          '{} vs. Unique Records: {}'.format(len(self.Y),
+                                                             unique_ys))
+
+        if len(self.X) != unique_xs:
+            raise ValueError('Domain space has duplicates\n\tNumber of ' +
+                             'Records: {}\n\tNumber of Unique Records: {}\n'\
+                             .format(len(self.X), unique_xs))
+
+    def check_single_connected_component(self):
+        """ Function for testing whether the data represents a single
+            connected component. Will raise a ValueError if the data is
+            degenerate (need more information here), and will raise a
+            warning if the number of connected components is greater
+            than 2 at the completely simplified level.
+        """
+        #np.asarray(self.hierarchy)
+        hierarchy = [None] * len(self.hierarchy)
+        for i in range(len(self.hierarchy)):
+            tokens = self.hierarchy[i].split(',')
+            if (tokens[0] == 'Maxima'):
+                #print(tokens)
+                hierarchy[i] = [float(i) for i in tokens[1:]]
+                #float(tokens[1] + ',' + '1' + ',' + tokens[2] + ',' + tokens[3] + ',' + tokens[4]
+            else:
+                hierarchy[i] = [float(i) for i in tokens[1:]]
+                #modified.write(tokens[1] + ',' + '0' + ',' + tokens[2] + ',' + tokens[3] + ',' + tokens[4] + '\n')
+        check = np.asarray(hierarchy)
+        hierarchy_sorted = check[np.argsort(check[:, 0])]
+        p_max = hierarchy_sorted[-1, 0]
+        total = len(check[:, 0][check[:, 0] == p_max])
+
+        if total > 2:
+            warnings.warn('Partitions do not merge to a single connected ' +
+                          'component. Increasing k or changing to a more ' +
+                          'relaxed graph structure can ensure the graph is ' +
+                          'more connected.')
+        if total < 2:
+            raise ValueError('Hierarchy may not work due to degeneracy')
