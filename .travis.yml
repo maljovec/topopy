@@ -1,4 +1,7 @@
 language: python
+addons:
+  apt_packages:
+    - swig
 install: make && pip install coveralls
 python:
   - "2.7"
