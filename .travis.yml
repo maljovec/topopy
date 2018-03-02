@@ -18,3 +18,6 @@ python:
 script: coverage run --source topopy setup.py test
 after_success:
   - coveralls
+branches:
+  only:
+  - master
