@@ -620,7 +620,7 @@ class MorseSmaleComplex(object):
 
         if len(self.X) != unique_xs:
             raise ValueError('Domain space has duplicates\n\tNumber of ' +
-                             'Records: {}\n\tNumber of Unique Records: {}\n'\
+                             'Records: {}\n\tNumber of Unique Records: {}\n'
                              .format(len(self.X), unique_xs))
 
     def check_single_connected_component(self):
@@ -630,17 +630,14 @@ class MorseSmaleComplex(object):
             warning if the number of connected components is greater
             than 2 at the completely simplified level.
         """
-        #np.asarray(self.hierarchy)
+        # np.asarray(self.hierarchy)
         hierarchy = [None] * len(self.hierarchy)
         for i in range(len(self.hierarchy)):
             tokens = self.hierarchy[i].split(',')
             if (tokens[0] == 'Maxima'):
-                #print(tokens)
-                hierarchy[i] = [float(i) for i in tokens[1:]]
-                #float(tokens[1] + ',' + '1' + ',' + tokens[2] + ',' + tokens[3] + ',' + tokens[4]
+                hierarchy[i] = [float(val) for val in tokens[1:]]
             else:
-                hierarchy[i] = [float(i) for i in tokens[1:]]
-                #modified.write(tokens[1] + ',' + '0' + ',' + tokens[2] + ',' + tokens[3] + ',' + tokens[4] + '\n')
+                hierarchy[i] = [float(val) for val in tokens[1:]]
         check = np.asarray(hierarchy)
         hierarchy_sorted = check[np.argsort(check[:, 0])]
         p_max = hierarchy_sorted[-1, 0]
