@@ -55,7 +55,8 @@ class MorseSmaleComplex(object):
     """
     def __init__(self, graph='beta skeleton', gradient='steepest',
                  max_neighbors=-1, beta=1.0, normalization=None,
-                 simplification='difference', debug=False):
+                 simplification='difference', connect=False,
+                 debug=False):
         """ Initialization method that takes at minimum a set of input
             points and corresponding output responses.
             @ In, graph, an optional string specifying the type of
@@ -94,6 +95,9 @@ class MorseSmaleComplex(object):
             simplification by the size (number of points) in each
             manifold such that smaller features will be absorbed into
             neighboring larger features first.
+            @ In, connect, an optional boolean flag for whether th
+            algorithm should enforce the data to be a single connected
+            component.
             @ In, debug, an optional boolean flag for whether debugging
             output should be enabled.
         """
@@ -107,6 +111,7 @@ class MorseSmaleComplex(object):
         self.simplification = simplification
         self.normalization = normalization
         self.gradient = gradient
+        self.connect = connect
         self.debug = debug
 
     def reset(self):
@@ -217,7 +222,7 @@ class MorseSmaleComplex(object):
             start = time.clock()
 
         graph_rep = nglpy.Graph(self.Xnorm, self.graph, self.max_neighbors,
-                                self.beta)
+                                self.beta, self.connect)
 
         if self.debug:
             end = time.clock()
