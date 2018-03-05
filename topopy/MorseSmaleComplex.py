@@ -222,7 +222,7 @@ class MorseSmaleComplex(object):
             start = time.clock()
 
         graph_rep = nglpy.Graph(self.Xnorm, self.graph, self.max_neighbors,
-                                self.beta, self.connect)
+                                self.beta, connect=self.connect)
 
         if self.debug:
             end = time.clock()
