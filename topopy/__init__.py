@@ -16,4 +16,4 @@ from .MergeTree import MergeTree
 from .ContourTree import ContourTree
 
 __all__ = ['MorseSmaleComplex', 'MergeTree', 'ContourTree']
-__version__ = '0.0.4'
+__version__ = '0.0.5'
