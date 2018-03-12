@@ -114,11 +114,11 @@ class AMSC
    * @param win vector of probability values in a one-to-one correspondence with
    *        Xin
    * @param neighborhoods a map where the keys are individual indices and the
-   *        values are sets of indices that are connected to that key index 
+   *        values are sets of indices that are connected to that key index
    *       (TODO consider using a vector< set<int> > here)
    */
   AMSC(std::vector<T> &Xin, std::vector<T> &yin,
-       std::vector<std::string> &_names, 
+       std::vector<std::string> &_names,
        std::string gradientMethod, std::string persistenceType,
        std::vector<T> &win,
        std::map< int, std::set<int> > &neighborhoods, bool verbosity=false);
@@ -367,6 +367,11 @@ class AMSC
    * Implements the Steepest Edge algorithm
    */
   void ComputeMinimaPersistence();
+
+  /**
+   * Removes Extraneous Extrema derived from Flat Regions of the Space
+   */
+  void RemoveZeroPersistenceExtrema();
 };
 
 #endif //AMSC_H

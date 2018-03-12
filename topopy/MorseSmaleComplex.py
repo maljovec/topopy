@@ -285,8 +285,6 @@ class MorseSmaleComplex(object):
 
         ################################################################
 
-        self.check_single_connected_component()
-
     def load_data_and_build(self, filename, delimiter=','):
         """ Convenience function for directly working with a data file.
             This opens a file and reads the data into an array, sets the
@@ -627,31 +625,3 @@ class MorseSmaleComplex(object):
             raise ValueError('Domain space has duplicates\n\tNumber of ' +
                              'Records: {}\n\tNumber of Unique Records: {}\n'
                              .format(len(self.X), unique_xs))
-
-    def check_single_connected_component(self):
-        """ Function for testing whether the data represents a single
-            connected component. Will raise a ValueError if the data is
-            degenerate (need more information here), and will raise a
-            warning if the number of connected components is greater
-            than 2 at the completely simplified level.
-        """
-        # np.asarray(self.hierarchy)
-        hierarchy = [None] * len(self.hierarchy)
-        for i in range(len(self.hierarchy)):
-            tokens = self.hierarchy[i].split(',')
-            if (tokens[0] == 'Maxima'):
-                hierarchy[i] = [float(val) for val in tokens[1:]]
-            else:
-                hierarchy[i] = [float(val) for val in tokens[1:]]
-        check = np.asarray(hierarchy)
-        hierarchy_sorted = check[np.argsort(check[:, 0])]
-        p_max = hierarchy_sorted[-1, 0]
-        total = len(check[:, 0][check[:, 0] == p_max])
-
-        if total > 2:
-            warnings.warn('Partitions do not merge to a single connected ' +
-                          'component. Increasing k or changing to a more ' +
-                          'relaxed graph structure can ensure the graph is ' +
-                          'more connected.')
-        if total < 2:
-            raise ValueError('Hierarchy may not work due to degeneracy')

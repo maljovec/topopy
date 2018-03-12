@@ -80,7 +80,7 @@ void AMSC<T>::SteepestEdge()
   {
     std::set<int> Ni = neighbors[i];
     int j; // An index adjacent to i
-    
+
     for (std::set<int>::iterator it = Ni.begin(); it != Ni.end(); it++)
     {
       j = *it;
@@ -289,7 +289,7 @@ void AMSC<T>::MaxFlow()
 
     std::set<int> Ni = neighbors[i];
     int j; // An index adjacent to i
-    
+
     for (std::set<int>::iterator it = Ni.begin(); it != Ni.end(); it++)
     {
       j = *it;
@@ -380,7 +380,7 @@ void AMSC<T>::ComputeMaximaPersistence()
 
     std::set<int> Ni = neighbors[i];
     int j; // An index adjacent to i
-    
+
     for (std::set<int>::iterator it = Ni.begin(); it != Ni.end(); it++)
     {
       j = *it;
@@ -660,7 +660,7 @@ void AMSC<T>::ComputeMinimaPersistence()
     int e1 = flow[i].down;
     std::set<int> Ni = neighbors[i];
     int j; // An index adjacent to i
-    
+
     for (std::set<int>::iterator it = Ni.begin(); it != Ni.end(); it++)
     {
       j = *it;
@@ -921,6 +921,41 @@ void AMSC<T>::ComputeMinimaPersistence()
 }
 
 template<typename T>
+void AMSC<T>::RemoveZeroPersistenceExtrema()
+{
+  std::set<int> minLabelsToRemove;
+  std::set<int> maxLabelsToRemove;
+
+  for(int i = 0; i < Size(); i++)
+  {
+    int minIdx = MinLabel(i,0);
+    int maxIdx = MaxLabel(i,0);
+
+    while(minHierarchy[minIdx].persistence <= 0
+          && minIdx != minHierarchy[minIdx].parent)
+    {
+      minLabelsToRemove.insert(minIdx);
+      flow[i].down = minIdx = flow[minIdx].down = minHierarchy[minIdx].parent;
+    }
+
+    while(maxHierarchy[maxIdx].persistence <= 0
+          && maxIdx != maxHierarchy[maxIdx].parent)
+    {
+      maxLabelsToRemove.insert(maxIdx);
+      flow[i].up = maxIdx = flow[maxIdx].up = maxHierarchy[maxIdx].parent;
+    }
+  }
+
+  std::set<int>::iterator it;
+  for(it = minLabelsToRemove.begin(); it != minLabelsToRemove.end(); it++) {
+      minHierarchy.erase(*it);
+  }
+  for(it = maxLabelsToRemove.begin(); it != maxLabelsToRemove.end(); it++) {
+      maxHierarchy.erase(*it);
+  }
+}
+
+template<typename T>
 AMSC<T>::AMSC(std::vector<T> &Xin,
               std::vector<T> &yin,
               std::vector<std::string> &_names,
@@ -986,6 +1021,7 @@ AMSC<T>::AMSC(std::vector<T> &Xin,
   ComputeMaximaPersistence();
   DebugTimerStop(myTime);
   DebugTimerStart(myTime, "\rCleaning up...");
+  RemoveZeroPersistenceExtrema();
   DebugTimerStop(myTime);
   DebugPrint("\rMy work is complete. The Maker would be pleased.");
 
@@ -1008,14 +1044,14 @@ void AMSC<T>::computeDistances()
   {
       i = it->first;
       Ni = it->second;
-      
+
       for (std::set<int>::iterator it = Ni.begin(); it != Ni.end(); it++)
       {
         j = *it;
         T dist = 0;
         for(int d = 0; d < dims; d++)
             dist += ((X[d][i]-X[d][j])*(X[d][i]-X[d][j]));
-        
+
         distances[sortedPair(i,j)] = sqrt(dist);
       }
   }
