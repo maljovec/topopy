@@ -612,7 +612,12 @@ class MorseSmaleComplex(object):
             @Out, None
         """
         unique_ys = len(np.unique(self.Y, axis=0))
-        unique_xs = len(np.unique(self.X, axis=0))
+        unique_xs, indices = np.unique(self.X, axis=0, return_index=True)
+        unique_xs = len(unique_xs)
+
+        for i in range(len(self.X)):
+            if i not in indices:
+                print(i+2, self.X[i])
 
         if len(self.Y) != unique_ys:
             warnings.warn('Range space has duplicates. Simulation of ' +

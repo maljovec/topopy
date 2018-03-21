@@ -1247,12 +1247,14 @@ std::map< std::string, std::vector<int> > AMSC<T>::GetPartitions(T persistence)
     while(minHierarchy[minIdx].persistence < persistence
           && minIdx != minHierarchy[minIdx].parent)
     {
+		std::cerr << minIdx << " -> " << minHierarchy[minIdx].parent << std::endl;
       minIdx = minHierarchy[minIdx].parent;
     }
 
     while(maxHierarchy[maxIdx].persistence < persistence
           && maxIdx != maxHierarchy[maxIdx].parent)
     {
+		std::cerr << maxIdx << " -> " << maxHierarchy[maxIdx].parent << std::endl;
       maxIdx = maxHierarchy[maxIdx].parent;
     }
 
