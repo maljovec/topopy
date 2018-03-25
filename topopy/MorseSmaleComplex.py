@@ -55,7 +55,7 @@ class MorseSmaleComplex(object):
     """
     def __init__(self, graph='beta skeleton', gradient='steepest',
                  max_neighbors=-1, beta=1.0, normalization=None,
-                 simplification='difference', connect=False,
+                 simplification='difference', connect=False, aggregator=None,
                  debug=False):
         """ Initialization method that takes at minimum a set of input
             points and corresponding output responses.
@@ -95,9 +95,13 @@ class MorseSmaleComplex(object):
             simplification by the size (number of points) in each
             manifold such that smaller features will be absorbed into
             neighboring larger features first.
-            @ In, connect, an optional boolean flag for whether th
+            @ In, connect, an optional boolean flag for whether the
             algorithm should enforce the data to be a single connected
             component.
+            @ In, aggregator, an optional string that specifies what
+            type of aggregation to do when duplicates are found in the
+            domain space. Default value is None meaning the code will
+            error if duplicates are identified.
             @ In, debug, an optional boolean flag for whether debugging
             output should be enabled.
         """
@@ -113,6 +117,12 @@ class MorseSmaleComplex(object):
         self.gradient = gradient
         self.connect = connect
         self.debug = debug
+        self.aggregator = aggregator
+
+        # This feature is for controlling how many decimal places of
+        # precision will be used to determine if two points should
+        # be considered the same
+        self.precision = 15
 
     def reset(self):
         """
@@ -604,15 +614,59 @@ class MorseSmaleComplex(object):
         """
         return self.__amsc.Neighbors(int(idx))
 
+    def collapse_duplicates(self):
+        if self.aggregator is None:
+            return
+
+        if 'min' in self.aggregator.lower():
+            aggregator = np.min
+        elif 'max' in self.aggregator.lower():
+            aggregator = np.max
+        elif 'median' in self.aggregator.lower():
+            aggregator = np.median
+        elif self.aggregator.lower() in ['average', 'mean']:
+            aggregator = np.mean
+        else:
+            warnings.warn('Aggregator \"{}\" not understood. Skipping ' +
+                          'sample aggregation.'.format(self.aggregator))
+
+        X = self.X.round(decimals=self.precision)
+
+        unique_xs = np.unique(X, axis=0)
+
+        old_size = len(X)
+        new_size = len(unique_xs)
+        if old_size == new_size:
+            return
+
+        reduced_y = np.empty(new_size)
+
+        warnings.warn('Domain space duplicates caused a data reduction. ' +
+                      'Original size: {} vs. New size: {}'.format(old_size,
+                                                                  new_size))
+
+        for i, distinct_row in enumerate(unique_xs):
+            filtered_rows = np.all(X == distinct_row, axis=1)
+            reduced_y[i] = aggregator(self.Y[filtered_rows])
+
+        self.X = unique_xs
+        self.Y = reduced_y
+        return unique_xs, reduced_y
+
     def check_duplicates(self):
         """ Function to test whether duplicates exist in the input or
-            output space. Will raise a warning if they exist in the
-            output space. Will raise a ValueError if they exist in the
-            input space.
+            output space. First, if an aggregator function has been
+            specified, the domain space duplicates will be consolidated
+            using the function to generate a new range value for that
+            shared point. Otherwise, it will raise a ValueError.
+            The function will raise a warning if duplicates exist in the
+            output space
             @Out, None
         """
+        self.collapse_duplicates()
         unique_ys = len(np.unique(self.Y, axis=0))
-        unique_xs = len(np.unique(self.X, axis=0))
+        unique_xs = len(np.unique(self.X.round(decimals=self.precision),
+                                  axis=0))
 
         if len(self.Y) != unique_ys:
             warnings.warn('Range space has duplicates. Simulation of ' +
@@ -622,6 +676,10 @@ class MorseSmaleComplex(object):
                                                              unique_ys))
 
         if len(self.X) != unique_xs:
-            raise ValueError('Domain space has duplicates\n\tNumber of ' +
+            raise ValueError('Domain space has duplicates. Try using an ' +
+                             'aggregator function to consolidate duplicates ' +
+                             'into a single sample with one range value. ' +
+                             'e.g., MorseSmaleComplex(aggregator=\'max\'). ' +
+                             '\n\tNumber of ' +
                              'Records: {}\n\tNumber of Unique Records: {}\n'
                              .format(len(self.X), unique_xs))

@@ -274,6 +274,9 @@ class AMSC
    */
   std::map< int, std::vector<int> > GetUnstableManifolds(T persistence);
 
+  void addToHierarchy(bool isMinimum, int dyingIndex, T persistence,
+                      int survivingIndex, int saddleIndex);
+
 //  std::string ComputeLinearRegressions(T persistence);
 
  private:

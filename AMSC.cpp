@@ -66,6 +66,23 @@ int AMSC<T>::descending(int index)
 }
 
 template<typename T>
+void AMSC<T>::addToHierarchy(bool isMinimum, int dyingIndex, T persistence, int survivingIndex, int saddleIndex)
+{
+    persistence_map *hierarchyToUpdate;
+
+    if (isMinimum) {
+        hierarchyToUpdate = &minHierarchy;
+    }
+    else {
+        hierarchyToUpdate = &maxHierarchy;
+    }
+
+    (*hierarchyToUpdate)[dyingIndex].persistence = persistence;
+    (*hierarchyToUpdate)[dyingIndex].parent = survivingIndex;
+    (*hierarchyToUpdate)[dyingIndex].saddle = saddleIndex;
+}
+
+template<typename T>
 void AMSC<T>::SteepestEdge()
 {
   for( int i = 0; i < Size(); i++)
@@ -212,18 +229,20 @@ void AMSC<T>::SteepestEdge()
       if(prev == -1)
       {
         ext = path.back();
+        T persistence = 1;
         if(this->persistenceType.compare("difference") == 0)
         {
-          maxHierarchy[ext] = Merge<T>(RangeY(),ext,ext);
+          persistence = RangeY();
         }
         else if(this->persistenceType.compare("count") == 0)
         {
-          maxHierarchy[ext] = Merge<T>(Size(),ext,ext);
+          persistence = Size();
         }
         else if(this->persistenceType.compare("probability") == 0)
         {
-          maxHierarchy[ext] = Merge<T>(1,ext,ext);
+          persistence = 1;
         }
+        addToHierarchy(false, ext, persistence, ext, ext);
       }
       else
         ext = flow[prev].up;
@@ -248,18 +267,20 @@ void AMSC<T>::SteepestEdge()
       if(prev == -1)
       {
         ext = path.back();
+        T persistence = 1;
         if(this->persistenceType.compare("difference") == 0)
         {
-          minHierarchy[ext] = Merge<T>(RangeY(),ext,ext);
+          persistence = RangeY();
         }
         else if(this->persistenceType.compare("count") == 0)
         {
-          minHierarchy[ext] = Merge<T>(Size(),ext,ext);
+          persistence = Size();
         }
         else if(this->persistenceType.compare("probability") == 0)
         {
-          minHierarchy[ext] = Merge<T>(1,ext,ext);
+          persistence = 1;
         }
+        addToHierarchy(true, ext, persistence, ext, ext);
       }
       else
         ext = flow[prev].down;
@@ -443,15 +464,13 @@ void AMSC<T>::ComputeMaximaPersistence()
           if(pers < tmpPers || (pers == tmpPers && tmpSaddle < saddleIdx))
           {
             (*it).second = std::pair<T,int>(pers,saddleIdx);
-            maxHierarchy[p.first].parent = p.second;
-            maxHierarchy[p.first].saddle = saddleIdx;
+            addToHierarchy(false, p.first, pers, p.second, saddleIdx);
           }
         }
         else
         {
           pinv[p] = std::pair<T,int>(pers,saddleIdx);
-          maxHierarchy[p.first].parent = p.second;
-          maxHierarchy[p.first].saddle = saddleIdx;
+          addToHierarchy(false, p.first, pers, p.second, saddleIdx);
         }
       }
     }
@@ -523,9 +542,7 @@ void AMSC<T>::ComputeMaximaPersistence()
         if(pinv2.end() == invIt)
         {
           merge[p.first] = p.second;
-          maxHierarchy[p.first].persistence = pers;
-          maxHierarchy[p.first].parent = p.second;
-          maxHierarchy[p.first].saddle = saddleIdx;
+          addToHierarchy(false, p.first, pers, p.second, saddleIdx);
 
           ptmp[std::pair<T,int>(pers,saddleIdx)] = p;
           pinv2[p] = std::pair<T,int>(pers,saddleIdx);
@@ -579,9 +596,7 @@ void AMSC<T>::ComputeMaximaPersistence()
         if(pinv2.end() == invIt)
         {
           merge[p.first] = p.second;
-          maxHierarchy[p.first].persistence = pers;
-          maxHierarchy[p.first].parent = p.second;
-          maxHierarchy[p.first].saddle = saddleIdx;
+          addToHierarchy(false, p.first, pers, p.second, saddleIdx);
 
           ptmp[std::pair<T,int>(pers,saddleIdx)] = p;
           pinv2[p] = std::pair<T,int>(pers,saddleIdx);
@@ -619,9 +634,7 @@ void AMSC<T>::ComputeMaximaPersistence()
         if(pinv2.end() == invIt)
         {
           merge[p.first] = p.second;
-          maxHierarchy[p.first].persistence = pers;
-          maxHierarchy[p.first].parent = p.second;
-          maxHierarchy[p.first].saddle = saddleIdx;
+          addToHierarchy(false, p.first, pers, p.second, saddleIdx);
 
           ptmp[std::pair<T,int>(pers,saddleIdx)] = p;
           pinv2[p] = std::pair<T,int>(pers,saddleIdx);
@@ -631,18 +644,6 @@ void AMSC<T>::ComputeMaximaPersistence()
     else if (this->persistenceType.compare("area") == 0)
     {
       //FIXME: implement this & test
-    }
-  }
-
-  DebugPrint("pers saddleIdx : merged -> parent\n");
-  if (globalVerbosity)
-  {
-    for(map_pi_pfi_it it = pinv2.begin(); it != pinv2.end(); it++)
-    {
-      std::stringstream ss;
-      ss << (*it).second.first << " " << (*it).second.second << ":"
-         << (*it).first.first << " -> " << (*it).first.second << std::endl;
-      DebugPrint(ss.str());
     }
   }
 }
@@ -721,17 +722,13 @@ void AMSC<T>::ComputeMinimaPersistence()
           if(pers < tmpPers || (pers == tmpPers && tmpSaddle < saddleIdx))
           {
             (*it).second = std::pair<T,int>(pers,saddleIdx);
-            minHierarchy[p.first].persistence = pers;
-            minHierarchy[p.first].parent = p.second;
-            minHierarchy[p.first].saddle = saddleIdx;
+            addToHierarchy(true, p.first, pers, p.second, saddleIdx);
           }
         }
         else
         {
           pinv[p] = std::pair<T,int>(pers,saddleIdx);
-          minHierarchy[p.first].persistence = pers;
-          minHierarchy[p.first].parent = p.second;
-          minHierarchy[p.first].saddle = saddleIdx;
+          addToHierarchy(true, p.first, pers, p.second, saddleIdx);
         }
       }
     }
@@ -782,8 +779,8 @@ void AMSC<T>::ComputeMinimaPersistence()
     if(p.first == p.second)
       continue;
 
-    //check if there is new merge pair with increased persistence (or same
-    // persistence and a smaller index minimum)
+    //check if there is a new merge pair with increased persistence (or
+    // the same persistence and a smaller index minimum)
     if (this->persistenceType.compare("difference") == 0)
     {
       T diff = y[pold.first] - y[p.first];
@@ -802,9 +799,8 @@ void AMSC<T>::ComputeMinimaPersistence()
         if(pinv2.end() == invIt)
         {
           merge[p.first] = p.second;
-          minHierarchy[p.first].persistence = pers;
-          minHierarchy[p.first].parent = p.second;
-          minHierarchy[p.first].saddle = saddleIdx;
+
+          addToHierarchy(true, p.first, pers, p.second, saddleIdx);
           ptmp[std::pair<T,int>(pers,saddleIdx)] = p;
           pinv2[p] = std::pair<T,int>(pers,saddleIdx);
         }
@@ -856,9 +852,7 @@ void AMSC<T>::ComputeMinimaPersistence()
         if(pinv2.end() == invIt)
         {
           merge[p.first] = p.second;
-          minHierarchy[p.first].persistence = pers;
-          minHierarchy[p.first].parent = p.second;
-          minHierarchy[p.first].saddle = saddleIdx;
+          addToHierarchy(true, p.first, pers, p.second, saddleIdx);
           ptmp[std::pair<T,int>(pers,saddleIdx)] = p;
           pinv2[p] = std::pair<T,int>(pers,saddleIdx);
         }
@@ -893,9 +887,7 @@ void AMSC<T>::ComputeMinimaPersistence()
         if(pinv2.end() == invIt)
         {
           merge[p.first] = p.second;
-          minHierarchy[p.first].persistence = pers;
-          minHierarchy[p.first].parent = p.second;
-          minHierarchy[p.first].saddle = saddleIdx;
+          addToHierarchy(true, p.first, pers, p.second, saddleIdx);
           ptmp[std::pair<T,int>(pers,saddleIdx)] = p;
           pinv2[p] = std::pair<T,int>(pers,saddleIdx);
         }
@@ -904,18 +896,6 @@ void AMSC<T>::ComputeMinimaPersistence()
     else if (this->persistenceType.compare("area") == 0)
     {
       //FIXME: implement this & test
-    }
-  }
-
-  DebugPrint("pers saddleIdx : merged -> parent\n");
-  if (globalVerbosity)
-  {
-    for(map_pi_pfi_it it = pinv2.begin(); it != pinv2.end(); it++)
-    {
-      std::stringstream ss;
-      ss << (*it).second.first << " " << (*it).second.second << ":"
-         << (*it).first.first << " -> " << (*it).first.second << std::endl;
-      DebugPrint(ss.str());
     }
   }
 }
@@ -931,19 +911,37 @@ void AMSC<T>::RemoveZeroPersistenceExtrema()
     int minIdx = MinLabel(i,0);
     int maxIdx = MaxLabel(i,0);
 
+    std::set<int> indicesToUpdate;
+    indicesToUpdate.insert(i);
+
     while(minHierarchy[minIdx].persistence <= 0
           && minIdx != minHierarchy[minIdx].parent)
     {
       minLabelsToRemove.insert(minIdx);
-      flow[i].down = minIdx = flow[minIdx].down = minHierarchy[minIdx].parent;
+      indicesToUpdate.insert(minIdx);
+      minIdx = minHierarchy[minIdx].parent;
     }
+
+    std::set<int>::iterator it;
+    for( it = indicesToUpdate.begin(); it != indicesToUpdate.end(); it++) {
+        flow[(*it)].down = minIdx;
+    }
+
+    indicesToUpdate.clear();
+    indicesToUpdate.insert(i);
 
     while(maxHierarchy[maxIdx].persistence <= 0
           && maxIdx != maxHierarchy[maxIdx].parent)
     {
       maxLabelsToRemove.insert(maxIdx);
+      indicesToUpdate.insert(maxIdx);
       flow[i].up = maxIdx = flow[maxIdx].up = maxHierarchy[maxIdx].parent;
     }
+
+    for( it = indicesToUpdate.begin(); it != indicesToUpdate.end(); it++) {
+        flow[(*it)].up = maxIdx;
+    }
+
   }
 
   std::set<int>::iterator it;
@@ -1150,8 +1148,9 @@ template<typename T>
 int AMSC<T>::MinLabel(int i, T pers)
 {
   int minIdx = flow[i].down;
-  while(minHierarchy[minIdx].persistence < pers)
+  while(minHierarchy[minIdx].persistence < pers) {
     minIdx = minHierarchy[minIdx].parent;
+  }
   return minIdx;
 }
 
@@ -1159,8 +1158,9 @@ template<typename T>
 int AMSC<T>::MaxLabel(int i, T pers)
 {
   int maxIdx = flow[i].up;
-  while(maxHierarchy[maxIdx].persistence < pers)
+  while(maxHierarchy[maxIdx].persistence < pers) {
     maxIdx = maxHierarchy[maxIdx].parent;
+  }
   return maxIdx;
 }
 

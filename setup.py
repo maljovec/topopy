@@ -41,6 +41,9 @@ from setuptools import setup, Extension
 import re
 
 
+extra_args = {}
+
+
 def get_property(prop, project):
     """
         Helper function for retrieving properties from a project's
@@ -91,4 +94,4 @@ setup(name='topopy',
                         'nglpy'],
       python_requires='>=2.7, <4',
       # package_dir={'':'src/'},
-      ext_modules=[Extension('_topology', FILES)])
+      ext_modules=[Extension('_topology', FILES, **extra_args)])
