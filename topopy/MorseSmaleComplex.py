@@ -633,12 +633,13 @@ class MorseSmaleComplex(object):
         X = self.X.round(decimals=self.precision)
 
         unique_xs = np.unique(X, axis=0)
-        reduced_y = np.empty(self.Y.shape)
 
         old_size = len(X)
         new_size = len(unique_xs)
         if old_size == new_size:
             return
+
+        reduced_y = np.empty(new_size)
 
         warnings.warn('Domain space duplicates caused a data reduction. ' +
                       'Original size: {} vs. New size: {}'.format(old_size,

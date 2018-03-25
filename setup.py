@@ -40,12 +40,8 @@
 from setuptools import setup, Extension
 import re
 
-import os
 
 extra_args = {}
-if os.name == 'nt':
-    extra_args['extra_compile_args'] = ['/Zi']
-    extra_args['extra_link_args'] = ['/DEBUG']
 
 
 def get_property(prop, project):
