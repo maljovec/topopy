@@ -68,14 +68,6 @@ int AMSC<T>::descending(int index)
 template<typename T>
 void AMSC<T>::addToHierarchy(bool isMinimum, int dyingIndex, T persistence, int survivingIndex, int saddleIndex)
 {
-    if (dyingIndex == 1020 || dyingIndex == -1) {
-        std::cerr << "Adding " << dyingIndex << " to hierarchy:" << std::endl;
-        std::cerr << "\t" << dyingIndex
-                    << " (" << persistence << ") -> "
-                    << survivingIndex << " X "
-                    << saddleIndex << std::endl;
-    }
-
     persistence_map *hierarchyToUpdate;
 
     if (isMinimum) {
@@ -664,18 +656,6 @@ void AMSC<T>::ComputeMaximaPersistence()
       //FIXME: implement this & test
     }
   }
-
-    //   DebugPrint("pers saddleIdx : merged -> parent\n");
-    //   if (globalVerbosity)
-    //   {
-    //     for(map_pi_pfi_it it = pinv2.begin(); it != pinv2.end(); it++)
-    //     {
-    //       std::stringstream ss;
-    //       ss << (*it).second.first << " " << (*it).second.second << ":"
-    //          << (*it).first.first << " -> " << (*it).first.second << std::endl;
-    //       DebugPrint(ss.str());
-    //     }
-    //   }
 }
 
 template<typename T>
@@ -745,17 +725,6 @@ void AMSC<T>::ComputeMinimaPersistence()
         }
 
         map_pi_pfi_it it = pinv.find(p);
-
-        // if (pers == 0) {
-        //     // If the region is flat, then ensure that the lower index is
-        //     // the surviving index
-        //     if (p.first < p.second) {
-        //         int temp = p.first;
-        //         p.first = p.second;
-        //         p.second = temp;
-        //         std::cerr << "\tswapping extrema on flat region." << std::endl;
-        //     }
-        // }
 
         if(it!=pinv.end())
         {
@@ -940,18 +909,6 @@ void AMSC<T>::ComputeMinimaPersistence()
       //FIXME: implement this & test
     }
   }
-
-  //   DebugPrint("pers saddleIdx : merged -> parent\n");
-  //   if (globalVerbosity)
-  //   {
-  //     for(map_pi_pfi_it it = pinv2.begin(); it != pinv2.end(); it++)
-  //     {
-  //       std::stringstream ss;
-  //       ss << (*it).second.first << " " << (*it).second.second << ":"
-  //          << (*it).first.first << " -> " << (*it).first.second << std::endl;
-  //       DebugPrint(ss.str());
-  //     }
-  //   }
 }
 
 template<typename T>
@@ -973,9 +930,6 @@ void AMSC<T>::RemoveZeroPersistenceExtrema()
     {
       minLabelsToRemove.insert(minIdx);
       indicesToUpdate.insert(minIdx);
-      std::cerr << "Removing " << minIdx << " from hierarchy" << std::endl;
-      std::cerr << "\tadjusting flow for " << i << " and " << minIdx
-                << " to point to " << minHierarchy[minIdx].parent << std::endl;
       minIdx = minHierarchy[minIdx].parent;
     }
 
@@ -1076,9 +1030,7 @@ AMSC<T>::AMSC(std::vector<T> &Xin,
   ComputeMaximaPersistence();
   DebugTimerStop(myTime);
   DebugTimerStart(myTime, "\rCleaning up...");
-
   RemoveZeroPersistenceExtrema();
-
   DebugTimerStop(myTime);
   DebugPrint("\rMy work is complete. The Maker would be pleased.");
 
@@ -1206,21 +1158,9 @@ T AMSC<T>::RangeX(int dim)
 template<typename T>
 int AMSC<T>::MinLabel(int i, T pers)
 {
-  std::stringstream chain;
   int minIdx = flow[i].down;
-  std::set<int> indices;
-  indices.insert(i);
-  chain << i << " -> " << minIdx;
-
   while(minHierarchy[minIdx].persistence < pers) {
-    if (indices.find(minIdx) != indices.end()) {
-        std::cerr << "Loop detected." << std::endl;
-        std::cerr << chain.str() << std::endl;
-        exit(1);
-    }
-    indices.insert(minIdx);
     minIdx = minHierarchy[minIdx].parent;
-    chain << " -> " << minHierarchy[minIdx].parent << "(" << minHierarchy[minIdx].persistence << ")";
   }
   return minIdx;
 }
