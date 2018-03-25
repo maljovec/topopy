@@ -456,16 +456,6 @@ void AMSC<T>::ComputeMaximaPersistence()
           //FIXME: implement this & test
         }
 
-        if (pers == 0) {
-            // If the region is flat, then ensure that the lower index is
-            // the surviving index
-            if (p.first > p.second) {
-                int temp = p.first;
-                p.first = p.second;
-                p.second = temp;
-            }
-        }
-
         map_pi_pfi_it it = pinv.find(p);
         if(it!=pinv.end())
         {
@@ -725,7 +715,6 @@ void AMSC<T>::ComputeMinimaPersistence()
         }
 
         map_pi_pfi_it it = pinv.find(p);
-
         if(it!=pinv.end())
         {
           T tmpPers = (*it).second.first;
@@ -1185,12 +1174,12 @@ std::string AMSC<T>::PrintHierarchy()
   for(it  = minHierarchy.begin(); it != minHierarchy.end(); it++)
     stream << "Minima" << sep << it->second.persistence << sep
            << it->first << sep << it->second.parent << sep << it->second.saddle
-           << " ";
+           << ' ';
 
   for(it = maxHierarchy.begin(); it != maxHierarchy.end(); it++)
     stream << "Maxima" << sep << it->second.persistence << sep
            << it->first << sep << it->second.parent << sep << it->second.saddle
-           << " ";
+           << ' ';
 
   return stream.str();
 }
