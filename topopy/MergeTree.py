@@ -124,7 +124,7 @@ class MergeTree(TopologicalObject):
         self.nodes = self.__tree.Nodes()
         self.edges = self.__tree.Edges()
         self.augmentedEdges = {}
-        for key, val in self.__tree.AugmentedEdges().iteritems():
+        for key, val in self.__tree.AugmentedEdges().items():
             self.augmentedEdges[key] = list(val)
         self.root = self.__tree.Root()
 
@@ -152,15 +152,22 @@ class MergeTree(TopologicalObject):
             end = time.clock()
             sys.stderr.write('%f s\n' % (end-start))
 
-    def build_for_ContourTree(self, contour_tree):
+    def build_for_ContourTree(self, contour_tree, negate=False):
         """
         """
         if self.debug:
-            sys.stderr.write('Merge Tree Computation: ')
+            tree_type = 'Join'
+            if negate:
+                tree_type = 'Split'
+            sys.stderr.write('{} Tree Computation: '.format(tree_type))
             start = time.clock()
 
-        self.__tree = MergeTreeFloat(vectorFloat(contour_tree.flatten()),
-                                     vectorFloat(contour_tree.Y),
+        Y = contour_tree.Y
+        if negate:
+            Y = -Y
+
+        self.__tree = MergeTreeFloat(vectorFloat(contour_tree.Xnorm.flatten()),
+                                     vectorFloat(Y),
                                      vectorString(contour_tree.names),
                                      str(contour_tree.gradient),
                                      contour_tree.graph_rep.full_graph(),
@@ -169,7 +176,7 @@ class MergeTree(TopologicalObject):
         self.nodes = self.__tree.Nodes()
         self.edges = self.__tree.Edges()
         self.augmentedEdges = {}
-        for key, val in self.__tree.AugmentedEdges().iteritems():
+        for key, val in self.__tree.AugmentedEdges().items():
             self.augmentedEdges[key] = list(val)
         self.root = self.__tree.Root()
 
