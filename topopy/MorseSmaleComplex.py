@@ -212,17 +212,17 @@ class MorseSmaleComplex(TopologicalObject):
             self.ascending_partitions[new_key] = []
 
         # Does this need to be stored as a string? This seems excessive.
-        for min_max_pair in list(partitions.keys()):
-            new_key = str(min_max_pair[0])+', '+str(min_max_pair[1])
-            partitions[new_key] = partitions[min_max_pair]
+        for ext_pair in list(partitions.keys()):
+            new_key = str(ext_pair[0])+', '+str(ext_pair[1])
+            partitions[new_key] = partitions[ext_pair]
 
-            new_key = '{}, {}'.format(globalMinIdx, min_max_pair[1])
-            self.descending_partitions[new_key].extend(partitions[min_max_pair])
+            new_key = '{}, {}'.format(globalMinIdx, ext_pair[1])
+            self.descending_partitions[new_key].extend(partitions[ext_pair])
 
-            new_key = '{}, {}'.format(min_max_pair[0], globalMaxIdx)
-            self.ascending_partitions[new_key].extend(partitions[min_max_pair])
+            new_key = '{}, {}'.format(ext_pair[0], globalMaxIdx)
+            self.ascending_partitions[new_key].extend(partitions[ext_pair])
 
-            del partitions[min_max_pair]
+            del partitions[ext_pair]
 
         self.base_partitions = partitions
 
@@ -232,19 +232,20 @@ class MorseSmaleComplex(TopologicalObject):
                 partitions[key] = sorted(list(set(partitions[key])))
 
         hierarchy = self.__amsc.PrintHierarchy().strip().split(' ')
-        self.min_hierarchy = ''
-        self.max_hierarchy = ''
+        self.min_hierarchy = []
+        self.max_hierarchy = []
         for line in hierarchy:
             tokens = line.split(',')
             if (tokens[0] == 'Maxima'):
-                self.max_hierarchy += tokens[1] + ',1,' + tokens[2] + ',' + \
-                                      tokens[3] + ',' + tokens[4] + '\n'
-            elif (tokens[0] == 'Maxima'):
-                self.min_hierarchy += tokens[1] + ',0,' + tokens[2] + ',' + \
-                                      tokens[3] + ',' + tokens[4] + '\n'
+                self.max_hierarchy.append('Maxima,'+tokens[1] + ',' +
+                                          tokens[2] + ',' + tokens[3] + ',' +
+                                          tokens[4])
+            elif (tokens[0] == 'Minima'):
+                self.min_hierarchy.append('Minima,'+tokens[1] + ',' +
+                                          tokens[2] + ',' + tokens[3] + ',' +
+                                          tokens[4])
 
         ################################################################
-
 
     def save(self, hierarchyFilename=None, partitionFilename=None):
         """ Saves a constructed Morse-Smale Complex in json file
@@ -290,14 +291,14 @@ class MorseSmaleComplex(TopologicalObject):
 
         globalMinIdx = np.argmin(self.Y)
 
-        for min_max_pair in partitions.keys():
-            new_key = '{}, {}'.format(globalMinIdx, min_max_pair[1])
+        for ext_pair in partitions.keys():
+            new_key = '{}, {}'.format(globalMinIdx, ext_pair[1])
             partitions[new_key] = []
 
-        for min_max_pair in partitions.keys():
-            new_key = '{}, {}'.format(globalMinIdx, min_max_pair[1])
-            partitions[new_key].extend(partitions[min_max_pair])
-            del partitions[min_max_pair]
+        for ext_pair in partitions.keys():
+            new_key = '{}, {}'.format(globalMinIdx, ext_pair[1])
+            partitions[new_key].extend(partitions[ext_pair])
+            del partitions[ext_pair]
 
         for key in partitions.keys():
             partitions[key] = sorted(list(set(partitions[key])))
@@ -337,14 +338,14 @@ class MorseSmaleComplex(TopologicalObject):
 
         globalMaxIdx = np.argmax(self.Y)
 
-        for min_max_pair in partitions.keys():
-            new_key = '{}, {}'.format(min_max_pair[0], globalMaxIdx)
+        for ext_pair in partitions.keys():
+            new_key = '{}, {}'.format(ext_pair[0], globalMaxIdx)
             partitions[new_key] = []
 
-        for min_max_pair in partitions.keys():
-            new_key = '{}, {}'.format(min_max_pair[0], globalMaxIdx)
-            partitions[new_key].extend(partitions[min_max_pair])
-            del partitions[min_max_pair]
+        for ext_pair in partitions.keys():
+            new_key = '{}, {}'.format(ext_pair[0], globalMaxIdx)
+            partitions[new_key].extend(partitions[ext_pair])
+            del partitions[ext_pair]
 
         for key in partitions.keys():
             partitions[key] = sorted(list(set(partitions[key])))
