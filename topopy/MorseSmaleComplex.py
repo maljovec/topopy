@@ -199,15 +199,53 @@ class MorseSmaleComplex(TopologicalObject):
         self.minIdxs = np.unique(cellIdxs[:, 0])
         self.maxIdxs = np.unique(cellIdxs[:, 1])
 
+        globalMinIdx = np.argmin(self.Y)
+        globalMaxIdx = np.argmax(self.Y)
+
+        self.descending_partitions = {}
+        self.ascending_partitions = {}
+        for localMaxIdx in self.maxIdxs:
+            new_key = '{}, {}'.format(globalMinIdx, localMaxIdx)
+            self.descending_partitions[new_key] = []
+        for localMinIdx in self.minIdxs:
+            new_key = '{}, {}'.format(localMinIdx, globalMaxIdx)
+            self.ascending_partitions[new_key] = []
+
         # Does this need to be stored as a string? This seems excessive.
         for min_max_pair in list(partitions.keys()):
             new_key = str(min_max_pair[0])+', '+str(min_max_pair[1])
             partitions[new_key] = partitions[min_max_pair]
+
+            new_key = '{}, {}'.format(globalMinIdx, min_max_pair[1])
+            self.descending_partitions[new_key].extend(partitions[min_max_pair])
+
+            new_key = '{}, {}'.format(min_max_pair[0], globalMaxIdx)
+            self.ascending_partitions[new_key].extend(partitions[min_max_pair])
+
             del partitions[min_max_pair]
 
         self.base_partitions = partitions
 
+        for partitions in [self.base_partitions, self.ascending_partitions,
+                           self.descending_partitions]:
+            for key in partitions.keys():
+                partitions[key] = sorted(list(set(partitions[key])))
+
+        hierarchy = self.__amsc.PrintHierarchy().strip().split(' ')
+        self.min_hierarchy = ''
+        self.max_hierarchy = ''
+        for line in hierarchy:
+            tokens = line.split(',')
+            if (tokens[0] == 'Maxima'):
+                self.max_hierarchy += tokens[1] + ',1,' + tokens[2] + ',' +
+                                      tokens[3] + ',' + tokens[4] + '\n'
+            elif (tokens[0] == 'Maxima'):
+                self.min_hierarchy += tokens[1] + ',0,' + tokens[2] + ',' +
+                                      tokens[3] + ',' + tokens[4] + '\n'
+        modified.close()
+
         ################################################################
+
 
     def save(self, hierarchyFilename=None, partitionFilename=None):
         """ Saves a constructed Morse-Smale Complex in json file
