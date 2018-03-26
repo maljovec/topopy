@@ -41,21 +41,20 @@
 from unittest import TestCase
 import numpy as np
 import topopy
-from .testFunctions import gerber
+from .testFunctions import gerber, generate_test_grid_2d
 import sklearn
 
 
 class TestCT(TestCase):
     """
-    Class for testing the Morse-Smale Complex
+    Class for testing the Contour Tree and its prerequisite the Merge Tree
     """
 
     def setup(self):
         """ Setup function will create a fixed point set and parameter
             settings for testing different aspects of this library.
         """
-        x, y = np.mgrid[0:1:40j, 0:1:40j]
-        self.X = np.vstack([x.ravel(), y.ravel()]).T
+        self.X = generate_test_grid_2d(40)
         self.Y = gerber(self.X)
 
         self.norm_x = {}
@@ -82,13 +81,16 @@ class TestCT(TestCase):
         self.ct.build(self.X, self.Y)
 
     def test_default(self):
-        """ Test the build process of the MorseSmaleComplex
+        """ Test the build process of the ContourTree
         """
         self.setup()
 
-        self.assertEqual(len(self.ct.sortedNodes), 16,
-                         'The 2D Gerber test function should have x ' +
+        self.assertEqual(24, len(self.ct.superNodes),
+                         'The 2D Gerber test function should have 24 ' +
                          'nodes in its contour tree.')
+        self.assertEqual(23, len(self.ct.superArcs),
+                         'The 2D Gerber test function should have 23 ' +
+                         'arcs in its contour tree.')
 
     def test_get_names(self):
         """ Test the ability for the code to generate dummy names
@@ -105,7 +107,7 @@ class TestCT(TestCase):
         test_names = self.ct.get_names()
         for i in range(len(default_names)):
             self.assertEqual(default_names[i], test_names[i],
-                             'The MorseSmaleComplex object should generate ' +
+                             'The ContourTree object should generate ' +
                              'default value names for labeling purposes.')
 
         custom_names = ['a', 'b', 'c']
@@ -113,7 +115,7 @@ class TestCT(TestCase):
         test_names = self.ct.get_names()
         for i in range(len(custom_names)):
             self.assertEqual(custom_names[i], test_names[i],
-                             'The MorseSmaleComplex object should use any ' +
+                             'The ContourTree object should use any ' +
                              'custom names passed in for labeling purposes.')
 
     def test_get_normed_x(self):

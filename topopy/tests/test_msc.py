@@ -56,8 +56,7 @@ class TestMSC(TestCase):
         """ Setup function will create a fixed point set and parameter
             settings for testing different aspects of this library.
         """
-        x, y = np.mgrid[0:1:40j, 0:1:40j]
-        self.X = np.vstack([x.ravel(), y.ravel()]).T
+        self.X = generate_test_grid_2d(40)
         self.Y = gerber(self.X)
 
         self.norm_x = {}
