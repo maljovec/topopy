@@ -41,7 +41,7 @@
 from unittest import TestCase
 import numpy as np
 import topopy
-from .testFunctions import gerber
+from .testFunctions import gerber, generate_test_grid_2d
 import sklearn
 import os
 import json
