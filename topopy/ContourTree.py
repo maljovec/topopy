@@ -38,6 +38,7 @@ import sys
 import numpy as np
 import time
 import operator
+import warnings
 
 import networkx as nx
 
@@ -131,14 +132,11 @@ class ContourTree(TopologicalObject):
 
         # Build the join and split trees that we will merge into the
         # contour tree
-        joinTree = MergeTree(self.graph, self.gradient, self.max_neighbors,
-                             self.beta, self.normalization, self.connect,
-                             self.aggregator, self.debug)
-        joinTree.build(X, Y, names)
-        splitTree = MergeTree(self.graph, self.gradient, self.max_neighbors,
-                              self.beta, self.normalization, self.connect,
-                              self.aggregator, self.debug)
-        splitTree.build(X, -Y, names)
+        joinTree = MergeTree()
+        splitTree = MergeTree()
+
+        joinTree.build_for_ContourTree(self, True)
+        splitTree.build_for_ContourTree(self, False)
 
         self.augmentedEdges = dict(joinTree.augmentedEdges)
         self.augmentedEdges.update(dict(splitTree.augmentedEdges))
@@ -366,12 +364,12 @@ class ContourTree(TopologicalObject):
             nodesOfThatTree = thatTree.nodes.keys()
 
         # Fully or partially augment the join tree
-        for (superNode, _), nodes in thisTree.augmentedEdges.iteritems():
-            superNodeEdge = nxTree.out_edges(superNode)
+        for (superNode, _), nodes in thisTree.augmentedEdges.items():
+            superNodeEdge = list(nxTree.out_edges(superNode))
             if len(superNodeEdge) > 1:
-                sys.stderr.write('WARNING: The supernode %d should have ' +
-                                 'only a single emanating edge. Merge tree ' +
-                                 'is invalidly structured' % superNode)
+                warnings.warn('The supernode {} should have only a single '
+                              'emanating edge. Merge tree is invalidly '
+                              'structured'.format(superNode))
             endNode = superNodeEdge[0][1]
             startNode = superNode
             nxTree.remove_edge(startNode, endNode)
@@ -410,7 +408,7 @@ class ContourTree(TopologicalObject):
         # Get all of the leaf nodes that are not branches in the other
         # tree
         if len(thisTree.nodes()) > 1:
-            leaves = set([v for v in thisTree.nodes_iter()
+            leaves = set([v for v in thisTree.nodes()
                           if thisTree.in_degree(v) == 0 and
                           thatTree.in_degree(v) < 2])
         else:
@@ -425,10 +423,10 @@ class ContourTree(TopologicalObject):
 
             # Take the leaf and edge out of the input tree and place it
             # on the CT
-            edges = thisTree.out_edges(v)
+            edges = list(thisTree.out_edges(v))
             if len(edges) != 1:
-                sys.stderr.write('WARNING: The node %d should have a single ' +
-                                 'emanating edge.\n' % v)
+                warnings.warn('The node {} should have a single emanating '
+                              'edge.\n'.format(v))
             e1 = edges[0][0]
             e2 = edges[0][1]
             # This may be a bit beside the point, but if we want all of
@@ -458,8 +456,8 @@ class ContourTree(TopologicalObject):
             else:
                 # The other ends of the node being removed are added to
                 # "that" tree
-                startNode = thatTree.in_edges(v)[0][0]
-                endNode = thatTree.out_edges(v)[0][1]
+                startNode = list(thatTree.in_edges(v))[0][0]
+                endNode = list(thatTree.out_edges(v))[0][1]
                 thatTree.add_edge(startNode, endNode)
                 thatTree.remove_node(v)
 
@@ -469,7 +467,7 @@ class ContourTree(TopologicalObject):
                 #                      .format(v, startNode, endNode))
 
             if len(thisTree.nodes()) > 1:
-                leaves = set([v for v in thisTree.nodes_iter()
+                leaves = set([v for v in thisTree.nodes()
                               if thisTree.in_degree(v) == 0 and
                               thatTree.in_degree(v) < 2])
             else:
