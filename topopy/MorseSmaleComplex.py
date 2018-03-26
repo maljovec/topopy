@@ -237,10 +237,10 @@ class MorseSmaleComplex(TopologicalObject):
         for line in hierarchy:
             tokens = line.split(',')
             if (tokens[0] == 'Maxima'):
-                self.max_hierarchy += tokens[1] + ',1,' + tokens[2] + ',' +
+                self.max_hierarchy += tokens[1] + ',1,' + tokens[2] + ',' + \
                                       tokens[3] + ',' + tokens[4] + '\n'
             elif (tokens[0] == 'Maxima'):
-                self.min_hierarchy += tokens[1] + ',0,' + tokens[2] + ',' +
+                self.min_hierarchy += tokens[1] + ',0,' + tokens[2] + ',' + \
                                       tokens[3] + ',' + tokens[4] + '\n'
         modified.close()
 
