@@ -4,6 +4,31 @@
 
 A library for computing topological data structures stemming from Morse Theory. Given a set of arbitrarily arranged points in any dimension, this library is able to construct approximate topological structures using a neighborhood graph to simulate manifold structures.
 
+# Installation
+
+Currently, you can use [pip](https://pip.pypa.io/en/stable/) to install this package
+and all of its prerequisite libraries:
+
+```
+pip install topopy
+```
+
+Or to install from source, install all of the prerequiste libraries:
+
+* [scipy](https://www.scipy.org/)
+* [numpy](http://www.numpy.org/)
+* [sckit-learn](http://scikit-learn.org/)
+* [networkx](https://networkx.github.io/)
+* [nglpy](https://github.com/maljovec/nglpy)
+
+And then clone and build the source repository:
+
+```
+git clone https://github.com/maljovec/topopy.git
+cd topopy
+make
+python setup.py [develop|install]
+```
 
 # Example Usage
 
