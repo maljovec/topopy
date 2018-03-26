@@ -39,251 +39,147 @@ import numpy as np
 import time
 import operator
 
-import sklearn.neighbors
-import sklearn.linear_model
-import sklearn.preprocessing
-
 import networkx as nx
 
 from . import MergeTree
+from . import TopologicalObject
 
 
-class ContourTree(object):
+class ContourTree(TopologicalObject):
     """ A class for computing a contour tree from two merge trees
     """
-
-    def __init__(self, X, Y, names=None, graph='beta skeleton',
-                 gradient='steepest', knn=-1, beta=1.0, normalization=None,
-                 edges=None, debug=False, shortCircuit=True):
-        """ Initialization method that takes at minimum a set of input
-            points and corresponding output responses.
-            @ In, X, an m-by-n array of values specifying m
-                n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-                responses corresponding to the m samples specified by X
-            @ In, names, an optional list of strings that specify the
-                names to associate to the n input dimensions and 1
-                output dimension. Default of None means input variables
-                will be x0,x1...,x(n-1) and the output will be y
+    def __init__(self, graph='beta skeleton', gradient='steepest',
+                 max_neighbors=-1, beta=1.0, normalization=None, connect=False,
+                 aggregator=None, debug=False, shortCircuit=True):
+        """ Initialization method
             @ In, graph, an optional string specifying the type of
-                neighborhood graph to use. Default is 'beta skeleton,'
-                but other valid types are: 'delaunay,' 'relaxed beta
-                skeleton,' 'none', or 'approximate knn'
+            neighborhood graph to use. Default is 'beta skeleton,' but
+            other valid types are: 'delaunay,' 'relaxed beta skeleton,'
+            'none', or 'approximate knn'
             @ In, gradient, an optional string specifying the type of
-                gradient estimator to use. Currently the only available
-                option is 'steepest'
-            @ In, knn, an optional integer value specifying the maximum
-                number of k-nearest neighbors used to begin a
-                neighborhood search. In the case of graph='[relaxed]
-                beta skeleton', we will begin with the specified
-                approximate knn graph and prune edges that do not
-                satisfy the empty region criteria.
+            gradient estimator to use. Currently the only available
+            option is 'steepest'
+            @ In, max_neighbors, an optional integer value specifying
+            the maximum number of k-nearest neighbors used to begin a
+            neighborhood search. In the case of graph='[relaxed] beta
+            skeleton', we will begin with the specified approximate knn
+            graph and prune edges that do not satisfy the empty region
+            criteria.
             @ In, beta, an optional floating point value between 0 and
-                2. This value is only used when graph='[relaxed] beta
-                skeleton' and specifies the radius for the empty region
-                graph computation (1=Gabriel graph, 2=Relative neighbor
-                graph)
+            2. This value is only used when graph='[relaxed] beta
+            skeleton' and specifies the radius for the empty region
+            graph computation (1=Gabriel graph, 2=Relative neighbor
+            graph)
             @ In, normalization, an optional string specifying whether
-                the inputs/output should be scaled before computing.
-                Currently, two modes are supported 'zscore' and
-                'feature'. 'zscore' will ensure the data has a mean of
-                zero and a standard deviation of 1 by subtracting the
-                mean and dividing by the variance. 'feature' scales the
-                data into the unit hypercube.
-            @ In, edges, an optional list of custom edges to use as a
-                starting point for pruning, or in place of a computed
-                graph.
+            the inputs/output should be scaled before computing.
+            Currently, two modes are supported 'zscore' and 'feature'.
+            'zscore' will ensure the data has a mean of zero and a
+            standard deviation of 1 by subtracting the mean and dividing
+            by the variance. 'feature' scales the data into the unit
+            hypercube.
+            @ In, connect, an optional boolean flag for whether the
+            algorithm should enforce the data to be a single connected
+            component.
+            @ In, aggregator, an optional string that specifies what
+            type of aggregation to do when duplicates are found in the
+            domain space. Default value is None meaning the code will
+            error if duplicates are identified.
             @ In, debug, an optional boolean flag for whether debugging
-                output should be enabled.
+            output should be enabled.
+            @ In, shortCircuit, an optional boolean flag for whether the
+            contour tree should be short circuited (TODO: fix description).
         """
-        super(ContourTree, self).__init__()
-
-        # Store all of these parameters for safekeeping in case someone
-        # later wants to know your settings
-        self.X = X
-        self.Y = Y
-        self.names = names
-        self.graph = graph
-        self.gradient = gradient
-        self.knn = knn
-        self.beta = beta
-        self.normalization = normalization
-        self.inEdges = edges
-        self.debug = debug
+        super(ContourTree, self).__init__(graph=graph, gradient=gradient,
+                                          max_neighbors=max_neighbors,
+                                          beta=beta,
+                                          normalization=normalization,
+                                          connect=connect,
+                                          aggregator=aggregator,
+                                          debug=debug)
         self.shortCircuit = shortCircuit
 
+    def reset(self):
+        """
+            Empties all internal storage containers
+        """
+        super(ContourTree, self).reset()
         self.edges = []
         self.augmentedEdges = {}
+        self.sortedNodes = []
+        self.branches = set()
+        self.superNodes = []
+        self.superArcs = []
 
-        if self.debug:
-            sys.stderr.write('Preliminary graph construction: ')
-            start = time.clock()
-
-        # TODO This should call ngl directly, so we don't need to depend
-        # on each of the join tree and split tree to build the same
-        # graph twice. I think it is the most time-consuming part of
-        # that computation too.
-        edges = self._preliminaryGraphConstruction()
-
-        if self.debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Join Tree construction: ')
-            start = time.clock()
+    def build(self, X, Y, w=None, names=None, edges=None):
+        """ Assigns data to this object and builds the Morse-Smale
+            Complex
+            @ In, X, an m-by-n array of values specifying m
+            n-dimensional samples
+            @ In, Y, a m vector of values specifying the output
+            responses corresponding to the m samples specified by X
+            @ In, w, an optional m vector of values specifying the
+            weights associated to each of the m samples used. Default of
+            None means all points will be equally weighted
+            @ In, names, an optional list of strings that specify the
+            names to associate to the n input dimensions and 1 output
+            dimension. Default of None means input variables will be x0,
+            x1, ..., x(n-1) and the output will be y
+            @ In, edges, an optional list of custom edges to use as a
+            starting point for pruning, or in place of a computed graph.
+        """
+        super(ContourTree, self).build(X, Y, w, names, edges)
 
         # Build the join and split trees that we will merge into the
         # contour tree
-        joinTree = MergeTree(X, Y, names, graph, gradient, knn, beta,
-                             normalization, edges, False)
-
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Split Tree construction: ')
-            start = time.clock()
-
-        splitTree = MergeTree(X, -Y, names, graph, gradient, knn, beta,
-                              normalization, edges, False)
-
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Augmenting Final Tree: ')
-            start = time.clock()
-
-        # for superArc,idxs in joinTree.augmentedEdges.iteritems():
-        #     print('Arc',superArc)
-        #     for idx in idxs:
-        #         print('\t%d %f' % (idx, self.Y[idx]))
-
-        # print('Split tree')
-        # for superArc,idxs in splitTree.augmentedEdges.iteritems():
-        #     print('Arc',superArc)
-        #     for idx in idxs:
-        #         print('\t%d %f' % (idx, self.Y[idx]))
+        joinTree = MergeTree(self.graph, self.gradient, self.max_neighbors,
+                             self.beta, self.normalization, self.connect,
+                             self.aggregator, self.debug)
+        joinTree.build(X, Y, names)
+        splitTree = MergeTree(self.graph, self.gradient, self.max_neighbors,
+                              self.beta, self.normalization, self.connect,
+                              self.aggregator, self.debug)
+        splitTree.build(X, -Y, names)
 
         self.augmentedEdges = dict(joinTree.augmentedEdges)
         self.augmentedEdges.update(dict(splitTree.augmentedEdges))
 
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Networkx Join Tree construction: ')
-            start = time.clock()
-
         if self.shortCircuit:
             jt = self._constructNXTree(joinTree, splitTree)
-        else:
-            jt = self._constructNXTree(joinTree)
-
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Networkx Split Tree construction: ')
-            start = time.clock()
-
-        if self.shortCircuit:
             st = self._constructNXTree(splitTree, joinTree)
         else:
+            jt = self._constructNXTree(joinTree)
             st = self._constructNXTree(splitTree)
 
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Processing Join Tree: ')
-            start = time.clock()
-
         self._processTree(jt, st)
-
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Processing Split Tree: ')
-            start = time.clock()
-
         self._processTree(st, jt)
-
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Identifying branches: ')
-            start = time.clock()
 
         # Now we have a fully augmented contour tree stored in nodes and
         # edges The rest is some convenience stuff for querying later
 
         self._identifyBranches()
-
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Condensing Graph: ')
-            start = time.clock()
-
         self._identifySuperGraph()
 
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
+        if self.debug:
             sys.stderr.write('Sorting Nodes: ')
             start = time.clock()
 
         self.sortedNodes = sorted(enumerate(self.Y),
                                   key=operator.itemgetter(1))
 
-        if debug:
+        if self.debug:
             end = time.clock()
             sys.stderr.write('%f s\n' % (end-start))
-
-    def _preliminaryGraphConstruction(self):
-        if self.normalization == 'feature':
-            # This doesn't work with one-dimensional arrays on older
-            # versions of sklearn
-            min_max_scaler = sklearn.preprocessing.MinMaxScaler()
-            self.Xnorm = min_max_scaler.fit_transform(np.atleast_2d(self.X))
-            self.Ynorm = min_max_scaler.fit_transform(np.atleast_2d(self.Y))
-        elif self.normalization == 'zscore':
-            self.Xnorm = sklearn.preprocessing.scale(self.X, axis=0,
-                                                     with_mean=True,
-                                                     with_std=True, copy=True)
-            self.Ynorm = sklearn.preprocessing.scale(self.Y, axis=0,
-                                                     with_mean=True,
-                                                     with_std=True, copy=True)
-        else:
-            self.Xnorm = np.array(self.X)
-            self.Ynorm = np.array(self.Y)
-
-        if self.knn <= 0:
-            self.knn = len(self.Xnorm)-1
-
-        if self.inEdges is None:
-            knnAlgorithm = sklearn.neighbors.NearestNeighbors(n_neighbors=self.knn, algorithm='kd_tree')
-            knnAlgorithm.fit(self.Xnorm)
-            edges = knnAlgorithm.kneighbors(self.Xnorm, return_distance=False)
-
-            # prevent duplicates with this guy
-            pairs = []
-            for e1 in range(0, edges.shape[0]):
-                for col in range(0, edges.shape[1]):
-                    e2 = edges.item(e1, col)
-                    if e1 != e2:
-                        pairs.append((e1, e2))
-        else:
-            pairs = self.inEdges
-
-        # As seen here:
-        #    http://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-in-python-whilst-preserving-order
-        seen = set()
-        pairs = [x for x in pairs if not (x in seen or x[::-1] in seen or
-                                          seen.add(x))]
-
-        return pairs
 
     def _identifyBranches(self):
         """ A helper function for determining all of the branches in the
             tree. This should be called after the tree has been fully
             constructed and its nodes and edges are populated.
         """
+
+        if self.debug:
+            sys.stderr.write('Identifying branches: ')
+            start = time.clock()
+
         seen = set()
         self.branches = set()
 
@@ -300,6 +196,10 @@ class ContourTree(object):
             else:
                 self.branches.add(e2)
 
+        if self.debug:
+            end = time.clock()
+            sys.stderr.write('%f s\n' % (end-start))
+
     def _identifySuperGraph(self):
         """ A helper function for determining the condensed
             representation of the tree. That is, one that does not hold
@@ -309,6 +209,11 @@ class ContourTree(object):
             limiting the searching on the graph to only nodes on these
             super arcs.
         """
+
+        if self.debug:
+            sys.stderr.write('Condensing Graph: ')
+            start = time.clock()
+
         G = nx.DiGraph()
         G.add_edges_from(self.edges)
 
@@ -376,6 +281,10 @@ class ContourTree(object):
 
         self.superNodes = G.nodes()
         self.superArcs = G.edges()
+
+        if self.debug:
+            end = time.clock()
+            sys.stderr.write('%f s\n' % (end-start))
 
     def getSeeds(self, threshold, getPath=False):
         """ Returns a list of seed points for isosurface extraction
@@ -445,6 +354,10 @@ class ContourTree(object):
             @ Out, nxTree, a networkx.Graph instance matching the
                 details of the input tree.
         """
+        if self.debug:
+            sys.stderr.write('Networkx Tree construction: ')
+            start = time.clock()
+
         nxTree = nx.DiGraph()
         nxTree.add_edges_from(thisTree.edges)
 
@@ -472,6 +385,10 @@ class ContourTree(object):
             if startNode != endNode:
                 nxTree.add_edge(startNode, endNode)
 
+        if self.debug:
+            end = time.clock()
+            sys.stderr.write('%f s\n' % (end-start))
+
         return nxTree
 
     def _processTree(self, thisTree, thatTree):
@@ -486,10 +403,16 @@ class ContourTree(object):
                 nodes from thisTree are processed
             @ Out, None
         """
+        if self.debug:
+            sys.stderr.write('Processing Tree: ')
+            start = time.clock()
+
         # Get all of the leaf nodes that are not branches in the other
         # tree
         if len(thisTree.nodes()) > 1:
-            leaves = set([v for v in thisTree.nodes_iter() if thisTree.in_degree(v) == 0 and thatTree.in_degree(v) < 2])
+            leaves = set([v for v in thisTree.nodes_iter()
+                          if thisTree.in_degree(v) == 0 and
+                          thatTree.in_degree(v) < 2])
         else:
             leaves = set()
 
@@ -497,7 +420,8 @@ class ContourTree(object):
             v = leaves.pop()
 
             # if self.debug:
-            #     sys.stderr.write('\tProcessing %d -> %d\n' % (v, thisTree.edges(v)[0][1]))
+            #     sys.stderr.write('\tProcessing {} -> {}\n'
+            #                      .format(v, thisTree.edges(v)[0][1]))
 
             # Take the leaf and edge out of the input tree and place it
             # on the CT
@@ -526,7 +450,8 @@ class ContourTree(object):
             if thatTree.out_degree(v) == 0:
                 thatTree.remove_node(v)
                 # if self.debug:
-                #     sys.stderr.write('\t\tRemoving root %d from other tree\n' % v)
+                #     sys.stderr.write('\t\tRemoving root {} from other tree\n'
+                #                      .format(v))
             # This is a "regular" node in the other tree, suppress it
             # there, but be sure to glue the upper and lower portions
             # together
@@ -539,10 +464,14 @@ class ContourTree(object):
                 thatTree.remove_node(v)
 
                 # if self.debug:
-                #     sys.stderr.write('\t\tSuppressing %d in other tree and gluing %d to %d\n' % (v,startNode,endNode))
+                #     sys.stderr.write('\t\tSuppressing {} in other tree and '
+                #                      'gluing {} to {}\n'
+                #                      .format(v, startNode, endNode))
 
             if len(thisTree.nodes()) > 1:
-                leaves = set([v for v in thisTree.nodes_iter() if thisTree.in_degree(v) == 0 and thatTree.in_degree(v) < 2])
+                leaves = set([v for v in thisTree.nodes_iter()
+                              if thisTree.in_degree(v) == 0 and
+                              thatTree.in_degree(v) < 2])
             else:
                 leaves = set()
 
@@ -554,16 +483,6 @@ class ContourTree(object):
             #         sep = ','
             #     sys.stderr.write(myMessage+'\n')
 
-    def GetSampleSize(self):
-        """ Returns the number of samples in the input data
-                @ Out, an integer specifying the number of samples.
-        """
-        return len(self.Y)
-
-    def GetDimensionality(self):
-        """ Returns the dimensionality of the input space of the input
-            data
-            @ Out, an integer specifying the dimensionality of the input
-                samples.
-        """
-        return self.X.shape[1]
+        if self.debug:
+            end = time.clock()
+            sys.stderr.write('%f s\n' % (end-start))

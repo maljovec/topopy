@@ -43,8 +43,6 @@ import numpy as np
 import topopy
 from .testFunctions import gerber
 import sklearn
-import os
-import json
 
 
 class TestCT(TestCase):
@@ -69,18 +67,19 @@ class TestCT(TestCase):
                                                             copy=True)
         self.norm_x['none'] = self.X
 
-        # TODO: convert CT to use this type of API like MSC:
         # Methods covered here:
         # __init__
         # build
         # __set_data
-        self.ct = topopy.ContourTree(self.X, self.Y, debug=False)
+        self.ct = topopy.ContourTree(debug=False)
+        self.ct.build(self.X, self.Y)
 
     def test_debug(self):
         """ Test the debugging output of the CT
         """
         self.setup()
-        self.ct = topopy.ContourTree(self.X, self.Y, debug=True)
+        self.ct = topopy.ContourTree(debug=True)
+        self.ct.build(self.X, self.Y)
 
     def test_default(self):
         """ Test the build process of the MorseSmaleComplex
@@ -88,13 +87,14 @@ class TestCT(TestCase):
         self.setup()
 
         self.assertEqual(len(self.ct.sortedNodes), 16,
-                         'The 2D Gerber test function should have 16 ' +
-                         'nodes at the base level.')
+                         'The 2D Gerber test function should have x ' +
+                         'nodes in its contour tree.')
 
     def test_get_names(self):
         """ Test the ability for the code to generate dummy names
             and also correctly use passed in names.
         """
+        pass
         self.setup()
 
         default_names = []
@@ -128,7 +128,7 @@ class TestCT(TestCase):
         self.setup()
 
         for norm, X in self.norm_x.items():
-            ct = topopy.MorseSmaleComplex(normalization=norm)
+            ct = topopy.ContourTree(normalization=norm)
             ct.build(self.X, self.Y)
 
             # Test single column extraction
@@ -171,26 +171,6 @@ class TestCT(TestCase):
             np.testing.assert_array_equal(X, ct.get_normed_x(),
                                           'get_normed_x should be able to ' +
                                           'access the entire input data.')
-
-    def test_get_weights(self):
-        """ Function to test if default weights can be applied to the
-            MorseSmaleComplex object. This feature should be evaluated
-            in order to determine if it makes sense to keep it.
-        """
-        self.setup()
-
-        equal_weights = np.ones(len(self.Y))*1.0/float(len(self.Y))
-
-        np.testing.assert_array_equal(equal_weights,
-                                      self.ct.get_weights(),
-                                      'The default weights should be 1 for ' +
-                                      'every row in the input.')
-
-        test_weights = self.ct.get_weights(list(range(len(self.ct.w))))
-
-        np.testing.assert_array_equal(equal_weights, test_weights,
-                                      'User should be able to filter the ' +
-                                      'rows retrieved from get_weights.')
 
     def test_get_x(self):
         """ Tests get_x in several different contexts:
@@ -283,47 +263,16 @@ class TestCT(TestCase):
                             'indices indicating who is connected to the ' +
                             'given index.')
 
-    def test_persistence(self):
-        """ Tests the getting and setting of different persistence
-            values. Will also test that the number of components
-            decreases correctly as persistence is increased
-        """
-        self.setup()
-        self.ct.set_persistence(self.ct.persistences[1])
-        self.assertEqual(self.ct.persistences[1], self.ct.get_persistence(),
-                         'Users should be able to get and set the ' +
-                         'persistence.')
-
-    # def test_reset(self):
-    #     """ Tests resetting of internal storage of the ct object
+    # def test_persistence(self):
+    #     """ Tests the getting and setting of different persistence
+    #         values. Will also test that the number of components
+    #         decreases correctly as persistence is increased
     #     """
     #     self.setup()
-    #     self.ct.reset()
-
-    #     self.assertListEqual([], self.ct.persistences, 'reset should clear ' +
-    #                          'all internal storage of the ct.')
-    #     self.assertDictEqual({}, self.ct.partitions, 'reset should clear ' +
-    #                          'all internal storage of the ct.')
-    #     self.assertDictEqual({}, self.ct.base_partitions, 'reset should ' +
-    #                          'clear all internal storage of the ct.')
-    #     self.assertEqual(0, self.ct.persistence, 'reset should ' +
-    #                      'clear all internal storage of the ct.')
-    #     self.assertDictEqual({}, self.ct.mergeSequence, 'reset should ' +
-    #                          'clear all internal storage of the ct.')
-    #     self.assertListEqual([], self.ct.minIdxs, 'reset should clear all ' +
-    #                          'internal storage of the ct.')
-    #     self.assertListEqual([], self.ct.maxIdxs, 'reset should clear all ' +
-    #                          'internal storage of the ct.')
-    #     self.assertEqual([], self.ct.X, 'reset should clear all ' +
-    #                      'internal storage of the ct.')
-    #     self.assertEqual([], self.ct.Y, 'reset should clear all ' +
-    #                      'internal storage of the ct.')
-    #     self.assertEqual([], self.ct.names, 'reset should clear all ' +
-    #                      'internal storage of the ct.')
-    #     self.assertEqual([], self.ct.Xnorm, 'reset should clear all ' +
-    #                      'internal storage of the ct.')
-    #     self.assertEqual(None, self.ct.hierarchy, 'reset should ' +
-    #                      'clear all internal storage of the ct.')
+    #     self.ct.set_persistence(self.ct.persistences[1])
+    #     self.assertEqual(self.ct.persistences[1], self.ct.get_persistence(),
+    #                      'Users should be able to get and set the ' +
+    #                      'persistence.')
 
     def test_shape_functions(self):
         """ Test the get_dimensionality and get_sample_size functions
@@ -336,6 +285,3 @@ class TestCT(TestCase):
         self.assertEqual(self.X.shape[0], self.ct.get_sample_size(),
                          'get_sample_size should return the number of ' +
                          'rows in X.')
-        self.assertEqual(121, self.ct.get_sample_size('1599, 1189'),
-                         'get_sample_size should return the number of ' +
-                         'rows in the specified partition.')

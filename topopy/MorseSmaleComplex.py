@@ -39,17 +39,14 @@ import sys
 import time
 import collections
 import json
-import warnings
 
 import numpy as np
-import sklearn.preprocessing
-
-import nglpy
 
 from .topology import AMSCFloat, vectorFloat, vectorString
+from . import TopologicalObject
 
 
-class MorseSmaleComplex(object):
+class MorseSmaleComplex(TopologicalObject):
     """ A wrapper class for the C++ approximate Morse-Smale complex
         Object
     """
@@ -105,29 +102,21 @@ class MorseSmaleComplex(object):
             @ In, debug, an optional boolean flag for whether debugging
             output should be enabled.
         """
-        super(MorseSmaleComplex, self).__init__()
-        self.reset()
-
-        self.graph = graph
-        self.gradient = gradient
-        self.max_neighbors = max_neighbors
-        self.beta = beta
+        super(MorseSmaleComplex, self).__init__(graph=graph, gradient=gradient,
+                                                max_neighbors=max_neighbors,
+                                                beta=beta,
+                                                normalization=normalization,
+                                                connect=connect,
+                                                aggregator=aggregator,
+                                                debug=debug)
         self.simplification = simplification
-        self.normalization = normalization
-        self.gradient = gradient
-        self.connect = connect
-        self.debug = debug
-        self.aggregator = aggregator
-
-        # This feature is for controlling how many decimal places of
-        # precision will be used to determine if two points should
-        # be considered the same
-        self.precision = 15
 
     def reset(self):
         """
             Empties all internal storage containers
         """
+        super(MorseSmaleComplex, self).reset()
+
         self.persistences = []
 
         self.partitions = {}
@@ -139,69 +128,8 @@ class MorseSmaleComplex(object):
         self.minIdxs = []
         self.maxIdxs = []
 
-        self.X = []
-        self.Y = []
-        self.w = []
-
-        self.names = []
-        self.Xnorm = []
-        self.Ynorm = []
-
         self.__amsc = None
         self.hierarchy = None
-
-    def __set_data(self, X, Y, w=None, names=None):
-        """ Internally assigns the input data and normalizes it
-            according to the user's specifications
-            @ In, X, an m-by-n array of values specifying m
-            n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-            responses corresponding to the m samples specified by X
-            @ In, w, an optional m vector of values specifying the
-            weights associated to each of the m samples used. Default of
-            None means all points will be equally weighted
-            @ In, names, an optional list of strings that specify the
-            names to associate to the n input dimensions and 1 output
-            dimension. Default of None means input variables will be x0,
-            x1, ..., x(n-1) and the output will be y
-        """
-        self.X = X
-        self.Y = Y
-        self.check_duplicates()
-
-        if w is not None:
-            self.w = np.array(w)
-        else:
-            self.w = np.ones(len(Y))*1.0/float(len(Y))
-
-        self.names = names
-
-        if self.names is None:
-            self.names = []
-            for d in range(self.get_dimensionality()):
-                self.names.append('x%d' % d)
-            self.names.append('y')
-
-        if self.normalization == 'feature':
-            # This doesn't work with one-dimensional arrays on older
-            # versions of sklearn
-            min_max_scaler = sklearn.preprocessing.MinMaxScaler()
-            self.Xnorm = min_max_scaler.fit_transform(np.atleast_2d(self.X))
-            self.Ynorm = min_max_scaler.fit_transform(np.atleast_2d(self.Y))
-        elif self.normalization == 'zscore':
-            self.Xnorm = sklearn.preprocessing.scale(self.X,
-                                                     axis=0,
-                                                     with_mean=True,
-                                                     with_std=True,
-                                                     copy=True)
-            self.Ynorm = sklearn.preprocessing.scale(self.Y,
-                                                     axis=0,
-                                                     with_mean=True,
-                                                     with_std=True,
-                                                     copy=True)
-        else:
-            self.Xnorm = np.array(self.X)
-            self.Ynorm = np.array(self.Y)
 
     def build(self, X, Y, w=None, names=None, edges=None):
         """ Assigns data to this object and builds the Morse-Smale
@@ -220,23 +148,9 @@ class MorseSmaleComplex(object):
             @ In, edges, an optional list of custom edges to use as a
             starting point for pruning, or in place of a computed graph.
         """
-        self.reset()
-
-        if X is None or Y is None:
-            return
-
-        self.__set_data(X, Y, w, names)
+        super(MorseSmaleComplex, self).build(X, Y, w, names, edges)
 
         if self.debug:
-            sys.stderr.write('Graph Preparation: ')
-            start = time.clock()
-
-        graph_rep = nglpy.Graph(self.Xnorm, self.graph, self.max_neighbors,
-                                self.beta, connect=self.connect)
-
-        if self.debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
             sys.stderr.write('Decomposition: ')
             start = time.clock()
 
@@ -246,7 +160,7 @@ class MorseSmaleComplex(object):
                                 str(self.gradient),
                                 str(self.simplification),
                                 vectorFloat(self.w),
-                                graph_rep.full_graph(),
+                                self.graph_rep.full_graph(),
                                 self.debug)
 
         if self.debug:
@@ -294,22 +208,6 @@ class MorseSmaleComplex(object):
         self.base_partitions = partitions
 
         ################################################################
-
-    def load_data_and_build(self, filename, delimiter=','):
-        """ Convenience function for directly working with a data file.
-            This opens a file and reads the data into an array, sets the
-            data as an nparray and list of dimnames
-            @ In, filename, string representing the data file
-        """
-        data = np.genfromtxt(filename, dtype=float, delimiter=delimiter,
-                             names=True)
-        names = list(data.dtype.names)
-        data = data.view(np.float64).reshape(data.shape + (-1,))
-
-        X = data[:, 0:-1]
-        Y = data[:, -1]
-
-        self.build(X=X, Y=Y, names=names)
 
     def save(self, hierarchyFilename=None, partitionFilename=None):
         """ Saves a constructed Morse-Smale Complex in json file
@@ -435,77 +333,6 @@ class MorseSmaleComplex(object):
         """
         self.persistence = p
 
-    def get_names(self):
-        """ Returns the names of the input and output dimensions in the
-            order they appear in the input data.
-            @ Out, a list of strings specifying the input + output
-            variable names.
-        """
-        return self.names
-
-    def get_normed_x(self, rows=None, cols=None):
-        """ Returns the normalized input data requested by the user
-            @ In, rows, a list of non-negative integers specifying the
-            row indices to return
-            @ In, cols, a list of non-negative integers specifying the
-            column indices to return
-            @ Out, a matrix of floating point values specifying the
-            normalized data values used in internal computations
-            filtered by the three input parameters.
-        """
-        if rows is None:
-            rows = list(range(0, self.get_sample_size()))
-        if cols is None:
-            cols = list(range(0, self.get_dimensionality()))
-
-        if not hasattr(rows, '__iter__'):
-            rows = [rows]
-        rows = sorted(list(set(rows)))
-
-        retValue = self.Xnorm[rows, :]
-        return retValue[:, cols]
-
-    def get_x(self, rows=None, cols=None):
-        """ Returns the input data requested by the user
-            @ In, rows, a list of non-negative integers specifying the
-            row indices to return
-            @ In, cols, a list of non-negative integers specifying the
-            column indices to return
-            @ Out, a matrix of floating point values specifying the
-            input data values filtered by the two input parameters.
-        """
-        if rows is None:
-            rows = list(range(0, self.get_sample_size()))
-        if cols is None:
-            cols = list(range(0, self.get_dimensionality()))
-
-        if not hasattr(rows, '__iter__'):
-            rows = [rows]
-        rows = sorted(list(set(rows)))
-
-        retValue = self.X[rows, :]
-        if len(rows) == 0:
-            return []
-        return retValue[:, cols]
-
-    def get_y(self, indices=None):
-        """ Returns the output data requested by the user
-            @ In, indices, a list of non-negative integers specifying
-            the row indices to return
-            @ Out, an nparray of floating point values specifying the output
-            data values filtered by the indices input parameter.
-        """
-        if indices is None:
-            indices = list(range(0, self.get_sample_size()))
-        else:
-            if not hasattr(indices, '__iter__'):
-                indices = [indices]
-            indices = sorted(list(set(indices)))
-
-        if len(indices) == 0:
-            return []
-        return self.Y[indices]
-
     def get_label(self, indices=None):
         """ Returns the label pair indices requested by the user
             @ In, indices, a list of non-negative integers specifying
@@ -535,23 +362,6 @@ class MorseSmaleComplex(object):
             return labels[indices][0]
         return labels[indices]
 
-    def get_weights(self, indices=None):
-        """ Returns the weights requested by the user
-            @ In, indices, a list of non-negative integers specifying
-            the row indices to return
-            @ Out, a list of floating point values specifying the
-            weights associated to the input data rows filtered by the
-            indices input parameter.
-        """
-        if indices is None:
-            indices = list(range(0, self.get_sample_size()))
-        else:
-            indices = sorted(list(set(indices)))
-
-        if len(indices) == 0:
-            return []
-        return self.w[indices]
-
     def get_current_labels(self):
         """ Returns a list of tuples that specifies the min-max index
             labels associated to each input sample
@@ -576,14 +386,6 @@ class MorseSmaleComplex(object):
         else:
             return len(self.partitions[self.persistence][key])
 
-    def get_dimensionality(self):
-        """ Returns the dimensionality of the input space of the input
-            data
-            @ Out, an integer specifying the dimensionality of the input
-            samples.
-        """
-        return self.X.shape[1]
-
     def get_classification(self, idx):
         """ Given an index, this function will report whether that
             sample is a local minimum, a local maximum, or a regular
@@ -606,80 +408,3 @@ class MorseSmaleComplex(object):
             all minima and maxima.
         """
         return self.__amsc.PrintHierarchy()
-
-    def get_neighbors(self, idx):
-        """ Returns a list of neighbors for the specified index
-            @ In, an integer specifying the query point
-            @ Out, a integer list of neighbors indices
-        """
-        return self.__amsc.Neighbors(int(idx))
-
-    def collapse_duplicates(self):
-        if self.aggregator is None:
-            return
-
-        if 'min' in self.aggregator.lower():
-            aggregator = np.min
-        elif 'max' in self.aggregator.lower():
-            aggregator = np.max
-        elif 'median' in self.aggregator.lower():
-            aggregator = np.median
-        elif self.aggregator.lower() in ['average', 'mean']:
-            aggregator = np.mean
-        else:
-            warnings.warn('Aggregator \"{}\" not understood. Skipping ' +
-                          'sample aggregation.'.format(self.aggregator))
-
-        X = self.X.round(decimals=self.precision)
-
-        unique_xs = np.unique(X, axis=0)
-
-        old_size = len(X)
-        new_size = len(unique_xs)
-        if old_size == new_size:
-            return
-
-        reduced_y = np.empty(new_size)
-
-        warnings.warn('Domain space duplicates caused a data reduction. ' +
-                      'Original size: {} vs. New size: {}'.format(old_size,
-                                                                  new_size))
-
-        for i, distinct_row in enumerate(unique_xs):
-            filtered_rows = np.all(X == distinct_row, axis=1)
-            reduced_y[i] = aggregator(self.Y[filtered_rows])
-
-        self.X = unique_xs
-        self.Y = reduced_y
-        return unique_xs, reduced_y
-
-    def check_duplicates(self):
-        """ Function to test whether duplicates exist in the input or
-            output space. First, if an aggregator function has been
-            specified, the domain space duplicates will be consolidated
-            using the function to generate a new range value for that
-            shared point. Otherwise, it will raise a ValueError.
-            The function will raise a warning if duplicates exist in the
-            output space
-            @Out, None
-        """
-        self.collapse_duplicates()
-        unique_ys = len(np.unique(self.Y, axis=0))
-        unique_xs = len(np.unique(self.X.round(decimals=self.precision),
-                                  axis=0))
-
-        if len(self.Y) != unique_ys:
-            warnings.warn('Range space has duplicates. Simulation of ' +
-                          'simplicity may help, but artificial noise may ' +
-                          'occur in flat regions of the domain. Sample size:' +
-                          '{} vs. Unique Records: {}'.format(len(self.Y),
-                                                             unique_ys))
-
-        if len(self.X) != unique_xs:
-            raise ValueError('Domain space has duplicates. Try using an ' +
-                             'aggregator function to consolidate duplicates ' +
-                             'into a single sample with one range value. ' +
-                             'e.g., MorseSmaleComplex(aggregator=\'max\'). ' +
-                             '\n\tNumber of ' +
-                             'Records: {}\n\tNumber of Unique Records: {}\n'
-                             .format(len(self.X), unique_xs))
