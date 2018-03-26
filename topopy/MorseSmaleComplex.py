@@ -235,6 +235,100 @@ class MorseSmaleComplex(TopologicalObject):
                                    tokens[3] + ',' + tokens[4] + '\n')
             modified.close()
 
+    def save_descending_manifolds(self, hierarchyFilename=None,
+                                  partitionFilename=None):
+        """ Saves a constructed Morse Complex in json file
+            @ In, hierarchyFilename, a filename for storing the
+            hierarchical merging of features
+            @ In, partitionFilename, a filename for storing the base
+            level partitions in the data
+        """
+        hierarchy = self.__amsc.PrintHierarchy().strip().split(' ')
+
+        p_interest = 0
+        partitions = self.get_partitions(p_interest)
+        cellIdxs = np.array(list(partitions.keys()))
+        self.minIdxs = np.unique(cellIdxs[:, 0])
+        self.maxIdxs = np.unique(cellIdxs[:, 1])
+
+        globalMinIdx = np.argmin(self.Y)
+
+        for min_max_pair in partitions.keys():
+            new_key = '{}, {}'.format(globalMinIdx, min_max_pair[1])
+            partitions[new_key] = []
+
+        for min_max_pair in partitions.keys():
+            new_key = '{}, {}'.format(globalMinIdx, min_max_pair[1])
+            partitions[new_key].extend(partitions[min_max_pair])
+            del partitions[min_max_pair]
+
+        for key in partitions.keys():
+            partitions[key] = sorted(list(set(partitions[key])))
+
+        if partitionFilename is None:
+            partitionFilename = 'Base_Partition.json'
+
+        with open(partitionFilename, 'w') as fp:
+            json.dump(partitions, fp)
+            fp.close()
+
+        if hierarchyFilename is None:
+            hierarchyFilename = 'Hierarchy.csv'
+        with open(hierarchyFilename, 'w') as modified:
+            for line in hierarchy:
+                tokens = line.split(',')
+                if (tokens[0] == 'Maxima'):
+                    modified.write(tokens[1] + ',1,' + tokens[2] + ',' +
+                                   tokens[3] + ',' + tokens[4] + '\n')
+            modified.close()
+
+    def save_ascending_manifolds(self, hierarchyFilename=None,
+                                 partitionFilename=None):
+        """ Saves a constructed Morse Complex in json file
+            @ In, hierarchyFilename, a filename for storing the
+            hierarchical merging of features
+            @ In, partitionFilename, a filename for storing the base
+            level partitions in the data
+        """
+        hierarchy = self.__amsc.PrintHierarchy().strip().split(' ')
+
+        p_interest = 0
+        partitions = self.get_partitions(p_interest)
+        cellIdxs = np.array(list(partitions.keys()))
+        self.minIdxs = np.unique(cellIdxs[:, 0])
+        self.maxIdxs = np.unique(cellIdxs[:, 1])
+
+        globalMaxIdx = np.argmax(self.Y)
+
+        for min_max_pair in partitions.keys():
+            new_key = '{}, {}'.format(min_max_pair[0], globalMaxIdx)
+            partitions[new_key] = []
+
+        for min_max_pair in partitions.keys():
+            new_key = '{}, {}'.format(min_max_pair[0], globalMaxIdx)
+            partitions[new_key].extend(partitions[min_max_pair])
+            del partitions[min_max_pair]
+
+        for key in partitions.keys():
+            partitions[key] = sorted(list(set(partitions[key])))
+
+        if partitionFilename is None:
+            partitionFilename = 'Base_Partition.json'
+
+        with open(partitionFilename, 'w') as fp:
+            json.dump(partitions, fp)
+            fp.close()
+
+        if hierarchyFilename is None:
+            hierarchyFilename = 'Hierarchy.csv'
+        with open(hierarchyFilename, 'w') as modified:
+            for line in hierarchy:
+                tokens = line.split(',')
+                if (tokens[0] == 'Minima'):
+                    modified.write(tokens[1] + ',1,' + tokens[2] + ',' +
+                                   tokens[3] + ',' + tokens[4] + '\n')
+            modified.close()
+
     # Depending on the persistence simplification strategy, this could
     # alter the hierarchy, so let's remove this feature until further
     # notice, also the weighting feature is still pretty experimental:
