@@ -242,7 +242,6 @@ class MorseSmaleComplex(TopologicalObject):
             elif (tokens[0] == 'Maxima'):
                 self.min_hierarchy += tokens[1] + ',0,' + tokens[2] + ',' + \
                                       tokens[3] + ',' + tokens[4] + '\n'
-        modified.close()
 
         ################################################################
 
