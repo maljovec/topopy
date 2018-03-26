@@ -4,6 +4,12 @@ import numpy as np
 import scipy
 import copy
 
+def generate_test_grid_2d(resolution=40):
+    """
+    """
+    x, y = np.mgrid[0:1:(resolution * 1j), 0:1:(resolution * 1j)]
+    return np.vstack([x.ravel(), y.ravel()]).T
+
 def unpack2D(_x):
     """
         Helper function for splitting 2D data into x and y component to make

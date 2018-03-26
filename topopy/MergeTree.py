@@ -36,151 +36,95 @@
 ########################################################################
 
 import sys
-import numpy as np
 import time
 
-from .topology import MergeTreeFloat, vectorFloat, vectorString, vectorInt
+from .topology import MergeTreeFloat, vectorFloat, vectorString
 
-import sklearn.neighbors
-import sklearn.linear_model
-import sklearn.preprocessing
+from . import TopologicalObject
 
 
-class MergeTree(object):
+class MergeTree(TopologicalObject):
     """ A wrapper class for the C++ merge tree data structure
     """
 
-    def __init__(self, X, Y, names=None, graph='beta skeleton',
-                 gradient='steepest', knn=-1, beta=1.0, normalization=None,
-                 edges=None, debug=False):
-        """ Initialization method that takes at minimum a set of input
-            points and corresponding output responses.
-            @ In, X, an m-by-n array of values specifying m
-                n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-                responses corresponding to the m samples specified by X
-            @ In, names, an optional list of strings that specify the
-                names to associate to the n input dimensions and 1
-                output dimension. Default of None means input variables
-                will be x0,x1...,x(n-1) and the output will be y
+    def __init__(self, graph='beta skeleton', gradient='steepest',
+                 max_neighbors=-1, beta=1.0, normalization=None, connect=False,
+                 aggregator=None, debug=False):
+        """ Initialization method
             @ In, graph, an optional string specifying the type of
-                neighborhood graph to use. Default is 'beta skeleton,'
-                but other valid types are: 'delaunay,' 'relaxed beta
-                skeleton,' 'none', or 'approximate knn'
+            neighborhood graph to use. Default is 'beta skeleton,' but
+            other valid types are: 'delaunay,' 'relaxed beta skeleton,'
+            'none', or 'approximate knn'
             @ In, gradient, an optional string specifying the type of
-                gradient estimator to use. Currently the only available
-                option is 'steepest'
-            @ In, knn, an optional integer value specifying the maximum
-                number of k-nearest neighbors used to begin a
-                neighborhood search. In the case of graph='[relaxed]
-                beta skeleton', we will begin with the specified
-                approximate knn graph and prune edges that do not
-                satisfy the empty region criteria.
+            gradient estimator to use. Currently the only available
+            option is 'steepest'
+            @ In, max_neighbors, an optional integer value specifying
+            the maximum number of k-nearest neighbors used to begin a
+            neighborhood search. In the case of graph='[relaxed] beta
+            skeleton', we will begin with the specified approximate knn
+            graph and prune edges that do not satisfy the empty region
+            criteria.
             @ In, beta, an optional floating point value between 0 and
-                2. This value is only used when graph='[relaxed] beta
-                skeleton' and specifies the radius for the empty region
-                graph computation (1=Gabriel graph, 2=Relative neighbor
-                graph)
+            2. This value is only used when graph='[relaxed] beta
+            skeleton' and specifies the radius for the empty region
+            graph computation (1=Gabriel graph, 2=Relative neighbor
+            graph)
             @ In, normalization, an optional string specifying whether
-                the inputs/output should be scaled before computing.
-                Currently, two modes are supported 'zscore' and
-                'feature'. 'zscore' will ensure the data has a mean of
-                zero and a standard deviation of 1 by subtracting the
-                mean and dividing by the variance. 'feature' scales the
-                data into the unit hypercube.
-            @ In, edges, an optional list of custom edges to use as a
-                starting point for pruning, or in place of a computed
-                graph.
+            the inputs/output should be scaled before computing.
+            Currently, two modes are supported 'zscore' and 'feature'.
+            'zscore' will ensure the data has a mean of zero and a
+            standard deviation of 1 by subtracting the mean and dividing
+            by the variance. 'feature' scales the data into the unit
+            hypercube.
+            @ In, connect, an optional boolean flag for whether the
+            algorithm should enforce the data to be a single connected
+            component.
+            @ In, aggregator, an optional string that specifies what
+            type of aggregation to do when duplicates are found in the
+            domain space. Default value is None meaning the code will
+            error if duplicates are identified.
             @ In, debug, an optional boolean flag for whether debugging
-                output should be enabled.
+            output should be enabled.
         """
-        super(MergeTree, self).__init__()
+        super(MergeTree, self).__init__(graph=graph, gradient=gradient,
+                                        max_neighbors=max_neighbors, beta=beta,
+                                        normalization=normalization,
+                                        connect=connect, aggregator=aggregator,
+                                        debug=debug)
 
-        self.X = X
-        self.Y = Y
+    def build(self, X, Y, w=None, names=None, edges=None):
+        """ Assigns data to this object and builds the Morse-Smale
+            Complex
+            @ In, X, an m-by-n array of values specifying m
+            n-dimensional samples
+            @ In, Y, a m vector of values specifying the output
+            responses corresponding to the m samples specified by X
+            @ In, w, an optional m vector of values specifying the
+            weights associated to each of the m samples used. Default of
+            None means all points will be equally weighted
+            @ In, names, an optional list of strings that specify the
+            names to associate to the n input dimensions and 1 output
+            dimension. Default of None means input variables will be x0,
+            x1, ..., x(n-1) and the output will be y
+            @ In, edges, an optional list of custom edges to use as a
+            starting point for pruning, or in place of a computed graph.
+        """
+        super(MergeTree, self).build(X, Y, w, names, edges)
 
-        self.names = names
-        self.normalization = normalization
-
-        if self.X is None or self.Y is None:
-            raise ValueError('There is no data to process.')
-
-        if self.names is None:
-            self.names = []
-            for d in range(self.GetDimensionality()):
-                self.names.append('x%d' % d)
-            self.names.append('y')
-
-        if normalization == 'feature':
-            # This doesn't work with one-dimensional arrays on older
-            # versions of sklearn
-            min_max_scaler = sklearn.preprocessing.MinMaxScaler()
-            self.Xnorm = min_max_scaler.fit_transform(np.atleast_2d(self.X))
-            self.Ynorm = min_max_scaler.fit_transform(np.atleast_2d(self.Y))
-        elif normalization == 'zscore':
-            self.Xnorm = sklearn.preprocessing.scale(self.X, axis=0,
-                                                     with_mean=True,
-                                                     with_std=True, copy=True)
-            self.Ynorm = sklearn.preprocessing.scale(self.Y, axis=0,
-                                                     with_mean=True,
-                                                     with_std=True, copy=True)
-        else:
-            self.Xnorm = np.array(self.X)
-            self.Ynorm = np.array(self.Y)
-
-        if knn <= 0:
-            knn = len(self.Xnorm)-1
-
-        if debug:
-            sys.stderr.write('Graph Preparation: ')
-            start = time.clock()
-
-        if edges is None:
-            knnAlgorithm = sklearn.neighbors.NearestNeighbors(n_neighbors=knn,
-                                                              algorithm='kd_tree')
-            knnAlgorithm.fit(self.Xnorm)
-            edges = knnAlgorithm.kneighbors(self.Xnorm, return_distance=False)
-            if debug:
-                end = time.clock()
-                sys.stderr.write('%f s\n' % (end-start))
-
-            # prevent duplicates with this guy
-            pairs = []
-            for e1 in range(0, edges.shape[0]):
-                for col in range(0, edges.shape[1]):
-                    e2 = edges.item(e1, col)
-                    if e1 != e2:
-                        pairs.append((e1, e2))
-        else:
-            pairs = edges
-
-        # As seen here:
-        #    http://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-in-python-whilst-preserving-order
-        seen = set()
-        pairs = [x for x in pairs if not (x in seen or x[::-1] in seen or
-                                          seen.add(x))]
-        edgesToPrune = []
-        for edge in pairs:
-            edgesToPrune.append(edge[0])
-            edgesToPrune.append(edge[1])
-
-        if debug:
-            end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
-            sys.stderr.write('Decomposition: ')
+        if self.debug:
+            sys.stderr.write('Merge Tree Computation: ')
             start = time.clock()
 
         self.__tree = MergeTreeFloat(vectorFloat(self.Xnorm.flatten()),
                                      vectorFloat(self.Y),
                                      vectorString(self.names),
-                                     str(graph), str(gradient), int(knn),
-                                     float(beta),
-                                     vectorInt(edgesToPrune))
+                                     str(self.gradient),
+                                     self.graph_rep.full_graph(), self.debug)
 
         self.nodes = self.__tree.Nodes()
         self.edges = self.__tree.Edges()
         self.augmentedEdges = {}
-        for key, val in self.__tree.AugmentedEdges().iteritems():
+        for key, val in self.__tree.AugmentedEdges().items():
             self.augmentedEdges[key] = list(val)
         self.root = self.__tree.Root()
 
@@ -204,20 +148,58 @@ class MergeTree(object):
         self.leaves = set(self.nodes.keys()) - self.branches
         self.leaves.remove(self.root)
 
-        if debug:
+        if self.debug:
             end = time.clock()
             sys.stderr.write('%f s\n' % (end-start))
 
-    def GetSampleSize(self):
-        """ Returns the number of samples in the input data
-            @ Out, an integer specifying the number of samples.
+    def build_for_ContourTree(self, contour_tree, negate=False):
         """
-        return len(self.Y)
+        """
+        if self.debug:
+            tree_type = 'Join'
+            if negate:
+                tree_type = 'Split'
+            sys.stderr.write('{} Tree Computation: '.format(tree_type))
+            start = time.clock()
 
-    def GetDimensionality(self):
-        """ Returns the dimensionality of the input space of the input
-            data
-            @ Out, an integer specifying the dimensionality of the input
-                samples.
-        """
-        return self.X.shape[1]
+        Y = contour_tree.Y
+        if negate:
+            Y = -Y
+
+        self.__tree = MergeTreeFloat(vectorFloat(contour_tree.Xnorm.flatten()),
+                                     vectorFloat(Y),
+                                     vectorString(contour_tree.names),
+                                     str(contour_tree.gradient),
+                                     contour_tree.graph_rep.full_graph(),
+                                     self.debug)
+
+        self.nodes = self.__tree.Nodes()
+        self.edges = self.__tree.Edges()
+        self.augmentedEdges = {}
+        for key, val in self.__tree.AugmentedEdges().items():
+            self.augmentedEdges[key] = list(val)
+        self.root = self.__tree.Root()
+
+        seen = set()
+        self.branches = set()
+
+        # Find all of the branching nodes in the tree, degree > 1
+        # That is, they appear in more than one edge
+        for e1, e2 in self.edges:
+            if e1 not in seen:
+                seen.add(e1)
+            else:
+                self.branches.add(e1)
+
+            if e2 not in seen:
+                seen.add(e2)
+            else:
+                self.branches.add(e2)
+
+        # The nodes that are not branches are leaves
+        self.leaves = set(self.nodes.keys()) - self.branches
+        self.leaves.remove(self.root)
+
+        if self.debug:
+            end = time.clock()
+            sys.stderr.write('%f s\n' % (end-start))
