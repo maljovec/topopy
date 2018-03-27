@@ -78,7 +78,7 @@ void AMSC<T>::addToHierarchy(bool isMinimum, int dyingIndex, T persistence, int 
             if (dyingIndex < survivingIndex) {
                 int temp = dyingIndex;
                 dyingIndex = survivingIndex;
-                survivingIndex = dyingIndex;
+                survivingIndex = temp;
             }
         }
 
@@ -91,7 +91,7 @@ void AMSC<T>::addToHierarchy(bool isMinimum, int dyingIndex, T persistence, int 
             if (dyingIndex > survivingIndex) {
                 int temp = dyingIndex;
                 dyingIndex = survivingIndex;
-                survivingIndex = dyingIndex;
+                survivingIndex = temp;
             }
         }
     }
