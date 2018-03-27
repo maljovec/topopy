@@ -83,26 +83,34 @@ class TopologicalObject(object):
             aggregator = np.median
         elif aggregator.lower() in ['average', 'mean']:
             aggregator = np.mean
+        elif 'first' in aggregator.lower():
+            aggregator = lambda x: x[0]
+        elif 'last' in aggregator.lower():
+            aggregator = lambda x: x[-1]
         else:
             warnings.warn('Aggregator \"{}\" not understood. Skipping sample '
                           'aggregation.'.format(aggregator))
             return X, Y
 
-        unique_xs = np.unique(X.round(decimals=precision), axis=0)
+        X_rounded = X.round(decimals=precision)
+        unique_xs = np.unique(X_rounded, axis=0)
 
-        old_size = len(X)
+        old_size = len(X_rounded)
         new_size = len(unique_xs)
         if old_size == new_size:
             return X, Y
 
-        reduced_y = np.empty(new_size)
+        if Y.ndim == 1:
+            Y = np.atleast_2d(Y).T
+
+        reduced_y = np.empty((new_size, Y.shape[1]))
 
         warnings.warn('Domain space duplicates caused a data reduction. ' +
                       'Original size: {} vs. New size: {}'.format(old_size,
                                                                   new_size))
 
         for i, distinct_row in enumerate(unique_xs):
-            filtered_rows = np.all(X == distinct_row, axis=1)
+            filtered_rows = np.all(X_rounded == distinct_row, axis=1)
             reduced_y[i] = aggregator(Y[filtered_rows])
 
         return unique_xs, reduced_y
