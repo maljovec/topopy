@@ -226,10 +226,17 @@ class MorseSmaleComplex(TopologicalObject):
 
         self.base_partitions = partitions
 
+        # Here we are ordering the sets such that the minimum and maximum
+        # occur at the beginning and all other points are in sorted order
         for partitions in [self.base_partitions, self.ascending_partitions,
                            self.descending_partitions]:
             for key in partitions.keys():
-                partitions[key] = sorted(list(set(partitions[key])))
+                extrema_indices = list(map(int, key.split(',')))
+                index_set = set(partitions[key])
+                for index in extrema_indices:
+                    if index in index_set:
+                        index_set.remove(index)
+                partitions[key] = extrema_indices + sorted(list(index_set))
 
         hierarchy = self.__amsc.PrintHierarchy().strip().split(' ')
         self.min_hierarchy = []
