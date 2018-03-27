@@ -92,6 +92,8 @@ class TopologicalObject(object):
                           'aggregation.'.format(aggregator))
             return X, Y
 
+        is_y_multivariate = Y.ndim > 1
+
         X_rounded = X.round(decimals=precision)
         unique_xs = np.unique(X_rounded, axis=0)
 
@@ -100,7 +102,7 @@ class TopologicalObject(object):
         if old_size == new_size:
             return X, Y
 
-        if Y.ndim == 1:
+        if not is_y_multivariate:
             Y = np.atleast_2d(Y).T
 
         reduced_y = np.empty((new_size, Y.shape[1]))
@@ -112,6 +114,9 @@ class TopologicalObject(object):
         for i, distinct_row in enumerate(unique_xs):
             filtered_rows = np.all(X_rounded == distinct_row, axis=1)
             reduced_y[i] = aggregator(Y[filtered_rows])
+
+        if not is_y_multivariate:
+            reduced_y = reduced_y.flatten()
 
         return unique_xs, reduced_y
 
