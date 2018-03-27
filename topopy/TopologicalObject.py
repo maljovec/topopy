@@ -389,12 +389,12 @@ class TopologicalObject(object):
         unique_xs = len(np.unique(self.X.round(decimals=self.precision),
                                   axis=0))
 
-        if len(self.Y) != unique_ys:
-            warnings.warn('Range space has duplicates. Simulation of ' +
-                          'simplicity may help, but artificial noise may ' +
-                          'occur in flat regions of the domain. Sample size:' +
-                          '{} vs. Unique Records: {}'.format(len(self.Y),
-                                                             unique_ys))
+        # if len(self.Y) != unique_ys:
+        #     warnings.warn('Range space has duplicates. Simulation of ' +
+        #                   'simplicity may help, but artificial noise may ' +
+        #                   'occur in flat regions of the domain. Sample size:' +
+        #                   '{} vs. Unique Records: {}'.format(len(self.Y),
+        #                                                      unique_ys))
 
         if len(self.X) != unique_xs:
             raise ValueError('Domain space has duplicates. Try using an ' +
