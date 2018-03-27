@@ -18,4 +18,4 @@ from .ContourTree import ContourTree
 
 __all__ = ['TopologicalObject', 'MorseSmaleComplex', 'MergeTree',
            'ContourTree']
-__version__ = '0.0.5'
+__version__ = '0.0.6'
