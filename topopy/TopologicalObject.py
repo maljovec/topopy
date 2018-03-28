@@ -49,6 +49,77 @@ class TopologicalObject(object):
     """ A base class for housing common interactions between Morse and
         Morse-Smale complexes, and Contour and Merge Trees
     """
+    precision = 16
+
+    @staticmethod
+    def aggregate_duplicates(X, Y, aggregator='mean', precision=precision):
+        """ A function that will attempt to collapse duplicates in
+            domain space, X, by aggregating values over the range space,
+            Y.
+            @ In, X, an m-by-n array of values specifying m
+            n-dimensional samples
+            @ In, Y, a m vector of values specifying the output
+            responses corresponding to the m samples specified by X
+            @ In, aggregator, an optional string or callable object that
+            specifies what type of aggregation to do when duplicates are
+            found in the domain space. Default value is mean meaning the
+            code will calculate the mean range value over each of the
+            unique, duplicated samples.
+            @ In, precision, an optional positive integer specifying how
+            many digits numbers should be rounded to in order to
+            determine if they are unique or not.
+            @ Out, (unique_X, aggregated_Y), a tuple where the first
+            value is an m'-by-n array specifying the unique domain
+            samples and the second value is an m' vector specifying the
+            associated range values. m' <= m.
+        """
+        if callable(aggregator):
+            pass
+        elif 'min' in aggregator.lower():
+            aggregator = np.min
+        elif 'max' in aggregator.lower():
+            aggregator = np.max
+        elif 'median' in aggregator.lower():
+            aggregator = np.median
+        elif aggregator.lower() in ['average', 'mean']:
+            aggregator = np.mean
+        elif 'first' in aggregator.lower():
+            aggregator = lambda x: x[0]
+        elif 'last' in aggregator.lower():
+            aggregator = lambda x: x[-1]
+        else:
+            warnings.warn('Aggregator \"{}\" not understood. Skipping sample '
+                          'aggregation.'.format(aggregator))
+            return X, Y
+
+        is_y_multivariate = Y.ndim > 1
+
+        X_rounded = X.round(decimals=precision)
+        unique_xs = np.unique(X_rounded, axis=0)
+
+        old_size = len(X_rounded)
+        new_size = len(unique_xs)
+        if old_size == new_size:
+            return X, Y
+
+        if not is_y_multivariate:
+            Y = np.atleast_2d(Y).T
+
+        reduced_y = np.empty((new_size, Y.shape[1]))
+
+        warnings.warn('Domain space duplicates caused a data reduction. ' +
+                      'Original size: {} vs. New size: {}'.format(old_size,
+                                                                  new_size))
+
+        for i, distinct_row in enumerate(unique_xs):
+            filtered_rows = np.all(X_rounded == distinct_row, axis=1)
+            reduced_y[i] = aggregator(Y[filtered_rows])
+
+        if not is_y_multivariate:
+            reduced_y = reduced_y.flatten()
+
+        return unique_xs, reduced_y
+
     def __init__(self, graph='beta skeleton', gradient='steepest',
                  max_neighbors=-1, beta=1.0, normalization=None, connect=False,
                  aggregator=None, debug=False):
@@ -101,11 +172,6 @@ class TopologicalObject(object):
         self.connect = connect
         self.debug = debug
         self.aggregator = aggregator
-
-        # This feature is for controlling how many decimal places of
-        # precision will be used to determine if two points should
-        # be considered the same
-        self.precision = 15
 
     def reset(self):
         """
@@ -335,45 +401,6 @@ class TopologicalObject(object):
         """
         return self.graph_rep.neighbors(int(idx))
 
-    def collapse_duplicates(self):
-        if self.aggregator is None:
-            return
-
-        if 'min' in self.aggregator.lower():
-            aggregator = np.min
-        elif 'max' in self.aggregator.lower():
-            aggregator = np.max
-        elif 'median' in self.aggregator.lower():
-            aggregator = np.median
-        elif self.aggregator.lower() in ['average', 'mean']:
-            aggregator = np.mean
-        else:
-            warnings.warn('Aggregator \"{}\" not understood. Skipping ' +
-                          'sample aggregation.'.format(self.aggregator))
-
-        X = self.X.round(decimals=self.precision)
-
-        unique_xs = np.unique(X, axis=0)
-
-        old_size = len(X)
-        new_size = len(unique_xs)
-        if old_size == new_size:
-            return
-
-        reduced_y = np.empty(new_size)
-
-        warnings.warn('Domain space duplicates caused a data reduction. ' +
-                      'Original size: {} vs. New size: {}'.format(old_size,
-                                                                  new_size))
-
-        for i, distinct_row in enumerate(unique_xs):
-            filtered_rows = np.all(X == distinct_row, axis=1)
-            reduced_y[i] = aggregator(self.Y[filtered_rows])
-
-        self.X = unique_xs
-        self.Y = reduced_y
-        return unique_xs, reduced_y
-
     def check_duplicates(self):
         """ Function to test whether duplicates exist in the input or
             output space. First, if an aggregator function has been
@@ -384,24 +411,31 @@ class TopologicalObject(object):
             output space
             @Out, None
         """
-        self.collapse_duplicates()
-        unique_ys = len(np.unique(self.Y, axis=0))
-        unique_xs = len(np.unique(self.X.round(decimals=self.precision),
-                                  axis=0))
 
-        if len(self.Y) != unique_ys:
-            warnings.warn('Range space has duplicates. Simulation of ' +
-                          'simplicity may help, but artificial noise may ' +
-                          'occur in flat regions of the domain. Sample size:' +
-                          '{} vs. Unique Records: {}'.format(len(self.Y),
-                                                             unique_ys))
+        if self.aggregator is not None:
+            X, Y = TopologicalObject.aggregate_duplicates(self.X,
+                                                          self.Y,
+                                                          self.aggregator)
+            self.X = X
+            self.Y = Y
+
+        temp_x = self.X.round(decimals=TopologicalObject.precision)
+        unique_xs = len(np.unique(temp_x, axis=0))
+
+        # unique_ys = len(np.unique(self.Y, axis=0))
+        # if len(self.Y) != unique_ys:
+        #     warnings.warn('Range space has duplicates. Simulation of '
+        #                   'simplicity may help, but artificial noise may '
+        #                   'occur in flat regions of the domain. Sample size:'
+        #                   '{} vs. Unique Records: {}'.format(len(self.Y),
+        #                                                      unique_ys))
 
         if len(self.X) != unique_xs:
-            raise ValueError('Domain space has duplicates. Try using an ' +
-                             'aggregator function to consolidate duplicates ' +
-                             'into a single sample with one range value. ' +
+            raise ValueError('Domain space has duplicates. Try using an '
+                             'aggregator function to consolidate duplicates '
+                             'into a single sample with one range value. '
                              'e.g., ' + self.__class__.__name__ +
-                             '(aggregator=\'max\'). ' +
-                             '\n\tNumber of ' +
+                             '(aggregator=\'max\'). '
+                             '\n\tNumber of '
                              'Records: {}\n\tNumber of Unique Records: {}\n'
                              .format(len(self.X), unique_xs))

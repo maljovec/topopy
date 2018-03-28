@@ -72,9 +72,28 @@ void AMSC<T>::addToHierarchy(bool isMinimum, int dyingIndex, T persistence, int 
 
     if (isMinimum) {
         hierarchyToUpdate = &minHierarchy;
+        if (persistence == 0) {
+            // If the region is flat, then ensure that the lower index is
+            // the surviving index
+            if (dyingIndex < survivingIndex) {
+                int temp = dyingIndex;
+                dyingIndex = survivingIndex;
+                survivingIndex = temp;
+            }
+        }
+
     }
     else {
         hierarchyToUpdate = &maxHierarchy;
+        if (persistence == 0) {
+            // If the region is flat, then ensure that the higher index is
+            // the surviving index
+            if (dyingIndex > survivingIndex) {
+                int temp = dyingIndex;
+                dyingIndex = survivingIndex;
+                survivingIndex = temp;
+            }
+        }
     }
 
     (*hierarchyToUpdate)[dyingIndex].persistence = persistence;
