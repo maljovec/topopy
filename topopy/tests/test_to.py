@@ -74,12 +74,12 @@ class TestTO(TestCase):
         self.to.build(self.X, self.Y)
 
     def test_aggregation(self):
-        X = np.ones((11, 2))
-        X[10] = [0, 0]
-
         # Since the default function can change, here we will only test
         # that the correct number of each array is reported
+        X = np.ones((11, 2))
+        X[10] = [0, 0]
         Y = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
+
         x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y)
         self.assertEqual(2, len(x),
                          'aggregate_duplicates should return a list of '
@@ -154,6 +154,35 @@ class TestTO(TestCase):
                                                              lambda x: x[0])
         self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
         self.assertListEqual(y.tolist(), [[100, 0], [0, 9]])
+
+        # Testing an invalid aggregator
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'invalid')
+        self.assertListEqual(x.tolist(), X.tolist())
+        self.assertListEqual(y.tolist(), Y.tolist())
+
+        # Testing aggregator on non-duplicate data
+        X = np.array([[0, 0], [0, 1]])
+        Y = np.array([0, 1])
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y)
+        self.assertListEqual(x.tolist(), X.tolist())
+        self.assertListEqual(y.tolist(), Y.tolist())
+
+        # Testing use of the aggregator in the check_duplicates function
+        X = np.ones((11, 2))
+        X[10] = [0, 0]
+        Y = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
+
+        to = topopy.TopologicalObject()
+        self.assertRaises(ValueError, to.build, **{'X': X, 'Y': Y})
+        to = topopy.TopologicalObject(aggregator='mean')
+        to.build(X, Y)
+
+    def test_empty(self):
+        """ Test the ability to handle None objects as input
+        """
+        self.setup()
+        self.to = topopy.TopologicalObject()
+        self.to.build(None, None)
 
     def test_debug(self):
         """ Test the debugging output of the TopologicalObject
