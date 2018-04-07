@@ -183,7 +183,6 @@ class TopologicalObject(object):
 
         self.names = []
         self.Xnorm = []
-        self.Ynorm = []
 
         self.graph_rep = None
 
@@ -224,21 +223,14 @@ class TopologicalObject(object):
             # versions of sklearn
             min_max_scaler = sklearn.preprocessing.MinMaxScaler()
             self.Xnorm = min_max_scaler.fit_transform(np.atleast_2d(self.X))
-            self.Ynorm = min_max_scaler.fit_transform(np.atleast_2d(self.Y))
         elif self.normalization == 'zscore':
             self.Xnorm = sklearn.preprocessing.scale(self.X,
                                                      axis=0,
                                                      with_mean=True,
                                                      with_std=True,
                                                      copy=True)
-            self.Ynorm = sklearn.preprocessing.scale(self.Y,
-                                                     axis=0,
-                                                     with_mean=True,
-                                                     with_std=True,
-                                                     copy=True)
         else:
             self.Xnorm = np.array(self.X)
-            self.Ynorm = np.array(self.Y)
 
     def build(self, X, Y, w=None, names=None, edges=None):
         """ Assigns data to this object and builds the requested topological
