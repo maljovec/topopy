@@ -43,8 +43,6 @@ import numpy as np
 import topopy
 from .testFunctions import gerber, generate_test_grid_2d
 import sklearn
-import os
-import json
 
 
 class TestTO(TestCase):
@@ -79,57 +77,83 @@ class TestTO(TestCase):
         X = np.ones((11, 2))
         X[10] = [0, 0]
 
+        # Since the default function can change, here we will only test
+        # that the correct number of each array is reported
         Y = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
-        x,y = topopy.TopologicalObject.aggregate_duplicates(X,  Y)
-        self.assertEqual(2, len(X),
-                         'aggregate_duplicates should return the number of '
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y)
+        self.assertEqual(2, len(x),
+                         'aggregate_duplicates should return a list of '
                          'unique items in X.')
-        self.assertEqual(2, len(X),
-                         'aggregate_duplicates should return the number of '
-                         'unique items in X.')
+        self.assertEqual(2, len(y),
+                         'aggregate_duplicates should return the aggregated '
+                         'values of Y for each unique item in X.')
+
+        # Next, we will test each of the string aggregation function
+        # names on scalar Y values
         x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'min')
-        printResults(x, y)
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [100, 0])
+
         x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'max')
-        printResults(x, y)
-        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, lambda x: x[0])
-        printResults(x, y)
-        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, lambda x: x[-1])
-        printResults(x, y)
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [100, 9])
 
-        printResults(X, Y)
-        x, y = topopy.ContourTree.aggregate_duplicates(X,  Y)
-        printResults(x, y)
-        x, y = topopy.MorseSmaleComplex.aggregate_duplicates(X, Y)
-        printResults(x, y)
-
-        Y = np.array([[0, 9],
-                    [1, 8],
-                    [2, 7],
-                    [3, 6],
-                    [4, 5],
-                    [5, 4],
-                    [6, 3],
-                    [7, 2],
-                    [8, 1],
-                    [9, 0],
-                    [100, 0]])
-
-
-        printResults(x, y)
-        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'min')
-        printResults(x, y)
-        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'max')
-        printResults(x, y)
         x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'mean')
-        printResults(x, y)
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [100, 4.5])
+
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'average')
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [100, 4.5])
+
         x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'median')
-        printResults(x, y)
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [100, 4.5])
+
+        # Next, we will test each of the string aggregation function
+        # names on vector Y values
+        Y = np.array([[0, 9],
+                      [1, 8],
+                      [2, 7],
+                      [3, 6],
+                      [4, 5],
+                      [5, 4],
+                      [6, 3],
+                      [7, 2],
+                      [8, 1],
+                      [9, 0],
+                      [100, 0]])
+
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'min')
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [[100, 0], [0, 0]])
+
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'max')
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [[100, 0], [9, 9]])
+
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'mean')
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [[100, 0], [4.5, 4.5]])
+
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'median')
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [[100, 0], [4.5, 4.5]])
+
         x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'first')
-        printResults(x, y)
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [[100, 0], [0, 9]])
+
+        # Testing custom callable aggregator
         x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, 'last')
-        printResults(x, y)
-        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y, lambda x: x[0])
-        printResults(x, y)
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [[100, 0], [9, 0]])
+
+        # Testing custom callable aggregator
+        x, y = topopy.TopologicalObject.aggregate_duplicates(X,  Y,
+                                                             lambda x: x[0])
+        self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
+        self.assertListEqual(y.tolist(), [[100, 0], [0, 9]])
 
     def test_debug(self):
         """ Test the debugging output of the TopologicalObject
@@ -306,7 +330,7 @@ class TestTO(TestCase):
         """ Tests the ability to retrieve the neighbors of a given index
         """
         self.setup()
-        self.assertSetEqual({40, 1}, set(self.to.get_neighbors(0)),
+        self.assertSetEqual({10, 1}, set(self.to.get_neighbors(0)),
                             'get_neighbors should return a list of integer ' +
                             'indices indicating who is connected to the ' +
                             'given index.')
