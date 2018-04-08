@@ -51,7 +51,7 @@ class ContourTree(TopologicalObject):
     """
     def __init__(self, graph='beta skeleton', gradient='steepest',
                  max_neighbors=-1, beta=1.0, normalization=None, connect=False,
-                 aggregator=None, debug=False, shortCircuit=True):
+                 aggregator=None, debug=False, short_circuit=True):
         """ Initialization method
             @ In, graph, an optional string specifying the type of
             neighborhood graph to use. Default is 'beta skeleton,' but
@@ -87,7 +87,7 @@ class ContourTree(TopologicalObject):
             error if duplicates are identified.
             @ In, debug, an optional boolean flag for whether debugging
             output should be enabled.
-            @ In, shortCircuit, an optional boolean flag for whether the
+            @ In, short_circuit, an optional boolean flag for whether the
             contour tree should be short circuited (TODO: fix description).
         """
         super(ContourTree, self).__init__(graph=graph, gradient=gradient,
@@ -97,7 +97,7 @@ class ContourTree(TopologicalObject):
                                           connect=connect,
                                           aggregator=aggregator,
                                           debug=debug)
-        self.shortCircuit = shortCircuit
+        self.short_circuit = short_circuit
 
     def reset(self):
         """
@@ -141,15 +141,15 @@ class ContourTree(TopologicalObject):
         self.augmentedEdges = dict(joinTree.augmentedEdges)
         self.augmentedEdges.update(dict(splitTree.augmentedEdges))
 
-        if self.shortCircuit:
-            jt = self._constructNXTree(joinTree, splitTree)
-            st = self._constructNXTree(splitTree, joinTree)
+        if self.short_circuit:
+            jt = self._construct_nx_tree(joinTree, splitTree)
+            st = self._construct_nx_tree(splitTree, joinTree)
         else:
-            jt = self._constructNXTree(joinTree)
-            st = self._constructNXTree(splitTree)
+            jt = self._construct_nx_tree(joinTree)
+            st = self._construct_nx_tree(splitTree)
 
-        self._processTree(jt, st)
-        self._processTree(st, jt)
+        self._process_tree(jt, st)
+        self._process_tree(st, jt)
 
         # Now we have a fully augmented contour tree stored in nodes and
         # edges The rest is some convenience stuff for querying later
@@ -215,7 +215,7 @@ class ContourTree(TopologicalObject):
         G = nx.DiGraph()
         G.add_edges_from(self.edges)
 
-        if self.shortCircuit:
+        if self.short_circuit:
             self.superNodes = G.nodes()
             self.superArcs = G.edges()
             # There should be a way to populate this from the data we
@@ -244,10 +244,11 @@ class ContourTree(TopologicalObject):
                 removedNodes = []
 
                 # Trace down to a non-internal node
-                lowerLink = G.in_edges(node)[0][0]
+
+                lowerLink = list(G.in_edges(node))[0][0]
                 while (G.in_degree(lowerLink) == 1 and
                        G.out_degree(lowerLink) == 1):
-                    newLowerLink = G.in_edges(lowerLink)[0][0]
+                    newLowerLink = list(G.in_edges(lowerLink))[0][0]
                     G.add_edge(newLowerLink, node)
                     G.remove_node(lowerLink)
                     removedNodes.append(lowerLink)
@@ -257,10 +258,10 @@ class ContourTree(TopologicalObject):
                 removedNodes.append(node)
 
                 # Trace up to a non-internal node
-                upperLink = G.out_edges(node)[0][1]
+                upperLink = list(G.out_edges(node))[0][1]
                 while (G.in_degree(upperLink) == 1 and
                        G.out_degree(upperLink) == 1):
-                    newUpperLink = G.out_edges(upperLink)[0][1]
+                    newUpperLink = list(G.out_edges(upperLink))[0][1]
                     G.add_edge(node, newUpperLink)
                     G.remove_node(upperLink)
                     removedNodes.append(upperLink)
@@ -284,7 +285,7 @@ class ContourTree(TopologicalObject):
             end = time.clock()
             sys.stderr.write('%f s\n' % (end-start))
 
-    def getSeeds(self, threshold, getPath=False):
+    def get_seeds(self, threshold, getPath=False):
         """ Returns a list of seed points for isosurface extraction
             given a threshold value
             @ In, threshold, float, the isovalue for which we want to
@@ -295,7 +296,7 @@ class ContourTree(TopologicalObject):
         paths = []
         # ##### END DEBUG Stuff ######
         for e1, e2 in self.superArcs:
-            # Because we did some extra work in _processTree, we can
+            # Because we did some extra work in _process_tree, we can
             # safely assume e1 is lower than e2
             if self.Y[e1] <= threshold <= self.Y[e2]:
                 # ####### DEBUG Stuff ########
@@ -339,7 +340,7 @@ class ContourTree(TopologicalObject):
         else:
             return seeds
 
-    def _constructNXTree(self, thisTree, thatTree=None):
+    def _construct_nx_tree(self, thisTree, thatTree=None):
         """ A function for creating networkx instances that can be used
             more efficiently for graph manipulation than the MergeTree
             class.
@@ -389,7 +390,7 @@ class ContourTree(TopologicalObject):
 
         return nxTree
 
-    def _processTree(self, thisTree, thatTree):
+    def _process_tree(self, thisTree, thatTree):
         """ A function that will process either a split or join tree
             with reference to the other tree and store it as part of
             this CT instance.
@@ -456,9 +457,26 @@ class ContourTree(TopologicalObject):
             else:
                 # The other ends of the node being removed are added to
                 # "that" tree
-                startNode = list(thatTree.in_edges(v))[0][0]
-                endNode = list(thatTree.out_edges(v))[0][1]
-                thatTree.add_edge(startNode, endNode)
+
+                if len(thatTree.in_edges(v)) > 0:
+                    startNode = list(thatTree.in_edges(v))[0][0]
+                else:
+                    # This means we are at the root of the other tree,
+                    # we can safely remove this node without connecting
+                    # its predecessor with its descendant
+                    startNode = None
+
+                if len(thatTree.out_edges(v)) > 0:
+                    endNode = list(thatTree.out_edges(v))[0][1]
+                else:
+                    # This means we are at a leaf of the other tree,
+                    # we can safely remove this node without connecting
+                    # its predecessor with its descendant
+                    endNode = None
+
+                if startNode is not None and endNode is not None:
+                    thatTree.add_edge(startNode, endNode)
+
                 thatTree.remove_node(v)
 
                 # if self.debug:
