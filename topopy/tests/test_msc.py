@@ -88,7 +88,7 @@ class TestMSC(TestCase):
         self.setup()
 
         self.assertEqual(len(self.msc.base_partitions.keys()), 16,
-                         'The 2D Gerber test function should have 16 ' +
+                         'The 2D Gerber test function should have 16 '
                          'partitions at the base level.')
 
     def test_get_classification(self):
@@ -98,13 +98,13 @@ class TestMSC(TestCase):
         self.setup()
 
         self.assertEqual('minimum', self.msc.get_classification(0),
-                         'get_classification has misidentified a local ' +
+                         'get_classification has misidentified a local '
                          'minimum')
         self.assertEqual('maximum', self.msc.get_classification(429),
-                         'get_classification has misidentified a local ' +
+                         'get_classification has misidentified a local '
                          'maximum')
         self.assertEqual('regular', self.msc.get_classification(22),
-                         'get_classification has misidentified a regular ' +
+                         'get_classification has misidentified a regular '
                          'point')
 
     def test_get_current_labels(self):
@@ -120,13 +120,13 @@ class TestMSC(TestCase):
                              '960, 410', '24, 410', '960, 1170', '24, 429',
                              '984, 1170', '984, 429', '1560, 1170',
                              '984, 1189', '39, 429'},
-                            set(self.msc.get_current_labels()), 'The base ' +
+                            set(self.msc.get_current_labels()), 'The base '
                             'partition labels returned from ' +
                             'get_current_labels does not match.')
 
         self.msc.set_persistence(self.msc.persistences[-1])
         self.assertSetEqual({(1599, 410)},
-                            set(self.msc.get_current_labels()), 'The base ' +
+                            set(self.msc.get_current_labels()), 'The base '
                             'partition labels returned from ' +
                             'get_current_labels does not match.')
 
@@ -136,14 +136,24 @@ class TestMSC(TestCase):
         """
         self.setup()
 
-        self.assertEqual((0, 410), self.msc.get_label(0), 'The label of a ' +
+        self.assertEqual((0, 410), self.msc.get_label(0), 'The label of a '
                          'single index should be retrievable.')
+
+        self.assertEqual(len(self.Y), len(self.msc.get_label()), 'The label '
+                         'of the entire dataset should be retrievable.')
 
         gold_labels = np.array([[0, 410], [0, 410]])
         test_labels = np.array(self.msc.get_label([0, 1]).flatten().tolist())
         np.testing.assert_array_equal(gold_labels, test_labels,
-                                      'The label of a multiple indices ' +
+                                      'The label of a multiple indices '
                                       'should be retrievable.')
+
+        self.assertEqual(len(self.Y), len(self.msc.get_label()), 'Requesting '
+                         'labels without specifying an index should return a '
+                         'list of all labels')
+
+        self.assertEqual([], self.msc.get_label([]), 'Requesting labels for '
+                         'an empty query should return an empty list')
 
     def test_get_merge_sequence(self):
         """ Testing the ability to succinctly report the merge hierarchy
@@ -168,87 +178,6 @@ class TestMSC(TestCase):
                              'The merge sequence does not match the ' +
                              'expected output.')
 
-    def test_get_names(self):
-        """ Test the ability for the code to generate dummy names
-            and also correctly use passed in names.
-        """
-        self.setup()
-
-        default_names = []
-        for d in range(self.msc.get_dimensionality()):
-            default_names.append('x%d' % d)
-        default_names.append('y')
-
-        test_names = self.msc.get_names()
-        for i in range(len(default_names)):
-            self.assertEqual(default_names[i], test_names[i],
-                             'The MorseSmaleComplex object should generate ' +
-                             'default value names for labeling purposes.')
-
-        custom_names = ['a', 'b', 'c']
-        self.msc.build(self.X, self.Y, names=custom_names)
-        test_names = self.msc.get_names()
-        for i in range(len(custom_names)):
-            self.assertEqual(custom_names[i], test_names[i],
-                             'The MorseSmaleComplex object should use any ' +
-                             'custom names passed in for labeling purposes.')
-
-    def test_get_normed_x(self):
-        """ Tests get_normed_x in several different contexts:
-                Single Element extraction
-                Single Column extraction
-                Single Row extraction
-                Multiple row extraction
-                Multiple column extraction
-                Full data extraction
-        """
-        self.setup()
-
-        for norm, X in self.norm_x.items():
-            msc = topopy.MorseSmaleComplex(normalization=norm)
-            msc.build(self.X, self.Y)
-
-            # Test single column extraction
-            for col in range(X.shape[1]):
-                column_values = msc.get_normed_x(cols=col)
-                np.testing.assert_array_equal(X[:, col], column_values,
-                                              'get_normed_x should be able ' +
-                                              'to access a full column of ' +
-                                              'the input data.')
-
-            # Test single row extraction
-            for row in range(X.shape[0]):
-                row_values = msc.get_normed_x(row).flatten()
-                np.testing.assert_array_equal(X[row, :], row_values,
-                                              'get_normed_x should be able ' +
-                                              'to access a full row of the ' +
-                                              'input data.')
-                # Test single element extraction
-                for col in range(X.shape[1]):
-                    self.assertEqual(X[row, col],
-                                     msc.get_normed_x(row, col),
-                                     'get_normed_x should be able to access ' +
-                                     'a single element of the input data.')
-
-            # Multiple row extraction
-            row_values = msc.get_normed_x(list(range(X.shape[0])), 0)
-            np.testing.assert_array_equal(X[:, 0], row_values,
-                                          'get_normed_x should be able to ' +
-                                          'access multiple rows of the ' +
-                                          'input data.')
-
-            # Multiple column extraction
-            col_values = msc.get_normed_x(0, list(range(X.shape[1]))).flatten()
-            np.testing.assert_array_equal(X[0, :], col_values,
-                                          'get_normed_x should be able to ' +
-                                          'access multiple columns of the ' +
-                                          'input data.')
-
-            # Full data extraction
-            np.testing.assert_array_equal(X, msc.get_normed_x(),
-                                          'get_normed_x should be able to ' +
-                                          'access the entire input data.')
-
     def test_get_weights(self):
         """ Function to test if default weights can be applied to the
             MorseSmaleComplex object. This feature should be evaluated
@@ -260,96 +189,20 @@ class TestMSC(TestCase):
 
         np.testing.assert_array_equal(equal_weights,
                                       self.msc.get_weights(),
-                                      'The default weights should be 1 for ' +
+                                      'The default weights should be 1 for '
                                       'every row in the input.')
 
         test_weights = self.msc.get_weights(list(range(len(self.msc.w))))
 
         np.testing.assert_array_equal(equal_weights, test_weights,
-                                      'User should be able to filter the ' +
+                                      'User should be able to filter the '
                                       'rows retrieved from get_weights.')
 
-    def test_get_x(self):
-        """ Tests get_x in several different contexts:
-                Single Element extraction
-                Single Column extraction
-                Single Row extraction
-                Multiple row extraction
-                Multiple column extraction
-                Full data extraction
-        """
-        self.setup()
+        test_weights = self.msc.get_weights([])
 
-        # Test single column extraction
-        for col in range(self.X.shape[1]):
-            column_values = self.msc.get_x(cols=col)
-            np.testing.assert_array_equal(self.X[:, col], column_values,
-                                          'get_x should be able to access a ' +
-                                          'full column of the input data.')
-
-        # Test single row extraction
-        for row in range(self.X.shape[0]):
-            row_values = self.msc.get_x(row).flatten()
-            np.testing.assert_array_equal(self.X[row, :], row_values,
-                                          'get_x should be able to access a ' +
-                                          'full row of the input data.')
-            # Test single element extraction
-            for col in range(self.X.shape[1]):
-                self.assertEqual(self.X[row, col], self.msc.get_x(row, col),
-                                 'get_x should be able to access a single ' +
-                                 'element of the input data.')
-
-        # Multiple row extraction
-        row_values = self.msc.get_x(list(range(self.X.shape[0])), 0)
-        np.testing.assert_array_equal(self.X[:, 0], row_values,
-                                      'get_x should be able to access ' +
-                                      'multiple rows of the input data.')
-
-        # Multiple column extraction
-        col_values = self.msc.get_x(0, list(range(self.X.shape[1]))).flatten()
-        np.testing.assert_array_equal(self.X[0, :], col_values,
-                                      'get_x should be able to access ' +
-                                      'multiple columns of the input data.')
-
-        # Full data extraction
-        np.testing.assert_array_equal(self.X, self.msc.get_x(),
-                                      'get_x should be able to access ' +
-                                      'the entire input data.')
-
-        # Empty query
-        np.testing.assert_array_equal([], self.msc.get_x([]),
-                                      'get_x should be able to access ' +
-                                      'return an empty array on null filter.')
-
-    def test_get_y(self):
-        """ Tests get_y in several different contexts:
-                Single Element extraction
-                Multiple row extraction
-                Full data extraction
-        """
-        self.setup()
-
-        for row in range(len(self.Y)):
-            # Test single element extraction
-            self.assertEqual(self.Y[row], self.msc.get_y(row),
-                             'get_y should be able to access a single ' +
-                             'element of the input data.')
-
-        # Multiple row extraction
-        row_values = self.msc.get_y(list(range(len(self.Y))))
-        np.testing.assert_array_equal(self.Y, row_values,
-                                      'get_y should be able to access ' +
-                                      'multiple rows of the input data.')
-
-        # Full data extraction
-        np.testing.assert_array_equal(self.Y, self.msc.get_y(),
-                                      'get_y should be able to access ' +
-                                      'the entire input data.')
-
-        # Empty query
-        np.testing.assert_array_equal([], self.msc.get_y([]),
-                                      'get_y should be able to access ' +
-                                      'return an empty array on null filter.')
+        np.testing.assert_array_equal([], test_weights,
+                                      'An empty query should return empty'
+                                      'results.')
 
     def test_load_data_and_build(self):
         """ Tests that loading the same test data from file yields an
@@ -370,15 +223,6 @@ class TestMSC(TestCase):
         self.assertDictEqual(self.msc.base_partitions, msc.base_partitions,
                              'loading from file should produce the base ' +
                              'partitions.')
-
-    def test_neighbors(self):
-        """ Tests the ability to retrieve the neighbors of a given index
-        """
-        self.setup()
-        self.assertSetEqual({40, 1}, set(self.msc.get_neighbors(0)),
-                            'get_neighbors should return a list of integer ' +
-                            'indices indicating who is connected to the ' +
-                            'given index.')
 
     def test_persistence(self):
         """ Tests the getting and setting of different persistence
@@ -497,6 +341,26 @@ class TestMSC(TestCase):
                          'get_sample_size should return the number of ' +
                          'rows in the specified partition.')
 
-# get_partitions
-# get_stable_manifolds
-# get_unstable_manifolds
+    def test_get_partitions(self):
+        self.setup()
+        partitions = self.msc.get_partitions()
+        self.assertEqual(16, len(partitions), 'The number of partitions '
+                                              'without specifying the '
+                                              'persistence should be the '
+                                              'same as requesting the base '
+                                              '(0) persistence level')
+
+        partitions = self.msc.get_stable_manifolds(0)
+        self.assertEqual(4, len(partitions), 'The number of stable manifolds '
+                                             'should be 4 at the base level')
+
+        partitions = self.msc.get_unstable_manifolds(0)
+        self.assertEqual(9, len(partitions), 'The number of unstable '
+                                             'manifolds should be 9 at the '
+                                             'base level')
+
+        self.msc = topopy.MorseSmaleComplex()
+        partitions = self.msc.get_partitions()
+        self.assertEqual(None, partitions, 'Requesting partitions on an '
+                                           'unbuilt object should return an '
+                                           'None object')

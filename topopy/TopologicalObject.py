@@ -110,10 +110,10 @@ class TopologicalObject(object):
         warnings.warn('Domain space duplicates caused a data reduction. ' +
                       'Original size: {} vs. New size: {}'.format(old_size,
                                                                   new_size))
-
-        for i, distinct_row in enumerate(unique_xs):
-            filtered_rows = np.all(X_rounded == distinct_row, axis=1)
-            reduced_y[i] = aggregator(Y[filtered_rows])
+        for col in range(Y.shape[1]):
+            for i, distinct_row in enumerate(unique_xs):
+                filtered_rows = np.all(X_rounded == distinct_row, axis=1)
+                reduced_y[i, col] = aggregator(Y[filtered_rows, col])
 
         if not is_y_multivariate:
             reduced_y = reduced_y.flatten()
@@ -183,7 +183,6 @@ class TopologicalObject(object):
 
         self.names = []
         self.Xnorm = []
-        self.Ynorm = []
 
         self.graph_rep = None
 
@@ -224,21 +223,14 @@ class TopologicalObject(object):
             # versions of sklearn
             min_max_scaler = sklearn.preprocessing.MinMaxScaler()
             self.Xnorm = min_max_scaler.fit_transform(np.atleast_2d(self.X))
-            self.Ynorm = min_max_scaler.fit_transform(np.atleast_2d(self.Y))
         elif self.normalization == 'zscore':
             self.Xnorm = sklearn.preprocessing.scale(self.X,
                                                      axis=0,
                                                      with_mean=True,
                                                      with_std=True,
                                                      copy=True)
-            self.Ynorm = sklearn.preprocessing.scale(self.Y,
-                                                     axis=0,
-                                                     with_mean=True,
-                                                     with_std=True,
-                                                     copy=True)
         else:
             self.Xnorm = np.array(self.X)
-            self.Ynorm = np.array(self.Y)
 
     def build(self, X, Y, w=None, names=None, edges=None):
         """ Assigns data to this object and builds the requested topological

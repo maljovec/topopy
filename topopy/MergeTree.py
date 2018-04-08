@@ -93,8 +93,7 @@ class MergeTree(TopologicalObject):
                                         debug=debug)
 
     def build(self, X, Y, w=None, names=None, edges=None):
-        """ Assigns data to this object and builds the Morse-Smale
-            Complex
+        """ Assigns data to this object and builds the Merge Tree
             @ In, X, an m-by-n array of values specifying m
             n-dimensional samples
             @ In, Y, a m vector of values specifying the output
