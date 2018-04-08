@@ -132,8 +132,8 @@ class ContourTree(TopologicalObject):
 
         # Build the join and split trees that we will merge into the
         # contour tree
-        joinTree = MergeTree()
-        splitTree = MergeTree()
+        joinTree = MergeTree(debug=self.debug)
+        splitTree = MergeTree(debug=self.debug)
 
         joinTree.build_for_ContourTree(self, True)
         splitTree.build_for_ContourTree(self, False)
@@ -285,35 +285,22 @@ class ContourTree(TopologicalObject):
             end = time.clock()
             sys.stderr.write('%f s\n' % (end-start))
 
-    def get_seeds(self, threshold, getPath=False):
+    def get_seeds(self, threshold):
         """ Returns a list of seed points for isosurface extraction
             given a threshold value
             @ In, threshold, float, the isovalue for which we want to
                 identify seed points for isosurface extraction
         """
         seeds = []
-        # ####### DEBUG Stuff ########
-        paths = []
-        # ##### END DEBUG Stuff ######
         for e1, e2 in self.superArcs:
             # Because we did some extra work in _process_tree, we can
             # safely assume e1 is lower than e2
             if self.Y[e1] <= threshold <= self.Y[e2]:
-                # ####### DEBUG Stuff ########
-                print('Super Arc: %d -> %d' % (e1, e2))
-                # ##### END DEBUG Stuff ######
                 if (e1, e2) in self.augmentedEdges:
-                    path = []
-
                     # These should be sorted
                     edgeList = self.augmentedEdges[(e1, e2)]
                 elif (e2, e1) in self.augmentedEdges:
-                    # ####### DEBUG Stuff ########
-                    print('\tSwapping arc order')
-                    # ##### END DEBUG Stuff ######
-
                     e1, e2 = e2, e1
-
                     # These should be reverse sorted
                     edgeList = list(reversed(self.augmentedEdges[(e1, e2)]))
                 else:
@@ -321,9 +308,6 @@ class ContourTree(TopologicalObject):
 
                 startNode = e1
                 for endNode in edgeList + [e2]:
-                    # ####### DEBUG Stuff ########
-                    path.append((startNode, endNode))
-                    # ##### END DEBUG Stuff ######
                     if self.Y[endNode] >= threshold:
                         # Stop when you find the first point above the
                         # threshold
@@ -332,13 +316,7 @@ class ContourTree(TopologicalObject):
 
                 seeds.append(startNode)
                 seeds.append(endNode)
-                print('\t\t%d: %f' % (startNode, self.Y[startNode]))
-                print('\t\t%d: %f' % (endNode, self.Y[endNode]))
-                paths.append(path)
-        if getPath:
-            return seeds, paths
-        else:
-            return seeds
+        return seeds
 
     def _construct_nx_tree(self, thisTree, thatTree=None):
         """ A function for creating networkx instances that can be used
