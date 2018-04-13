@@ -44,6 +44,7 @@
 #include <cstdlib>
 #include <time.h>
 #include <cstring>
+#include <queue>
 #include <cmath>
 
 int followChain(int i, std::map<int,int> merge)
@@ -668,6 +669,192 @@ void AMSC<T>::ComputeMaximaPersistence()
 }
 
 template<typename T>
+void AMSC<T>::ComputeMaximumGraph()
+{
+  map_pi_pfi pinv;
+  for(int i = 0; i < Size(); i++)
+  {
+    int e1 = flow[i].up;
+    int saddleIdx;
+    std::set<int> Ni = neighbors[i];
+    int j; // An index adjacent to i
+
+    for (std::set<int>::iterator it = Ni.begin(); it != Ni.end(); it++)
+    {
+      j = *it;
+
+      int e2 = flow[j].up;
+      if(e1 != e2)
+      {
+        T pers = 0;
+        //p should have the merging index in the first position and the parent
+        // in the second
+        int_pair p(e1,e2);
+        if( y[e1] > y[e2] || (y[e1] == y[e2] && e1 > e2) )
+        {
+          p.first = e2;
+          p.second = e1;
+        }
+
+        saddleIdx = y[i] < y[j] ? i : j;
+
+        if (this->persistenceType.compare("difference") == 0)
+        {
+          pers = y[p.first] - y[saddleIdx];
+        }
+        else if (this->persistenceType.compare("probability") == 0)
+        {
+          T probabilityIntegral = 0.;
+          int count = 0;
+
+          for(int idx = 0; idx < Size(); idx++)
+          {
+            if (flow[idx].up == p.first)
+            {
+              probabilityIntegral += w[idx];
+              count++;
+            }
+          }
+          pers = probabilityIntegral;
+          if (count > 0)
+            pers /= (T) count;
+        }
+        else if (this->persistenceType.compare("count") == 0)
+        {
+          //TODO: test
+          int count = 0;
+          for(int idx = 0; idx < Size(); idx++)
+            if (flow[idx].up == p.first)
+              count++;
+          pers = count;
+        }
+        else if (this->persistenceType.compare("area") == 0)
+        {
+          //FIXME: implement this & test
+        }
+
+        map_pi_pfi_it it = pinv.find(p);
+        if(it!=pinv.end())
+        {
+          T tmpPers = (*it).second.first;
+          int tmpSaddle = (*it).second.second;
+          if(pers < tmpPers || (pers == tmpPers && tmpSaddle < saddleIdx))
+          {
+            (*it).second = std::pair<T,int>(pers,saddleIdx);
+          }
+        }
+        else
+        {
+          pinv[p] = std::pair<T,int>(pers,saddleIdx);
+        }
+      }
+    }
+  }
+
+  maximumGraph.clear();
+  std::priority_queue< Saddle<T> > Q;
+  std::map<int, T> P;
+  std::map<int, T> PStar;
+  for(map_pi_pfi_it it = pinv.begin(); it != pinv.end(); ++it)
+  {
+    int saddleIdx = (*it).second.second;
+    T pers = (*it).second.first;
+    int u = (*it).first.first;
+    int v = (*it).first.second;
+    Q.push(Saddle<T>(saddleIdx, u, v, pers));
+    if (maximumGraph.find(saddleIdx) == maximumGraph.end())
+    {
+      maximumGraph[saddleIdx] = Node<T>(saddleIdx, MaxSaddle);
+      P[saddleIdx] = PStar[saddleIdx] = std::numeric_limits<T>::infinity();
+    }
+    if (maximumGraph.find(u) == maximumGraph.end())
+    {
+      maximumGraph[u] = Node<T>(u, Maximum);
+      P[u] = PStar[u] = std::numeric_limits<T>::infinity();
+    }
+    if (maximumGraph.find(v) == maximumGraph.end())
+    {
+      maximumGraph[v] = Node<T>(v, Maximum);
+      P[v] = PStar[v] = std::numeric_limits<T>::infinity();
+    }
+    maximumGraph[saddleIdx].neighborU = &(maximumGraph[u]);
+    maximumGraph[saddleIdx].neighborV = &(maximumGraph[v]);
+    maximumGraph[saddleIdx].successor = maximumGraph[saddleIdx].neighborV;
+  }
+
+  //compute final persistences - recursively merge smallest persistence
+  //extrema and update remaining persistences depending on the merge
+  while(!Q.empty())
+  {
+    Saddle<T> saddle = Q.top();
+    Q.pop();
+    T p = saddle.p;
+    int s = saddle.idx;
+    int u = saddle.u;
+    int v = saddle.v;
+    std::vector<int> U = maximumGraph[s].Path('u');
+    std::vector<int> V = maximumGraph[s].Path('v');
+
+    int uHat = U[U.size()-1];
+    int vHat = V[V.size()-1];
+
+    // TODO: Implement other persistence metrics here
+    p = std::min(fabs(y[uHat]-y[s]),fabs(y[vHat]-y[s]));
+    if (!Q.empty() && p > Q.top().p)
+    {
+      saddle.p = p;
+      Q.push(saddle);
+    }
+    else
+    {
+      saddle.p = p;
+      for(unsigned int i = 0; i < U.size(); i++)
+      {
+        if (maximumGraph[U[i]].type == MaxSaddle)
+          PStar[U[i]] = p;
+      }
+      for(unsigned int i = 0; i < V.size(); i++)
+      {
+        if (maximumGraph[V[i]].type == MaxSaddle)
+          PStar[V[i]] = p;
+      }
+      if (uHat != vHat)
+      {
+        P[s] = p;
+        // TODO: Implement other persistence metrics here
+        if (fabs(y[uHat]-y[s]) < fabs(y[vHat]-y[s]))
+        {
+          P[uHat] = p;
+          //Reverse U
+          maximumGraph[U[0]].successor = &maximumGraph[v];
+          for (unsigned int i = 1; i < U.size(); i++)
+          {
+            maximumGraph[U[i]].successor = &maximumGraph[U[i-1]];
+          }
+        }
+        else
+        {
+          P[vHat] = p;
+          //Reverse V
+          maximumGraph[V[0]].successor = &maximumGraph[u];
+          for (unsigned int i = 1; i < V.size(); i++)
+          {
+            maximumGraph[V[i]].successor = &maximumGraph[V[i-1]];
+          }
+        }
+      }
+    }
+  }
+  //Store all of the p and PStars in the graph
+  for (typename std::map<int, Node<T> >::iterator it = maximumGraph.begin();
+       it != maximumGraph.end(); it++)
+  {
+    it->second.p = P[it->second.idx];
+    it->second.pStar = PStar[it->second.idx];
+  }
+}
+
+template<typename T>
 void AMSC<T>::ComputeMinimaPersistence()
 {
   //initial persistences
@@ -920,6 +1107,174 @@ void AMSC<T>::ComputeMinimaPersistence()
 }
 
 template<typename T>
+void AMSC<T>::ComputeMinimumGraph()
+{
+  //initial persistences
+  //store as pairs of extrema such that p.first merges to p.second (e.g.
+  //p.second is the min with the smaller function value
+  map_pi_pfi pinv;
+  for(int i = 0; i < Size(); i++)
+  {
+    int saddleIdx;
+    int e1 = flow[i].down;
+    std::set<int> Ni = neighbors[i];
+    int j; // An index adjacent to i
+
+    for (std::set<int>::iterator it = Ni.begin(); it != Ni.end(); it++)
+    {
+      j = *it;
+
+      int e2 = flow[j].down;
+      if(e1 != e2)
+      {
+        T pers = 0;
+        // mergePair should have the merging index in the first position and the
+        // parent in the second
+        int_pair mergePair(e1,e2);
+        if( y[e1] < y[e2] || (y[e1] == y[e2] && e1 < e2) )
+        {
+          mergePair.first = e2;
+          mergePair.second = e1;
+        }
+
+        saddleIdx = y[i] > y[j] ? i : j;
+        pers = y[saddleIdx] - y[mergePair.first];
+
+        map_pi_pfi_it it = pinv.find(mergePair);
+        if(it!=pinv.end())
+        {
+          T tmpPers = (*it).second.first;
+          int tmpSaddle = (*it).second.second;
+          if(pers < tmpPers || (pers == tmpPers && tmpSaddle < saddleIdx))
+          {
+            (*it).second = std::pair<T,int>(pers,saddleIdx);
+          }
+        }
+        else
+        {
+          pinv[mergePair] = std::pair<T,int>(pers,saddleIdx);
+        }
+      }
+    }
+  }
+
+  minimumGraph.clear();
+  std::priority_queue< Saddle<T> > Q;
+  std::map<int, T> P;
+  std::map<int, T> PStar;
+  for(map_pi_pfi_it it = pinv.begin(); it != pinv.end(); ++it)
+  {
+    int saddleIdx = (*it).second.second;
+    //T pers = (*it).second.first;
+    int u = (*it).first.first;
+    int v = (*it).first.second;
+    Q.push(Saddle<T>(saddleIdx, u, v, 0));
+    // std::cout << "Saddle:" << std::endl
+    //           << "\tidx = " << saddleIdx << std::endl
+    //           << "\tneighbors = " << u << ',' << v << std::endl
+    //           << "\tPersistence = " << pers << std::endl;
+
+    if (minimumGraph.find(saddleIdx) == minimumGraph.end())
+    {
+      minimumGraph[saddleIdx] = Node<T>(saddleIdx, MinSaddle);
+      P[saddleIdx] = PStar[saddleIdx] = std::numeric_limits<T>::infinity();
+    }
+    if (minimumGraph.find(u) == minimumGraph.end())
+    {
+      minimumGraph[u] = Node<T>(u, Minimum);
+      P[u] = PStar[u] = std::numeric_limits<T>::infinity();
+    }
+    if (minimumGraph.find(v) == minimumGraph.end())
+    {
+      minimumGraph[v] = Node<T>(v, Minimum);
+      P[v] = PStar[v] = std::numeric_limits<T>::infinity();
+    }
+    minimumGraph[saddleIdx].neighborU = &(minimumGraph[u]);
+    minimumGraph[saddleIdx].neighborV = &(minimumGraph[v]);
+    minimumGraph[saddleIdx].successor = minimumGraph[saddleIdx].neighborV;
+    std::cout << saddleIdx << " : " << u << " " << v << std::endl;
+  }
+
+  //compute final persistences - recursively merge smallest persistence
+  //extrema and update remaining persistences depending on the merge
+  while(!Q.empty())
+  {
+    Saddle<T> saddle = Q.top();
+    Q.pop();
+    // T p = saddle.p;
+    int s = saddle.idx;
+    int u = saddle.u;
+    int v = saddle.v;
+    std::vector<int> U = minimumGraph[s].Path('u');
+    std::vector<int> V = minimumGraph[s].Path('v');
+
+    int uHat = U[U.size()-1];
+    int vHat = V[V.size()-1];
+
+    // TODO: Implement other persistence metrics here
+    T p = std::min(fabs(y[uHat]-y[s]),fabs(y[vHat]-y[s]));
+    if (!Q.empty() && p > Q.top().p)
+    {
+      saddle.p = p;
+      Q.push(saddle);
+    }
+    else
+    {
+      saddle.p = p;
+      P[s] = p;
+
+      for(unsigned int i = 0; i < U.size(); i++)
+      {
+        if (minimumGraph[U[i]].type == MinSaddle)
+          PStar[U[i]] = p;
+      }
+      for(unsigned int i = 0; i < V.size(); i++)
+      {
+        if (minimumGraph[V[i]].type == MinSaddle)
+          PStar[V[i]] = p;
+      }
+      if (uHat != vHat)
+      {
+        // TODO: Implement other persistence metrics here
+        if (fabs(y[uHat]-y[s]) < fabs(y[vHat]-y[s]))
+        {
+          P[uHat] = p;
+          //Reverse U
+          minimumGraph[U[0]].successor = &minimumGraph[v];
+          std::cout << v << " <- " << U[0] << std::flush;
+          for (unsigned int i = 1; i < U.size(); i++)
+          {
+            minimumGraph[U[i]].successor = &minimumGraph[U[i-1]];
+            std::cout << " <- " << U[i] << std::flush;
+          }
+          std::cout << std::endl;
+        }
+        else
+        {
+          P[vHat] = p;
+          //Reverse V
+          minimumGraph[V[0]].successor = &minimumGraph[u];
+          std::cout << u << "<-" << V[0] << std::flush;
+          for (unsigned int i = 1; i < V.size(); i++)
+          {
+            minimumGraph[V[i]].successor = &minimumGraph[V[i-1]];
+            std::cout << " <- " << V[i] << std::flush;
+          }
+          std::cout << std::endl;
+        }
+      }
+    }
+  }
+  //Store all of the p and PStars in the graph
+  for (typename std::map<int, Node<T> >::iterator it = minimumGraph.begin();
+       it != minimumGraph.end(); it++)
+  {
+    it->second.p = P[it->second.idx];
+    it->second.pStar = PStar[it->second.idx];
+  }
+}
+
+template<typename T>
 void AMSC<T>::RemoveZeroPersistenceExtrema()
 {
   std::set<int> minLabelsToRemove;
@@ -1028,15 +1383,27 @@ AMSC<T>::AMSC(std::vector<T> &Xin,
   DebugTimerStart(myTime, "\rComputing distances...");
   computeDistances();
   DebugTimerStop(myTime);
+
   DebugTimerStart(myTime, "\rEstimating integral lines...");
   EstimateIntegralLines(gradientMethod);
+
   DebugTimerStop(myTime);
   DebugTimerStart(myTime, "\rComputing persistence for minima...\n");
   ComputeMinimaPersistence();
   DebugTimerStop(myTime);
+
+  DebugTimerStart(myTime, "\rComputing persistence for minimum graph...\n");
+  ComputeMinimumGraph();
+  DebugTimerStop(myTime);
+
   DebugTimerStart(myTime, "\rComputing persistence for maxima...\n");
   ComputeMaximaPersistence();
   DebugTimerStop(myTime);
+
+  DebugTimerStart(myTime, "\rComputing persistence for maximum graph...\n");
+  ComputeMaximumGraph();
+  DebugTimerStop(myTime);
+
   DebugTimerStart(myTime, "\rCleaning up...");
   RemoveZeroPersistenceExtrema();
   DebugTimerStop(myTime);
@@ -1292,6 +1659,49 @@ std::map< std::string, std::vector<int> > AMSC<T>::GetPartitions(T persistence)
 }
 
 template<typename T>
+std::map< std::string, std::vector<int> > AMSC<T>::GetPartitionsFromLevel(int level)
+{
+  //FIXME: Something wrong right here. Gerber2 should not have two minima alive at the last level
+  std::vector<T> pValues = SortedPersistences();
+  T minP = pValues[0];
+  T persistence = pValues[level];
+
+  std::map< std::string, std::vector<int> > partitions;
+  for(int i = 0; i < Size(); i++)
+  {
+    std::stringstream stream;
+    int minIdx = MinLabel(i,minP);
+    int maxIdx = MaxLabel(i,minP);
+
+    while(minHierarchy[minIdx].persistence < persistence
+          && minIdx != minHierarchy[minIdx].parent)
+    {
+      minIdx = minHierarchy[minIdx].parent;
+    }
+
+    while(maxHierarchy[maxIdx].persistence < persistence
+          && maxIdx != maxHierarchy[maxIdx].parent)
+    {
+      maxIdx = maxHierarchy[maxIdx].parent;
+    }
+
+    stream << minIdx << ',' << maxIdx;
+    std::string label = stream.str();
+    if( partitions.find(label) == partitions.end())
+    {
+      partitions[label] = std::vector<int>();
+      partitions[label].push_back(minIdx);
+      partitions[label].push_back(maxIdx);
+    }
+
+    if(i != minIdx && i != maxIdx)
+      partitions[label].push_back(i);
+  }
+
+  return partitions;
+}
+
+template<typename T>
 std::map< int, std::vector<int> > AMSC<T>::GetStableManifolds(T persistence)
 {
   T minP = SortedPersistences()[0];
@@ -1357,6 +1767,246 @@ template<typename T>
 std::set<int> AMSC<T>::Neighbors(int index)
 {
   return neighbors[index];
+}
+
+template<typename T>
+std::vector<int> AMSC<T>::GetExtremumGraph(T lo, T hi)
+{
+  std::vector<int> retList;
+  std::vector<int> edgeList;
+  for (typename std::map<int, Node<T> >::iterator it = minimumGraph.begin();
+       it != minimumGraph.end(); it++)
+  {
+    if(it->second.type == Minimum)
+    {
+      if(it->second.p >= lo)
+      {
+        retList.push_back(it->second.idx);
+      }
+
+      if (it->second.successor != NULL)
+      {
+        if(lo <= it->second.successor->pStar && it->second.successor->p <= hi)
+        {
+          edgeList.push_back(it->second.idx);
+          edgeList.push_back(it->second.successor->idx);
+        }
+      }
+
+    }
+    else
+    {
+      if(it->second.p >= lo && it->second.p <= hi)
+      {
+        retList.push_back(it->second.idx);
+      }
+      if(lo <= it->second.pStar && it->second.p <= hi)
+      {
+        edgeList.push_back(it->second.idx);
+        edgeList.push_back(it->second.successor->idx);
+      }
+    }
+  }
+
+  for (typename std::map<int, Node<T> >::iterator it = maximumGraph.begin();
+       it != maximumGraph.end(); it++)
+  {
+    if(it->second.type == Maximum)
+    {
+      if(it->second.p >= lo)
+      {
+        retList.push_back(it->second.idx);
+      }
+
+      if (it->second.successor != NULL)
+      {
+        if(lo <= it->second.successor->pStar && it->second.successor->p <= hi)
+        {
+          edgeList.push_back(it->second.idx);
+          edgeList.push_back(it->second.successor->idx);
+        }
+      }
+    }
+    else
+    {
+      if(it->second.p >= lo && it->second.p <= hi)
+      {
+        retList.push_back(it->second.idx);
+      }
+      if(lo <= it->second.pStar && it->second.p <= hi)
+      {
+        edgeList.push_back(it->second.idx);
+        edgeList.push_back(it->second.successor->idx);
+      }
+    }
+  }
+  retList.push_back(-1);
+  for(unsigned int i=0; i < edgeList.size(); i++)
+  {
+    retList.push_back(edgeList[i]);
+  }
+
+  return retList;
+}
+
+template<typename T>
+std::vector<int> AMSC<T>::GetMaximumGraph(T lo, T hi)
+{
+  std::vector<int> retList;
+  std::vector<int> edgeList;
+
+  for (typename std::map<int, Node<T> >::iterator it = maximumGraph.begin();
+       it != maximumGraph.end(); it++)
+  {
+    if(it->second.type == Maximum)
+    {
+      if(it->second.p >= lo)
+      {
+        retList.push_back(it->second.idx);
+      }
+
+      if (it->second.successor != NULL)
+      {
+        if(lo <= it->second.successor->pStar && it->second.successor->p <= hi)
+        {
+          edgeList.push_back(it->second.idx);
+          edgeList.push_back(it->second.successor->idx);
+        }
+        else
+        {
+          std::cout << "Maximum-Saddle" << std::endl;
+          std::cout << lo << "-" << hi << " vs " << it->second.successor->p << "-" << it->second.successor->pStar << std::endl;
+        }
+      }
+      else
+      {
+        std::cout << "No successor" << std::endl;
+      }
+    }
+    else
+    {
+      if(it->second.p >= lo && it->second.p <= hi)
+      {
+        retList.push_back(it->second.idx);
+      }
+      if(lo <= it->second.pStar && it->second.p <= hi)
+      {
+        edgeList.push_back(it->second.idx);
+        edgeList.push_back(it->second.successor->idx);
+      }
+      else
+      {
+        std::cout << "Saddle-Maximum" << std::endl;
+        std::cout << lo << "-" << hi << " vs " << it->second.p << "-" << it->second.pStar << std::endl;
+      }
+    }
+  }
+  retList.push_back(-1);
+  std::cout << "Edge list: ";
+  for(unsigned int i=0; i < edgeList.size(); i++)
+  {
+    retList.push_back(edgeList[i]);
+    std::cout << edgeList[i] << " ";
+  }
+  std::cout << std::endl;
+
+  return retList;
+}
+
+template<typename T>
+std::vector<int> AMSC<T>::GetMinimumGraph(T lo, T hi)
+{
+  std::vector<int> retList;
+  std::vector<int> edgeList;
+  for (typename std::map<int, Node<T> >::iterator it = minimumGraph.begin();
+       it != minimumGraph.end(); it++)
+  {
+    if(it->second.type == Minimum)
+    {
+      if(it->second.p >= lo)
+      {
+        retList.push_back(it->second.idx);
+      }
+
+      if (it->second.successor != NULL)
+      {
+        if(lo <= it->second.successor->pStar && it->second.successor->p <= hi)
+        {
+          edgeList.push_back(it->second.idx);
+          edgeList.push_back(it->second.successor->idx);
+        }
+      }
+
+    }
+    else
+    {
+      if(it->second.p >= lo && it->second.p <= hi)
+      {
+        retList.push_back(it->second.idx);
+      }
+      if(lo <= it->second.pStar && it->second.p <= hi)
+      {
+        edgeList.push_back(it->second.idx);
+        edgeList.push_back(it->second.successor->idx);
+      }
+    }
+  }
+
+  retList.push_back(-1);
+  for(unsigned int i=0; i < edgeList.size(); i++)
+  {
+    retList.push_back(edgeList[i]);
+  }
+
+  return retList;
+}
+
+template<typename T>
+std::map<std::pair<int,int>, std::pair<T,T> > AMSC<T>::GetMinimumArcs()
+{
+  std::map<std::pair<int,int>, std::pair<T,T> > arcs;
+  for (typename std::map<int, Node<T> >::iterator it = minimumGraph.begin();
+       it != minimumGraph.end(); it++)
+  {
+    if(it->second.type == Minimum)
+    {
+      if (it->second.successor != NULL)
+      {
+        arcs[std::make_pair(it->second.idx,it->second.successor->idx)] = std::make_pair<T,T>(it->second.successor->p, it->second.successor->pStar);
+      }
+    }
+    else
+    {
+      arcs[std::make_pair(it->second.idx,it->second.neighborU->idx)] = std::make_pair<T,T>(it->second.p,it->second.pStar);
+      arcs[std::make_pair(it->second.idx,it->second.neighborV->idx)] = std::make_pair<T,T>(it->second.p,it->second.pStar);
+    }
+  }
+
+  return arcs;
+}
+
+template<typename T>
+std::map<std::pair<int,int>, std::pair<T,T> > AMSC<T>::GetMaximumArcs()
+{
+  std::map<std::pair<int,int>, std::pair<T,T> > arcs;
+  for (typename std::map<int, Node<T> >::iterator it = maximumGraph.begin();
+       it != maximumGraph.end(); it++)
+  {
+    if(it->second.type == Maximum)
+    {
+      if (it->second.successor != NULL)
+      {
+        arcs[std::make_pair(it->second.idx,it->second.successor->idx)] = std::make_pair<T,T>(it->second.successor->p, it->second.successor->pStar);
+      }
+    }
+    else
+    {
+      arcs[std::make_pair(it->second.idx,it->second.neighborU->idx)] = std::make_pair<T,T>(it->second.p,it->second.pStar);
+      arcs[std::make_pair(it->second.idx,it->second.neighborV->idx)] = std::make_pair<T,T>(it->second.p,it->second.pStar);
+    }
+  }
+
+  return arcs;
 }
 
 template class AMSC<double>;

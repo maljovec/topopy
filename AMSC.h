@@ -43,6 +43,7 @@
 #include <list>
 #include <iostream>
 #include <iterator>
+#include <limits>
 
 /**
  * Merge data structure
@@ -75,6 +76,75 @@ struct FlowPair
 
   int down;
   int up;
+};
+
+template<typename T>
+struct Saddle
+{
+  Saddle(): idx(-1), u(-1), v(-1), p(std::numeric_limits<T>::infinity()) { }
+  Saddle(int _idx, int _u, int _v, T _p)
+    : idx(_idx), u(_u), v(_v), p(_p) { }
+
+  bool operator<(const Saddle& rhs) const {
+      return rhs.p < this->p || (rhs.p == this->p && rhs.idx < this->idx);
+  }
+
+  int idx;
+  int u;
+  int v;
+  T p;
+};
+
+enum CriticalPointType { Minimum, MinSaddle, MaxSaddle, Maximum };
+
+template<typename T>
+struct Node
+{
+  Node(): idx(-1) { }
+  Node(int _idx, CriticalPointType _type)
+    : idx(_idx), type(_type), neighborU(NULL), neighborV(NULL), successor(NULL)
+  { }
+
+  std::vector<int> Path()
+  {
+    Node *nextNode = this;
+    std::vector<int> path;
+    while (nextNode != NULL)
+    {
+      path.push_back(nextNode->idx);
+      nextNode = nextNode->successor;
+    }
+    return path;
+  }
+
+  std::vector<int> Path(char uv)
+  {
+    Node *nextNode = this;
+    std::vector<int> path;
+    if(type == MinSaddle || type == MaxSaddle)
+    {
+      if ( uv == 'u' )
+      {
+        nextNode = this->neighborU;
+        path = nextNode->Path();
+      }
+      else
+      {
+        nextNode = this->neighborV;
+        path = nextNode->Path();
+      }
+    }
+    path.insert(path.begin(),this->idx);
+    return path;
+  }
+
+  int idx;
+  CriticalPointType type;
+  Node * neighborU;
+  Node * neighborV;
+  Node * successor;
+  T p;
+  T pStar;
 };
 
 /**
@@ -258,6 +328,15 @@ class AMSC
    */
   std::map< std::string, std::vector<int> > GetPartitions(T persistence);
 
+/**
+   * Returns a map where the key represent a minimum/maximum pair
+   * ('minIdx,maxIdx') and the value is a list of associated indices from the
+   * input data
+   * @param level integer value that optionally simplifies the
+   *        topological decomposition before fetching the indices.
+   */
+  std::map< std::string, std::vector<int> > GetPartitionsFromLevel(int level);
+
   /**
    * Returns a map where the key represent a maximum and the value is a list of
    * associated indices from the input data
@@ -276,6 +355,13 @@ class AMSC
 
   void addToHierarchy(bool isMinimum, int dyingIndex, T persistence,
                       int survivingIndex, int saddleIndex);
+
+  std::vector<int> GetMinimumGraph(T lo, T hi);
+  std::vector<int> GetMaximumGraph(T lo, T hi);
+  std::vector<int> GetExtremumGraph(T lo, T hi);
+
+  std::map<std::pair<int,int>, std::pair<T,T> > GetMinimumArcs();
+  std::map<std::pair<int,int>, std::pair<T,T> > GetMaximumArcs();
 
 //  std::string ComputeLinearRegressions(T persistence);
 
@@ -319,6 +405,9 @@ class AMSC
   persistence_map minHierarchy;       /** The simplification hierarchy for all
                                         * of the minima                       */
   //////////////////////////////////////////////////////////////////////////////
+
+  std::map<int, Node<T> > maximumGraph;
+  std::map<int, Node<T> > minimumGraph;
 
   // Private Methods
 
@@ -365,11 +454,13 @@ class AMSC
    * Implements the Steepest Edge algorithm
    */
   void ComputeMaximaPersistence();
+  void ComputeMaximumGraph();
 
   /**
    * Implements the Steepest Edge algorithm
    */
   void ComputeMinimaPersistence();
+  void ComputeMinimumGraph();
 
   /**
    * Removes Extraneous Extrema derived from Flat Regions of the Space
