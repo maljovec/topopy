@@ -446,6 +446,18 @@ class MorseSmaleComplex(TopologicalObject):
             return 'maximum'
         return 'regular'
 
+    def get_maximum_arcs(self):
+        """ Method for retrieving the maximum arcs of the extremum graph
+            for the stable manifolds
+        """
+        return self.__amsc.GetMaximumArcs()
+
+    def get_minimum_arcs(self):
+        """ Method for retrieving the minimum arcs of the extremum graph
+            for the unstable manifolds
+        """
+        return self.__amsc.GetMinimumArcs()
+
     def print_hierarchy(self):
         """ Writes the complete Morse-Smale merge hierarchy to a string
             object.

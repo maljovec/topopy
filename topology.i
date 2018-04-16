@@ -32,4 +32,6 @@ namespace std
   %template(setIntPair)      set< pair<int,int> >;
   %template(mapIntSetInt)    map< int, set<int> >;
   %template(mapIntPairVectorInt)    map< pair<int,int> , vector<int> >;
+  %template(mapArcsFloat)  map<pair<int,int>, pair<float,float> >;
+  %template(mapArcsDouble) map<pair<int,int>, pair<double,double> >;
 }
