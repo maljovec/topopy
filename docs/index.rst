@@ -10,7 +10,9 @@ Welcome to topopy's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   install.rst
+   usage.rst
+   license.rst
 
 Indices and tables
 ==================

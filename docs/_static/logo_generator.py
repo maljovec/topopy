@@ -1,28 +1,13 @@
 import math
 import time
-import scipy
 import numpy as np
-import pandas as pd
 
 import matplotlib
-from matplotlib import cm
 import matplotlib.pyplot as plt
-import matplotlib.tri as tri
-from matplotlib.colors import LightSource
-from matplotlib.markers import MarkerStyle
 
 import seaborn as sns
 import topopy
 
-from matplotlib.colors import LinearSegmentedColormap
-
-from test_functions import *
-
-magma_cmap = matplotlib.cm.get_cmap('magma')
-viridis_cmap = matplotlib.cm.get_cmap('viridis')
-cividis_cmap = matplotlib.cm.get_cmap('cividis')
-earth_cmap = matplotlib.cm.get_cmap('gist_earth')
-terrain_cmap = matplotlib.cm.get_cmap('terrain')
 set3_cmap = matplotlib.cm.get_cmap('Set3')
 
 unique_colors = 12
@@ -54,6 +39,72 @@ def color_msc(X, Y, p):
     return C
 
 
+def bump(x, y, amplitude=1./4., cx=0.5, cy=0.5):
+    return amplitude * np.exp(-((x - cx)**2+(y - cy)**2)/0.001)
+
+
+def unpack2D(_x):
+    """
+        Helper function for splitting 2D data into x and y component to make
+        equations simpler
+    """
+    _x = np.atleast_2d(_x)
+    x = _x[:, 0]
+    y = _x[:, 1]
+    return x, y
+
+
+def df(_x):
+    p = _x
+    centers = [np.array([0.801570375639, 0.161880925191]),
+               np.array([0.829773664309, 0.225535923249]),
+               np.array([0.126453126536, 0.982384428954]),
+               np.array([0.693347266615, 0.764874190406]),
+               np.array([0.415066271455, 0.181807048897])]
+    powers = [1.17269364563,
+              1.38511464016,
+              1.93062086148,
+              1.71429326706,
+              1.7429854611]
+
+    covars = []
+    covars.append(np.array([[6.861127634772008044e+00, 5.713205235351410671e+00],
+                            [5.713205235351410671e+00, 1.182733672915492917e+01]]))
+    covars.append(np.array([[1.832786696485626265e+01, 8.906194773508316231e+00],
+                            [8.906194773508316231e+00, 1.072361068483539803e+01]]))
+    covars.append(np.array([[5.039436493504411807e+00, 4.461204945275424549e+00],
+                            [4.461204945275424549e+00, 1.137522966049168183e+01]]))
+    covars.append(np.array([[2.087529540101837000e+01, 7.181066748222261431e+00],
+                            [7.181066748222261431e+00, 8.028676705850410045e+00]]))
+    covars.append(np.array([[4.053108367744338913e+00, 2.245412739483759967e+00],
+                            [2.245412739483759967e+00, 1.817496301681578785e+01]]))
+
+    dist = [math.pow(math.sqrt(np.dot(p-c, np.dot(covar, (p-c)))), power)
+            for c, covar, power in zip(centers, covars, powers)]
+
+    centers2 = [[0.4, 0.6],
+                [1.0, 1.0]]
+    powers2 = [2,
+               1.38511464016]
+    covars2 = []
+    covars2.append(np.array([[4.053108367744338913e+00, 2.245412739483759967e+00],
+                             [2.245412739483759967e+00, 1.817496301681578785e+01]]))
+    covars2.append(np.array([[6.861127634772008044e+00, 5.713205235351410671e+00],
+                             [5.713205235351410671e+00, 1.182733672915492917e+01]]))
+
+    dist2 = [math.pow(math.sqrt(np.dot(p-c, np.dot(covar, (p-c)))), power)
+             for c, covar, power in zip(centers2, covars2, powers2)]
+
+    min_dist = min(dist)
+    x, y = unpack2D(_x)
+    return min_dist + bump(x, y, amplitude=1., cx=1, cy=1) \
+                    + bump(x, y, amplitude=1., cx=0, cy=0.6) \
+                    + bump(x, y, amplitude=1., cx=0.7, cy=0.0) \
+                    + bump(x, y, amplitude=1., cx=0.494987, cy=0.581399) \
+                    + bump(x, y, amplitude=1., cx=1, cy=0.41) \
+                    + bump(x, y, amplitude=1., cx=1, cy=0.0)
+
+
 min_x = 0
 max_x = 1
 resolution = 500
@@ -63,7 +114,6 @@ stopping_crieterion = 1e-6
 push_size = 1
 step_size = 0.005
 test_function = df
-# test_function = ackley
 
 
 def dxdy(x, foo=test_function):
@@ -109,17 +159,6 @@ for line in msc.print_hierarchy().strip().split(' '):
         saddle_ptrs[saddles[-1]].append(int(tokens[2]))
         saddle_ptrs[saddles[-1]].append(int(tokens[3]))
 
-# [116,
-#  104293,
-#  128500,
-#  ,
-#  130423,
-#  163592,
-#  ,
-#  189235,
-#  207588,
-#  229500,
-#  249748]
 saddles.remove(129428)
 saddles.remove(188237)
 
@@ -139,6 +178,7 @@ plt.figure(num=None, figsize=(8, 8), dpi=100, facecolor='w')
 plt.scatter(X[:, 0], X[:, 1], c=C / np.max(C),
             cmap=set3_cmap, zorder=1, s=1, marker=',')
 
+
 def trace_path(current_x, sgn=1):
     grad_x = dxdy(current_x)
     steps = 0
@@ -149,6 +189,7 @@ def trace_path(current_x, sgn=1):
         trace.append(np.array(current_x))
         steps += 1
     return np.array(trace)
+
 
 traces = []
 traces.append(trace_path(np.array([0.81, 0.18])))
@@ -214,27 +255,11 @@ for trace in traces:
     plt.plot(trace[:, 0], trace[:, 1], c="#000000", linewidth=5, zorder=6)
     plt.plot(trace[:, 0], trace[:, 1], c="#984ea3", linewidth=3, zorder=7)
 
-# plt.contourf(x,y,z, cmap=plt.cm.gist_earth)
 lws = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2]
-# levels = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1, 1]
-# print(min(Z), max(Z))
 plt.contourf(x, y, z, cmap=plt.cm.gist_gray, alpha=0.2, linewidths=lws,
              vmin=np.min(Z), vmax=np.max(Z), zorder=2)
 plt.contour(x, y, z, colors='k', alpha=0.5, linewidths=lws,
             linestyles='solid', zorder=3)
-
-# valid_saddles = []
-# for saddle in saddles:
-#     if X[saddle, 0] > 0 and X[saddle, 0] < 1 and X[saddle, 1] > 0 and X[saddle, 1] < 1:
-#         valid_saddles.append(saddle)
-# valid_saddles = [7348, 5183, 8119, 6617, 7647, 5283, 4158, 5100]
-# print(Z[4158], (Z[7647] + Z[5183]) / 2, Z[6617], Z[8119])
-# level_sets = [Z[6617]]
-# level_sets = [0.52]
-
-
-# plt.contour(x, y, z, colors='#000000', linewidths=4, linestyles='solid', levels=sorted(level_sets), zorder=2)
-# plt.contour(x, y, z, colors='#ff7f00', linewidths=2, linestyles='solid', levels=sorted(level_sets), zorder=3)
 
 print(saddles)
 
