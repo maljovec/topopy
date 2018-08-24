@@ -44,18 +44,27 @@ A library for computing topological data structures stemming from Morse Theory. 
 Installation
 ~~~~~~~~~~~~
 
-Currently, you can use [pip](https://pip.pypa.io/en/stable/) to install this package
+Currently, you can use pip_ to install this package
 and all of its prerequisite libraries::
 
     pip install topopy
 
+.. _pip: https://pip.pypa.io/en/stable/
+
 Or to install from source, install all of the prerequiste libraries:
 
-* [scipy](https://www.scipy.org/)
-* [numpy](http://www.numpy.org/)
-* [sckit-learn](http://scikit-learn.org/)
-* [networkx](https://networkx.github.io/)
-* [nglpy](https://github.com/maljovec/nglpy)
+* scipy_
+* numpy_
+* scikit-learn_
+* networkx_
+* nglpy_
+
+.. _scipy: https://www.scipy.org/
+.. _numpy: http://www.numpy.org/
+.. _scikit-learn: http://scikit-learn.org/)
+.. _networkx: https://networkx.github.io/
+.. _nglpy: https://github.com/maljovec/nglpy
+
 
 And then clone and build the source repository::
 
