@@ -27,6 +27,10 @@ topopy
 
 .. logo
 
+.. image:: docs/_static/topopy.png
+    :align: center
+    :alt: topopy
+
 .. end_logo
 
 .. introduction
