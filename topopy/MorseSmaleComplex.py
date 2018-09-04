@@ -1,40 +1,3 @@
-########################################################################
-# Software License Agreement (BSD License)                             #
-#                                                                      #
-# Copyright 2018 University of Utah                                    #
-# Scientific Computing and Imaging Institute                           #
-# 72 S Central Campus Drive, Room 3750                                 #
-# Salt Lake City, UT 84112                                             #
-#                                                                      #
-# THE BSD LICENSE                                                      #
-#                                                                      #
-# Redistribution and use in source and binary forms, with or without   #
-# modification, are permitted provided that the following conditions   #
-# are met:                                                             #
-#                                                                      #
-# 1. Redistributions of source code must retain the above copyright    #
-#    notice, this list of conditions and the following disclaimer.     #
-# 2. Redistributions in binary form must reproduce the above copyright #
-#    notice, this list of conditions and the following disclaimer in   #
-#    the documentation and/or other materials provided with the        #
-#    distribution.                                                     #
-# 3. Neither the name of the copyright holder nor the names of its     #
-#    contributors may be used to endorse or promote products derived   #
-#    from this software without specific prior written permission.     #
-#                                                                      #
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR #
-# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED       #
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   #
-# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY       #
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL   #
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE    #
-# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS        #
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER #
-# IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR      #
-# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN  #
-# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        #
-########################################################################
-
 import sys
 import time
 import collections
@@ -50,10 +13,19 @@ class MorseSmaleComplex(TopologicalObject):
     """ A wrapper class for the C++ approximate Morse-Smale complex
         Object
     """
-    def __init__(self, graph='beta skeleton', gradient='steepest',
-                 max_neighbors=-1, beta=1.0, normalization=None,
-                 simplification='difference', connect=False, aggregator=None,
-                 debug=False):
+
+    def __init__(
+        self,
+        graph="beta skeleton",
+        gradient="steepest",
+        max_neighbors=-1,
+        beta=1.0,
+        normalization=None,
+        simplification="difference",
+        connect=False,
+        aggregator=None,
+        debug=False,
+    ):
         """ Initialization method that takes at minimum a set of input
             points and corresponding output responses.
             @ In, graph, an optional string specifying the type of
@@ -102,13 +74,16 @@ class MorseSmaleComplex(TopologicalObject):
             @ In, debug, an optional boolean flag for whether debugging
             output should be enabled.
         """
-        super(MorseSmaleComplex, self).__init__(graph=graph, gradient=gradient,
-                                                max_neighbors=max_neighbors,
-                                                beta=beta,
-                                                normalization=normalization,
-                                                connect=connect,
-                                                aggregator=aggregator,
-                                                debug=debug)
+        super(MorseSmaleComplex, self).__init__(
+            graph=graph,
+            gradient=gradient,
+            max_neighbors=max_neighbors,
+            beta=beta,
+            normalization=normalization,
+            connect=connect,
+            aggregator=aggregator,
+            debug=debug,
+        )
         self.simplification = simplification
 
     def reset(self):
@@ -151,29 +126,31 @@ class MorseSmaleComplex(TopologicalObject):
         super(MorseSmaleComplex, self).build(X, Y, w, names, edges)
 
         if self.debug:
-            sys.stderr.write('Decomposition: ')
+            sys.stderr.write("Decomposition: ")
             start = time.clock()
 
-        self.__amsc = AMSCFloat(vectorFloat(self.Xnorm.flatten()),
-                                vectorFloat(self.Y),
-                                vectorString(self.names),
-                                str(self.gradient),
-                                str(self.simplification),
-                                vectorFloat(self.w),
-                                self.graph_rep.full_graph(),
-                                self.debug)
+        self.__amsc = AMSCFloat(
+            vectorFloat(self.Xnorm.flatten()),
+            vectorFloat(self.Y),
+            vectorString(self.names),
+            str(self.gradient),
+            str(self.simplification),
+            vectorFloat(self.w),
+            self.graph_rep.full_graph(),
+            self.debug,
+        )
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
+            sys.stderr.write("%f s\n" % (end - start))
 
-        hierarchy = self.__amsc.PrintHierarchy().strip().split(' ')
+        hierarchy = self.__amsc.PrintHierarchy().strip().split(" ")
         self.hierarchy = hierarchy
         self.persistences = []
         self.mergeSequence = {}
         for line in hierarchy:
-            if line.startswith('Maxima') or line.startswith('Minima'):
-                tokens = line.split(',')
+            if line.startswith("Maxima") or line.startswith("Minima"):
+                tokens = line.split(",")
                 p = float(tokens[1])
                 dyingIndex = int(tokens[2])
                 parentIndex = int(tokens[3])
@@ -205,21 +182,21 @@ class MorseSmaleComplex(TopologicalObject):
         self.descending_partitions = {}
         self.ascending_partitions = {}
         for localMaxIdx in self.maxIdxs:
-            new_key = '{}, {}'.format(globalMinIdx, localMaxIdx)
+            new_key = "{}, {}".format(globalMinIdx, localMaxIdx)
             self.descending_partitions[new_key] = []
         for localMinIdx in self.minIdxs:
-            new_key = '{}, {}'.format(localMinIdx, globalMaxIdx)
+            new_key = "{}, {}".format(localMinIdx, globalMaxIdx)
             self.ascending_partitions[new_key] = []
 
         # Does this need to be stored as a string? This seems excessive.
         for ext_pair in list(partitions.keys()):
-            new_key = str(ext_pair[0])+', '+str(ext_pair[1])
+            new_key = str(ext_pair[0]) + ", " + str(ext_pair[1])
             partitions[new_key] = partitions[ext_pair]
 
-            new_key = '{}, {}'.format(globalMinIdx, ext_pair[1])
+            new_key = "{}, {}".format(globalMinIdx, ext_pair[1])
             self.descending_partitions[new_key].extend(partitions[ext_pair])
 
-            new_key = '{}, {}'.format(ext_pair[0], globalMaxIdx)
+            new_key = "{}, {}".format(ext_pair[0], globalMaxIdx)
             self.ascending_partitions[new_key].extend(partitions[ext_pair])
 
             del partitions[ext_pair]
@@ -228,29 +205,46 @@ class MorseSmaleComplex(TopologicalObject):
 
         # Here we are ordering the sets such that the minimum and maximum
         # occur at the beginning and all other points are in sorted order
-        for partitions in [self.base_partitions, self.ascending_partitions,
-                           self.descending_partitions]:
+        for partitions in [
+            self.base_partitions,
+            self.ascending_partitions,
+            self.descending_partitions,
+        ]:
             for key in partitions.keys():
-                extrema_indices = list(map(int, key.split(',')))
+                extrema_indices = list(map(int, key.split(",")))
                 index_set = set(partitions[key])
                 for index in extrema_indices:
                     if index in index_set:
                         index_set.remove(index)
                 partitions[key] = extrema_indices + sorted(list(index_set))
 
-        hierarchy = self.__amsc.PrintHierarchy().strip().split(' ')
+        hierarchy = self.__amsc.PrintHierarchy().strip().split(" ")
         self.min_hierarchy = []
         self.max_hierarchy = []
         for line in hierarchy:
-            tokens = line.split(',')
-            if (tokens[0] == 'Maxima'):
-                self.max_hierarchy.append('Maxima,'+tokens[1] + ',' +
-                                          tokens[2] + ',' + tokens[3] + ',' +
-                                          tokens[4])
-            elif (tokens[0] == 'Minima'):
-                self.min_hierarchy.append('Minima,'+tokens[1] + ',' +
-                                          tokens[2] + ',' + tokens[3] + ',' +
-                                          tokens[4])
+            tokens = line.split(",")
+            if tokens[0] == "Maxima":
+                self.max_hierarchy.append(
+                    "Maxima,"
+                    + tokens[1]
+                    + ","
+                    + tokens[2]
+                    + ","
+                    + tokens[3]
+                    + ","
+                    + tokens[4]
+                )
+            elif tokens[0] == "Minima":
+                self.min_hierarchy.append(
+                    "Minima,"
+                    + tokens[1]
+                    + ","
+                    + tokens[2]
+                    + ","
+                    + tokens[3]
+                    + ","
+                    + tokens[4]
+                )
 
         ################################################################
 
@@ -262,22 +256,38 @@ class MorseSmaleComplex(TopologicalObject):
             level partitions in the data
         """
         if partitionFilename is None:
-            partitionFilename = 'Base_Partition.json'
-        with open(partitionFilename, 'w') as fp:
+            partitionFilename = "Base_Partition.json"
+        with open(partitionFilename, "w") as fp:
             json.dump(self.base_partitions, fp)
             fp.close()
 
         if hierarchyFilename is None:
-            hierarchyFilename = 'Hierarchy.csv'
-        with open(hierarchyFilename, 'w') as modified:
+            hierarchyFilename = "Hierarchy.csv"
+        with open(hierarchyFilename, "w") as modified:
             for line in self.hierarchy:
-                tokens = line.split(',')
-                if (tokens[0] == 'Maxima'):
-                    modified.write(tokens[1] + ',1,' + tokens[2] + ',' +
-                                   tokens[3] + ',' + tokens[4] + '\n')
+                tokens = line.split(",")
+                if tokens[0] == "Maxima":
+                    modified.write(
+                        tokens[1]
+                        + ",1,"
+                        + tokens[2]
+                        + ","
+                        + tokens[3]
+                        + ","
+                        + tokens[4]
+                        + "\n"
+                    )
                 else:
-                    modified.write(tokens[1] + ',0,' + tokens[2] + ',' +
-                                   tokens[3] + ',' + tokens[4] + '\n')
+                    modified.write(
+                        tokens[1]
+                        + ",0,"
+                        + tokens[2]
+                        + ","
+                        + tokens[3]
+                        + ","
+                        + tokens[4]
+                        + "\n"
+                    )
             modified.close()
 
     # Depending on the persistence simplification strategy, this could
@@ -326,7 +336,7 @@ class MorseSmaleComplex(TopologicalObject):
             minMaxKeys = partitions.keys()
             for strMinMax in minMaxKeys:
                 indices = partitions[strMinMax]
-                minMax = tuple(map(int, strMinMax.split(',')))
+                minMax = tuple(map(int, strMinMax.split(",")))
                 tupleKeyedPartitions[minMax] = indices
             self.partitions[persistence] = tupleKeyedPartitions
             # self.partitions[persistence] = partitions
@@ -395,12 +405,12 @@ class MorseSmaleComplex(TopologicalObject):
         if len(indices) == 0:
             return []
         partitions = self.__amsc.GetPartitions(self.persistence)
-        labels = self.X.shape[0]*[None]
+        labels = self.X.shape[0] * [None]
         for strMinMax in partitions.keys():
             partIndices = partitions[strMinMax]
-            label = tuple(map(int, strMinMax.split(',')))
+            label = tuple(map(int, strMinMax.split(",")))
             for idx in np.intersect1d(partIndices, indices):
-                    labels[idx] = label
+                labels[idx] = label
 
         labels = np.array(labels)
         if len(indices) == 1:
@@ -441,10 +451,10 @@ class MorseSmaleComplex(TopologicalObject):
             input sample: will be 'maximum,' 'minimum,' or 'regular.'
         """
         if idx in self.minIdxs:
-            return 'minimum'
+            return "minimum"
         elif idx in self.maxIdxs:
-            return 'maximum'
-        return 'regular'
+            return "maximum"
+        return "regular"
 
     def print_hierarchy(self):
         """ Writes the complete Morse-Smale merge hierarchy to a string
