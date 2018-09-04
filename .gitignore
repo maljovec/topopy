@@ -2,6 +2,7 @@ deprecated/*
 extra/*
 .vscode/*
 build/*
+htmlcov/*
 *_wrap.cpp
 *.csv
 *.png
@@ -9,9 +10,12 @@ build/*
 topology.py
 topopy.egg-info/*
 *.so
+*.pyd
 *pyc
 .eggs/*
 .cache/*
 *.log
 *.txt
 *tar.gz
+*.json
+.coverage

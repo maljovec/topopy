@@ -1,21 +1,21 @@
 """
 The Topology module includes the approximate Morse-Smale complex
-(MorseSmaleComplex) code, all of its associated visualization views and the
-MergeTree computation.
+(MorseSmaleComplex) and Merge Tree computation.
 
 Created on January 11, 2016
-@author: maljdp
+@author: maljovec
 """
 
 from __future__ import absolute_import
 
-## These lines ensure that we do not have to do something like:
-## 'from contrib.MorseSmaleComplex import MorseSmaleComplex' outside of this
-## submodule
+# These lines ensure that we do not have to do something like:
+# 'from contrib.MorseSmaleComplex import MorseSmaleComplex' outside of
+# this submodule
+from .TopologicalObject import TopologicalObject
 from .MorseSmaleComplex import MorseSmaleComplex
 from .MergeTree import MergeTree
 from .ContourTree import ContourTree
-# from .MainWindow import MainWindow
 
-# We should not really need this as we do not use wildcard imports
-__all__ = ['MorseSmaleComplex','MergeTree','ContourTree']
+__all__ = ['TopologicalObject', 'MorseSmaleComplex', 'MergeTree',
+           'ContourTree']
+__version__ = '0.0.6'
