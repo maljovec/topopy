@@ -1,40 +1,3 @@
-########################################################################
-# Software License Agreement (BSD License)                             #
-#                                                                      #
-# Copyright 2018 University of Utah                                    #
-# Scientific Computing and Imaging Institute                           #
-# 72 S Central Campus Drive, Room 3750                                 #
-# Salt Lake City, UT 84112                                             #
-#                                                                      #
-# THE BSD LICENSE                                                      #
-#                                                                      #
-# Redistribution and use in source and binary forms, with or without   #
-# modification, are permitted provided that the following conditions   #
-# are met:                                                             #
-#                                                                      #
-# 1. Redistributions of source code must retain the above copyright    #
-#    notice, this list of conditions and the following disclaimer.     #
-# 2. Redistributions in binary form must reproduce the above copyright #
-#    notice, this list of conditions and the following disclaimer in   #
-#    the documentation and/or other materials provided with the        #
-#    distribution.                                                     #
-# 3. Neither the name of the copyright holder nor the names of its     #
-#    contributors may be used to endorse or promote products derived   #
-#    from this software without specific prior written permission.     #
-#                                                                      #
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR #
-# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED       #
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   #
-# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY       #
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL   #
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE    #
-# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS        #
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER #
-# IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR      #
-# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN  #
-# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        #
-########################################################################
-
 import sys
 import time
 import warnings
@@ -49,10 +12,11 @@ class TopologicalObject(object):
     """ A base class for housing common interactions between Morse and
         Morse-Smale complexes, and Contour and Merge Trees
     """
+
     precision = 16
 
     @staticmethod
-    def aggregate_duplicates(X, Y, aggregator='mean', precision=precision):
+    def aggregate_duplicates(X, Y, aggregator="mean", precision=precision):
         """ A function that will attempt to collapse duplicates in
             domain space, X, by aggregating values over the range space,
             Y.
@@ -75,21 +39,23 @@ class TopologicalObject(object):
         """
         if callable(aggregator):
             pass
-        elif 'min' in aggregator.lower():
+        elif "min" in aggregator.lower():
             aggregator = np.min
-        elif 'max' in aggregator.lower():
+        elif "max" in aggregator.lower():
             aggregator = np.max
-        elif 'median' in aggregator.lower():
+        elif "median" in aggregator.lower():
             aggregator = np.median
-        elif aggregator.lower() in ['average', 'mean']:
+        elif aggregator.lower() in ["average", "mean"]:
             aggregator = np.mean
-        elif 'first' in aggregator.lower():
+        elif "first" in aggregator.lower():
             aggregator = lambda x: x[0]
-        elif 'last' in aggregator.lower():
+        elif "last" in aggregator.lower():
             aggregator = lambda x: x[-1]
         else:
-            warnings.warn('Aggregator \"{}\" not understood. Skipping sample '
-                          'aggregation.'.format(aggregator))
+            warnings.warn(
+                'Aggregator "{}" not understood. Skipping sample '
+                "aggregation.".format(aggregator)
+            )
             return X, Y
 
         is_y_multivariate = Y.ndim > 1
@@ -107,9 +73,10 @@ class TopologicalObject(object):
 
         reduced_y = np.empty((new_size, Y.shape[1]))
 
-        warnings.warn('Domain space duplicates caused a data reduction. ' +
-                      'Original size: {} vs. New size: {}'.format(old_size,
-                                                                  new_size))
+        warnings.warn(
+            "Domain space duplicates caused a data reduction. "
+            + "Original size: {} vs. New size: {}".format(old_size, new_size)
+        )
         for col in range(Y.shape[1]):
             for i, distinct_row in enumerate(unique_xs):
                 filtered_rows = np.all(X_rounded == distinct_row, axis=1)
@@ -120,9 +87,17 @@ class TopologicalObject(object):
 
         return unique_xs, reduced_y
 
-    def __init__(self, graph='beta skeleton', gradient='steepest',
-                 max_neighbors=-1, beta=1.0, normalization=None, connect=False,
-                 aggregator=None, debug=False):
+    def __init__(
+        self,
+        graph="beta skeleton",
+        gradient="steepest",
+        max_neighbors=-1,
+        beta=1.0,
+        normalization=None,
+        connect=False,
+        aggregator=None,
+        debug=False,
+    ):
         """ Initialization method that takes at minimum a set of input
             points and corresponding output responses.
             @ In, graph, an optional string specifying the type of
@@ -208,27 +183,25 @@ class TopologicalObject(object):
         if w is not None:
             self.w = np.array(w)
         else:
-            self.w = np.ones(len(Y))*1.0/float(len(Y))
+            self.w = np.ones(len(Y)) * 1.0 / float(len(Y))
 
         self.names = names
 
         if self.names is None:
             self.names = []
             for d in range(self.get_dimensionality()):
-                self.names.append('x%d' % d)
-            self.names.append('y')
+                self.names.append("x%d" % d)
+            self.names.append("y")
 
-        if self.normalization == 'feature':
+        if self.normalization == "feature":
             # This doesn't work with one-dimensional arrays on older
             # versions of sklearn
             min_max_scaler = sklearn.preprocessing.MinMaxScaler()
             self.Xnorm = min_max_scaler.fit_transform(np.atleast_2d(self.X))
-        elif self.normalization == 'zscore':
-            self.Xnorm = sklearn.preprocessing.scale(self.X,
-                                                     axis=0,
-                                                     with_mean=True,
-                                                     with_std=True,
-                                                     copy=True)
+        elif self.normalization == "zscore":
+            self.Xnorm = sklearn.preprocessing.scale(
+                self.X, axis=0, with_mean=True, with_std=True, copy=True
+            )
         else:
             self.Xnorm = np.array(self.X)
 
@@ -257,25 +230,24 @@ class TopologicalObject(object):
         self.__set_data(X, Y, w, names)
 
         if self.debug:
-            sys.stderr.write('Graph Preparation: ')
+            sys.stderr.write("Graph Preparation: ")
             start = time.clock()
 
-        self.graph_rep = nglpy.Graph(self.Xnorm, self.graph,
-                                     self.max_neighbors, self.beta,
-                                     connect=self.connect)
+        self.graph_rep = nglpy.Graph(
+            self.Xnorm, self.graph, self.max_neighbors, self.beta, connect=self.connect
+        )
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
+            sys.stderr.write("%f s\n" % (end - start))
 
-    def load_data_and_build(self, filename, delimiter=','):
+    def load_data_and_build(self, filename, delimiter=","):
         """ Convenience function for directly working with a data file.
             This opens a file and reads the data into an array, sets the
             data as an nparray and list of dimnames
             @ In, filename, string representing the data file
         """
-        data = np.genfromtxt(filename, dtype=float, delimiter=delimiter,
-                             names=True)
+        data = np.genfromtxt(filename, dtype=float, delimiter=delimiter, names=True)
         names = list(data.dtype.names)
         data = data.view(np.float64).reshape(data.shape + (-1,))
 
@@ -307,7 +279,7 @@ class TopologicalObject(object):
         if cols is None:
             cols = list(range(0, self.get_dimensionality()))
 
-        if not hasattr(rows, '__iter__'):
+        if not hasattr(rows, "__iter__"):
             rows = [rows]
         rows = sorted(list(set(rows)))
 
@@ -328,7 +300,7 @@ class TopologicalObject(object):
         if cols is None:
             cols = list(range(0, self.get_dimensionality()))
 
-        if not hasattr(rows, '__iter__'):
+        if not hasattr(rows, "__iter__"):
             rows = [rows]
         rows = sorted(list(set(rows)))
 
@@ -347,7 +319,7 @@ class TopologicalObject(object):
         if indices is None:
             indices = list(range(0, self.get_sample_size()))
         else:
-            if not hasattr(indices, '__iter__'):
+            if not hasattr(indices, "__iter__"):
                 indices = [indices]
             indices = sorted(list(set(indices)))
 
@@ -405,9 +377,9 @@ class TopologicalObject(object):
         """
 
         if self.aggregator is not None:
-            X, Y = TopologicalObject.aggregate_duplicates(self.X,
-                                                          self.Y,
-                                                          self.aggregator)
+            X, Y = TopologicalObject.aggregate_duplicates(
+                self.X, self.Y, self.aggregator
+            )
             self.X = X
             self.Y = Y
 
@@ -423,11 +395,13 @@ class TopologicalObject(object):
         #                                                      unique_ys))
 
         if len(self.X) != unique_xs:
-            raise ValueError('Domain space has duplicates. Try using an '
-                             'aggregator function to consolidate duplicates '
-                             'into a single sample with one range value. '
-                             'e.g., ' + self.__class__.__name__ +
-                             '(aggregator=\'max\'). '
-                             '\n\tNumber of '
-                             'Records: {}\n\tNumber of Unique Records: {}\n'
-                             .format(len(self.X), unique_xs))
+            raise ValueError(
+                "Domain space has duplicates. Try using an "
+                "aggregator function to consolidate duplicates "
+                "into a single sample with one range value. "
+                "e.g., " + self.__class__.__name__ + "(aggregator='max'). "
+                "\n\tNumber of "
+                "Records: {}\n\tNumber of Unique Records: {}\n".format(
+                    len(self.X), unique_xs
+                )
+            )

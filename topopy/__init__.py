@@ -16,6 +16,5 @@ from .MorseSmaleComplex import MorseSmaleComplex
 from .MergeTree import MergeTree
 from .ContourTree import ContourTree
 
-__all__ = ['TopologicalObject', 'MorseSmaleComplex', 'MergeTree',
-           'ContourTree']
-__version__ = '0.0.6'
+__all__ = ["TopologicalObject", "MorseSmaleComplex", "MergeTree", "ContourTree"]
+__version__ = "0.0.6"
