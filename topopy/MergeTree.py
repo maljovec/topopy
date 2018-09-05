@@ -68,7 +68,7 @@ class MergeTree(TopologicalObject):
             debug=debug,
         )
 
-    def build(self, X, Y, w=None, names=None, edges=None):
+    def build(self, X, Y, w=None, edges=None):
         """ Assigns data to this object and builds the Merge Tree
             @ In, X, an m-by-n array of values specifying m
             n-dimensional samples
@@ -77,14 +77,10 @@ class MergeTree(TopologicalObject):
             @ In, w, an optional m vector of values specifying the
             weights associated to each of the m samples used. Default of
             None means all points will be equally weighted
-            @ In, names, an optional list of strings that specify the
-            names to associate to the n input dimensions and 1 output
-            dimension. Default of None means input variables will be x0,
-            x1, ..., x(n-1) and the output will be y
             @ In, edges, an optional list of custom edges to use as a
             starting point for pruning, or in place of a computed graph.
         """
-        super(MergeTree, self).build(X, Y, w, names, edges)
+        super(MergeTree, self).build(X, Y, w, edges)
 
         if self.debug:
             sys.stderr.write("Merge Tree Computation: ")
@@ -93,7 +89,6 @@ class MergeTree(TopologicalObject):
         self.__tree = MergeTreeFloat(
             vectorFloat(self.Xnorm.flatten()),
             vectorFloat(self.Y),
-            vectorString(self.names),
             str(self.gradient),
             self.graph_rep.full_graph(),
             self.debug,
@@ -147,7 +142,6 @@ class MergeTree(TopologicalObject):
         self.__tree = MergeTreeFloat(
             vectorFloat(contour_tree.Xnorm.flatten()),
             vectorFloat(Y),
-            vectorString(contour_tree.names),
             str(contour_tree.gradient),
             contour_tree.graph_rep.full_graph(),
             self.debug,

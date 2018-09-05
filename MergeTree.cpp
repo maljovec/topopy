@@ -30,7 +30,6 @@ public:
 template<typename T>
 MergeTree<T>::MergeTree(std::vector<T> &Xin,
                         std::vector<T> &yin,
-                        std::vector<std::string> &_names,
                         std::string gradientMethod,
                         std::map< int, std::set<int> > &neighborhoods,
                         bool verbosity)
@@ -39,9 +38,6 @@ MergeTree<T>::MergeTree(std::vector<T> &Xin,
   time_t myTime;
 
   DebugTimerStart(myTime, "\rInitializing...");
-
-  for(unsigned int i = 0; i < _names.size(); i++)
-    names.push_back(_names[i]);
 
   int M = Xin.size() / yin.size();
   int N = yin.size();

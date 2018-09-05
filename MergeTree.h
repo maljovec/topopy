@@ -24,9 +24,6 @@ class MergeTree
    * @param Xin flattened vector of input data in row-major order
    * @param yin vector of response values in a one-to-one correspondence with
    *        Xin
-   * @param names a vector of string names for each dimension in the input data
-   *        and the name of the response value which should be at the end of the
-   *        vector
    * @param gradientMethod string identifier for what type of gradient
    *        estimation method is used
    * @param neighborhoods a map where the keys are individual indices and the
@@ -34,7 +31,7 @@ class MergeTree
    *       (TODO consider using a vector< set<int> > here)
    */
   MergeTree(std::vector<T> &Xin, std::vector<T> &yin,
-            std::vector<std::string> &_names, std::string gradientMethod,
+            std::string gradientMethod,
             std::map< int, std::set<int> > &neighborhoods,
             bool verbosity=false);
 
@@ -86,8 +83,6 @@ class MergeTree
   std::vector< std::vector<T> > X;                      /** Input data matrix */
   std::vector<T> y;                                    /** Output data vector */
   std::vector<T> w;                               /** Probability data vector */
-
-  std::vector<std::string> names;    /** Names of the input/output dimensions */
 
   std::map< int, std::set<int> > neighbors;         /** Maps a list of points
                                                      *  that are neighbors of
