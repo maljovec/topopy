@@ -1,11 +1,11 @@
 """
     This module will test the basic functionalities of
-    topopy.MorseSmaleComplex
+    topopy.MorseSmaleComplex and by proxy the topopy.MorseComplex
 """
 from unittest import TestCase
 import numpy as np
 import topopy
-from .testFunctions import gerber, generate_test_grid_2d
+from .test_functions import gerber, generate_test_grid_2d
 import sklearn
 import os
 import json
@@ -35,14 +35,14 @@ class TestMSC(TestCase):
         # __init__
         # build
         # __set_data
-        self.msc = topopy.MorseSmaleComplex(debug=False)
+        self.msc = topopy.MorseSmaleComplex(debug=False, max_neighbors=10)
         self.msc.build(self.X, self.Y)
 
     def test_debug(self):
         """ Test the debugging output of the MSC
         """
         self.setup()
-        self.msc = topopy.MorseSmaleComplex(debug=True)
+        self.msc = topopy.MorseSmaleComplex(debug=True, max_neighbors=10)
         self.msc.build(self.X, self.Y)
 
     def test_default(self):
@@ -226,7 +226,7 @@ class TestMSC(TestCase):
             "test_file.csv",
             np.hstack((self.X, np.atleast_2d(self.Y).T)),
             delimiter=",",
-            header=",".join(self.msc.names),
+            header="x0,x1,y",
         )
         msc.load_data_and_build("test_file.csv", delimiter=",")
         os.remove("test_file.csv")
@@ -321,11 +321,6 @@ class TestMSC(TestCase):
         )
         self.assertEqual(
             [], self.msc.w, "reset should clear all " + "internal storage of the msc."
-        )
-        self.assertEqual(
-            [],
-            self.msc.names,
-            "reset should clear all " + "internal storage of the msc.",
         )
         self.assertEqual(
             [],

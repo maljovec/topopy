@@ -5,7 +5,7 @@
 from unittest import TestCase
 import numpy as np
 import topopy
-from .testFunctions import gerber, generate_test_grid_2d
+from .test_functions import gerber, generate_test_grid_2d
 import sklearn
 
 
@@ -33,17 +33,17 @@ class TestCT(TestCase):
         # __init__
         # build
         # __set_data
-        self.ct = topopy.ContourTree(debug=False)
+        self.ct = topopy.ContourTree(debug=False, max_neighbors=10)
         self.ct.build(self.X, self.Y)
 
     def test_debug(self):
         """ Test the debugging output of the CT
         """
         self.setup()
-        self.ct = topopy.ContourTree(debug=True, short_circuit=True)
+        self.ct = topopy.ContourTree(debug=True, short_circuit=True, max_neighbors=10)
         self.ct.build(self.X, self.Y)
 
-        self.ct = topopy.ContourTree(debug=True, short_circuit=False)
+        self.ct = topopy.ContourTree(debug=True, short_circuit=False, max_neighbors=10)
         self.ct.build(self.X, self.Y)
 
     def test_default(self):
@@ -67,7 +67,7 @@ class TestCT(TestCase):
         """ Test the build process of the ContourTree
         """
         self.setup()
-        self.ct = topopy.ContourTree(short_circuit=False)
+        self.ct = topopy.ContourTree(short_circuit=False, max_neighbors=10)
         self.ct.build(self.X, self.Y)
 
         self.assertEqual(
@@ -115,7 +115,7 @@ class TestCT(TestCase):
         """
         self.setup()
 
-        mt = topopy.MergeTree(debug=True)
+        mt = topopy.MergeTree(debug=True, max_neighbors=10)
         mt.build(self.X, self.Y)
 
         self.assertEqual(

@@ -5,7 +5,7 @@
 from unittest import TestCase
 import numpy as np
 import topopy
-from .testFunctions import gerber, generate_test_grid_2d
+from .test_functions import gerber, generate_test_grid_2d
 import sklearn
 
 
@@ -33,7 +33,7 @@ class TestTO(TestCase):
         # __init__
         # build
         # __set_data
-        self.to = topopy.TopologicalObject(debug=False)
+        self.to = topopy.TopologicalObject(debug=False, max_neighbors=10)
         self.to.build(self.X, self.Y)
 
     def test_aggregation(self):
@@ -145,7 +145,7 @@ class TestTO(TestCase):
 
         to = topopy.TopologicalObject()
         self.assertRaises(ValueError, to.build, **{"X": X, "Y": Y})
-        to = topopy.TopologicalObject(aggregator="mean")
+        to = topopy.TopologicalObject(aggregator="mean", max_neighbors=10)
         to.build(X, Y)
 
     def test_empty(self):
@@ -159,40 +159,8 @@ class TestTO(TestCase):
         """ Test the debugging output of the TopologicalObject
         """
         self.setup()
-        self.to = topopy.TopologicalObject(debug=True)
+        self.to = topopy.TopologicalObject(debug=True, max_neighbors=10)
         self.to.build(self.X, self.Y)
-
-    def test_get_names(self):
-        """ Test the ability for the code to generate dummy names
-            and also correctly use passed in names.
-        """
-        self.setup()
-
-        default_names = []
-        for d in range(self.to.get_dimensionality()):
-            default_names.append("x%d" % d)
-        default_names.append("y")
-
-        test_names = self.to.get_names()
-        for i in range(len(default_names)):
-            self.assertEqual(
-                default_names[i],
-                test_names[i],
-                self.to.__class__.__name__ + " should generate "
-                "default value names for labeling purposes.",
-            )
-
-        custom_names = ["a", "b", "c"]
-        self.to.build(self.X, self.Y, names=custom_names)
-        test_names = self.to.get_names()
-        for i in range(len(custom_names)):
-            self.assertEqual(
-                custom_names[i],
-                test_names[i],
-                self.to.__class__.__name__ + " object should use "
-                "any custom names passed in for labeling "
-                "purposes.",
-            )
 
     def test_get_normed_x(self):
         """ Tests get_normed_x in several different contexts:
@@ -206,7 +174,7 @@ class TestTO(TestCase):
         self.setup()
 
         for norm, X in self.norm_x.items():
-            to = topopy.TopologicalObject(normalization=norm)
+            to = topopy.TopologicalObject(normalization=norm, max_neighbors=10)
             to.build(self.X, self.Y)
 
             # Test single column extraction
@@ -395,9 +363,6 @@ class TestTO(TestCase):
         )
         self.assertEqual(
             [], self.to.Y, "reset should clear all " + "internal storage of the to."
-        )
-        self.assertEqual(
-            [], self.to.names, "reset should clear all " + "internal storage of the to."
         )
         self.assertEqual(
             [], self.to.Xnorm, "reset should clear all " + "internal storage of the to."
