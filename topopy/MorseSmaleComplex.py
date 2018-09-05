@@ -5,8 +5,8 @@ import json
 
 import numpy as np
 
-from .topology import AMSCFloat, vectorFloat, vectorString
 from . import TopologicalObject
+from . import MorseComplex
 
 
 class MorseSmaleComplex(TopologicalObject):
@@ -103,10 +103,9 @@ class MorseSmaleComplex(TopologicalObject):
         self.minIdxs = []
         self.maxIdxs = []
 
-        self.__amsc = None
         self.hierarchy = None
 
-    def build(self, X, Y, w=None, names=None, edges=None):
+    def build(self, X, Y, w=None, edges=None):
         """ Assigns data to this object and builds the Morse-Smale
             Complex
             @ In, X, an m-by-n array of values specifying m
@@ -116,137 +115,42 @@ class MorseSmaleComplex(TopologicalObject):
             @ In, w, an optional m vector of values specifying the
             weights associated to each of the m samples used. Default of
             None means all points will be equally weighted
-            @ In, names, an optional list of strings that specify the
-            names to associate to the n input dimensions and 1 output
-            dimension. Default of None means input variables will be x0,
-            x1, ..., x(n-1) and the output will be y
             @ In, edges, an optional list of custom edges to use as a
             starting point for pruning, or in place of a computed graph.
         """
-        super(MorseSmaleComplex, self).build(X, Y, w, names, edges)
+        super(MorseSmaleComplex, self).build(X, Y, w, edges)
 
         if self.debug:
             sys.stderr.write("Decomposition: ")
             start = time.clock()
 
-        self.__amsc = AMSCFloat(
-            vectorFloat(self.Xnorm.flatten()),
-            vectorFloat(self.Y),
-            vectorString(self.names),
-            str(self.gradient),
-            str(self.simplification),
-            vectorFloat(self.w),
-            self.graph_rep.full_graph(),
-            self.debug,
+        stableManifolds = MorseComplex(
+            graph=self.graph,
+            gradient=self.gradient,
+            max_neighbors=self.max_neighbors,
+            beta=self.beta,
+            normalization=self.normalization,
+            simplification="difference",
+            connect=self.connect,
+            aggregator=self.aggregator,
+            debug=self.debug,
+        )
+        unstableManifolds = MorseComplex(
+            graph=self.graph,
+            gradient=self.gradient,
+            max_neighbors=self.max_neighbors,
+            beta=self.beta,
+            normalization=self.normalization,
+            simplification="difference",
+            connect=self.connect,
+            aggregator=self.aggregator,
+            debug=self.debug,
         )
 
-        if self.debug:
-            end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
-
-        hierarchy = self.__amsc.PrintHierarchy().strip().split(" ")
-        self.hierarchy = hierarchy
-        self.persistences = []
-        self.mergeSequence = {}
-        for line in hierarchy:
-            if line.startswith("Maxima") or line.startswith("Minima"):
-                tokens = line.split(",")
-                p = float(tokens[1])
-                dyingIndex = int(tokens[2])
-                parentIndex = int(tokens[3])
-                saddleIndex = int(tokens[4])
-
-                self.mergeSequence[dyingIndex] = (p, parentIndex, saddleIndex)
-                self.persistences.append(p)
-
-        self.persistences = sorted(list(set(self.persistences)))
-
-        ################################################################
-        # P Save starts here.
-        p_interest = 0
-        # p_interest = input('Input Persistence of Interest: ')
-        # idx_interest = -1
-        # for idx in range(0,len(self.persistences)):
-        #     if float(p_interest)<= self.persistences[idx]:
-        #         idx_interest = idx
-        #         break
-
-        partitions = self.get_partitions(p_interest)
-        cellIdxs = np.array(list(partitions.keys()))
-        self.minIdxs = np.unique(cellIdxs[:, 0])
-        self.maxIdxs = np.unique(cellIdxs[:, 1])
-
-        globalMinIdx = np.argmin(self.Y)
-        globalMaxIdx = np.argmax(self.Y)
-
-        self.descending_partitions = {}
-        self.ascending_partitions = {}
-        for localMaxIdx in self.maxIdxs:
-            new_key = "{}, {}".format(globalMinIdx, localMaxIdx)
-            self.descending_partitions[new_key] = []
-        for localMinIdx in self.minIdxs:
-            new_key = "{}, {}".format(localMinIdx, globalMaxIdx)
-            self.ascending_partitions[new_key] = []
-
-        # Does this need to be stored as a string? This seems excessive.
-        for ext_pair in list(partitions.keys()):
-            new_key = str(ext_pair[0]) + ", " + str(ext_pair[1])
-            partitions[new_key] = partitions[ext_pair]
-
-            new_key = "{}, {}".format(globalMinIdx, ext_pair[1])
-            self.descending_partitions[new_key].extend(partitions[ext_pair])
-
-            new_key = "{}, {}".format(ext_pair[0], globalMaxIdx)
-            self.ascending_partitions[new_key].extend(partitions[ext_pair])
-
-            del partitions[ext_pair]
-
-        self.base_partitions = partitions
-
-        # Here we are ordering the sets such that the minimum and maximum
-        # occur at the beginning and all other points are in sorted order
-        for partitions in [
-            self.base_partitions,
-            self.ascending_partitions,
-            self.descending_partitions,
-        ]:
-            for key in partitions.keys():
-                extrema_indices = list(map(int, key.split(",")))
-                index_set = set(partitions[key])
-                for index in extrema_indices:
-                    if index in index_set:
-                        index_set.remove(index)
-                partitions[key] = extrema_indices + sorted(list(index_set))
-
-        hierarchy = self.__amsc.PrintHierarchy().strip().split(" ")
-        self.min_hierarchy = []
-        self.max_hierarchy = []
-        for line in hierarchy:
-            tokens = line.split(",")
-            if tokens[0] == "Maxima":
-                self.max_hierarchy.append(
-                    "Maxima,"
-                    + tokens[1]
-                    + ","
-                    + tokens[2]
-                    + ","
-                    + tokens[3]
-                    + ","
-                    + tokens[4]
-                )
-            elif tokens[0] == "Minima":
-                self.min_hierarchy.append(
-                    "Minima,"
-                    + tokens[1]
-                    + ","
-                    + tokens[2]
-                    + ","
-                    + tokens[3]
-                    + ","
-                    + tokens[4]
-                )
-
-        ################################################################
+        stableManifolds.build(X, Y, w, edges)
+        X_reversed = X[::-1]
+        Y_negated_reversed = -Y[::-1]
+        unstableManifolds.build(X_reversed, Y_negated_reversed, w, edges)
 
     def save(self, hierarchyFilename=None, partitionFilename=None):
         """ Saves a constructed Morse-Smale Complex in json file
@@ -264,31 +168,7 @@ class MorseSmaleComplex(TopologicalObject):
         if hierarchyFilename is None:
             hierarchyFilename = "Hierarchy.csv"
         with open(hierarchyFilename, "w") as modified:
-            for line in self.hierarchy:
-                tokens = line.split(",")
-                if tokens[0] == "Maxima":
-                    modified.write(
-                        tokens[1]
-                        + ",1,"
-                        + tokens[2]
-                        + ","
-                        + tokens[3]
-                        + ","
-                        + tokens[4]
-                        + "\n"
-                    )
-                else:
-                    modified.write(
-                        tokens[1]
-                        + ",0,"
-                        + tokens[2]
-                        + ","
-                        + tokens[3]
-                        + ","
-                        + tokens[4]
-                        + "\n"
-                    )
-            modified.close()
+            pass
 
     # Depending on the persistence simplification strategy, this could
     # alter the hierarchy, so let's remove this feature until further
@@ -355,7 +235,7 @@ class MorseSmaleComplex(TopologicalObject):
         """
         if persistence is None:
             persistence = self.persistence
-        return self.__amsc.GetStableManifolds(persistence)
+        pass
 
     def get_unstable_manifolds(self, persistence=None):
         """ Returns the partitioned data based on a specified
@@ -370,7 +250,7 @@ class MorseSmaleComplex(TopologicalObject):
         """
         if persistence is None:
             persistence = self.persistence
-        return self.__amsc.GetUnstableManifolds(persistence)
+        pass
 
     def get_persistence(self):
         """ Sets the persistence simplfication level to be
@@ -462,4 +342,4 @@ class MorseSmaleComplex(TopologicalObject):
             @ Out, a string object storing the entire merge hierarchy of
             all minima and maxima.
         """
-        return self.__amsc.PrintHierarchy()
+        pass
