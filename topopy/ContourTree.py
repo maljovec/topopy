@@ -1,39 +1,3 @@
-########################################################################
-# Software License Agreement (BSD License)                             #
-#                                                                      #
-# Copyright 2018 University of Utah                                    #
-# Scientific Computing and Imaging Institute                           #
-# 72 S Central Campus Drive, Room 3750                                 #
-# Salt Lake City, UT 84112                                             #
-#                                                                      #
-# THE BSD LICENSE                                                      #
-#                                                                      #
-# Redistribution and use in source and binary forms, with or without   #
-# modification, are permitted provided that the following conditions   #
-# are met:                                                             #
-#                                                                      #
-# 1. Redistributions of source code must retain the above copyright    #
-#    notice, this list of conditions and the following disclaimer.     #
-# 2. Redistributions in binary form must reproduce the above copyright #
-#    notice, this list of conditions and the following disclaimer in   #
-#    the documentation and/or other materials provided with the        #
-#    distribution.                                                     #
-# 3. Neither the name of the copyright holder nor the names of its     #
-#    contributors may be used to endorse or promote products derived   #
-#    from this software without specific prior written permission.     #
-#                                                                      #
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR #
-# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED       #
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   #
-# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY       #
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL   #
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE    #
-# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS        #
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER #
-# IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR      #
-# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN  #
-# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        #
-########################################################################
 import sys
 import numpy as np
 import time
@@ -49,9 +13,19 @@ from . import TopologicalObject
 class ContourTree(TopologicalObject):
     """ A class for computing a contour tree from two merge trees
     """
-    def __init__(self, graph='beta skeleton', gradient='steepest',
-                 max_neighbors=-1, beta=1.0, normalization=None, connect=False,
-                 aggregator=None, debug=False, short_circuit=True):
+
+    def __init__(
+        self,
+        graph="beta skeleton",
+        gradient="steepest",
+        max_neighbors=-1,
+        beta=1.0,
+        normalization=None,
+        connect=False,
+        aggregator=None,
+        debug=False,
+        short_circuit=True,
+    ):
         """ Initialization method
             @ In, graph, an optional string specifying the type of
             neighborhood graph to use. Default is 'beta skeleton,' but
@@ -90,13 +64,16 @@ class ContourTree(TopologicalObject):
             @ In, short_circuit, an optional boolean flag for whether the
             contour tree should be short circuited (TODO: fix description).
         """
-        super(ContourTree, self).__init__(graph=graph, gradient=gradient,
-                                          max_neighbors=max_neighbors,
-                                          beta=beta,
-                                          normalization=normalization,
-                                          connect=connect,
-                                          aggregator=aggregator,
-                                          debug=debug)
+        super(ContourTree, self).__init__(
+            graph=graph,
+            gradient=gradient,
+            max_neighbors=max_neighbors,
+            beta=beta,
+            normalization=normalization,
+            connect=connect,
+            aggregator=aggregator,
+            debug=debug,
+        )
         self.short_circuit = short_circuit
 
     def reset(self):
@@ -158,15 +135,14 @@ class ContourTree(TopologicalObject):
         self._identifySuperGraph()
 
         if self.debug:
-            sys.stderr.write('Sorting Nodes: ')
+            sys.stderr.write("Sorting Nodes: ")
             start = time.clock()
 
-        self.sortedNodes = sorted(enumerate(self.Y),
-                                  key=operator.itemgetter(1))
+        self.sortedNodes = sorted(enumerate(self.Y), key=operator.itemgetter(1))
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
+            sys.stderr.write("%f s\n" % (end - start))
 
     def _identifyBranches(self):
         """ A helper function for determining all of the branches in the
@@ -175,7 +151,7 @@ class ContourTree(TopologicalObject):
         """
 
         if self.debug:
-            sys.stderr.write('Identifying branches: ')
+            sys.stderr.write("Identifying branches: ")
             start = time.clock()
 
         seen = set()
@@ -196,7 +172,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
+            sys.stderr.write("%f s\n" % (end - start))
 
     def _identifySuperGraph(self):
         """ A helper function for determining the condensed
@@ -209,7 +185,7 @@ class ContourTree(TopologicalObject):
         """
 
         if self.debug:
-            sys.stderr.write('Condensing Graph: ')
+            sys.stderr.write("Condensing Graph: ")
             start = time.clock()
 
         G = nx.DiGraph()
@@ -246,8 +222,7 @@ class ContourTree(TopologicalObject):
                 # Trace down to a non-internal node
 
                 lowerLink = list(G.in_edges(node))[0][0]
-                while (G.in_degree(lowerLink) == 1 and
-                       G.out_degree(lowerLink) == 1):
+                while G.in_degree(lowerLink) == 1 and G.out_degree(lowerLink) == 1:
                     newLowerLink = list(G.in_edges(lowerLink))[0][0]
                     G.add_edge(newLowerLink, node)
                     G.remove_node(lowerLink)
@@ -259,8 +234,7 @@ class ContourTree(TopologicalObject):
 
                 # Trace up to a non-internal node
                 upperLink = list(G.out_edges(node))[0][1]
-                while (G.in_degree(upperLink) == 1 and
-                       G.out_degree(upperLink) == 1):
+                while G.in_degree(upperLink) == 1 and G.out_degree(upperLink) == 1:
                     newUpperLink = list(G.out_edges(upperLink))[0][1]
                     G.add_edge(node, newUpperLink)
                     G.remove_node(upperLink)
@@ -283,7 +257,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
+            sys.stderr.write("%f s\n" % (end - start))
 
     def get_seeds(self, threshold):
         """ Returns a list of seed points for isosurface extraction
@@ -332,7 +306,7 @@ class ContourTree(TopologicalObject):
                 details of the input tree.
         """
         if self.debug:
-            sys.stderr.write('Networkx Tree construction: ')
+            sys.stderr.write("Networkx Tree construction: ")
             start = time.clock()
 
         nxTree = nx.DiGraph()
@@ -346,9 +320,11 @@ class ContourTree(TopologicalObject):
         for (superNode, _), nodes in thisTree.augmentedEdges.items():
             superNodeEdge = list(nxTree.out_edges(superNode))
             if len(superNodeEdge) > 1:
-                warnings.warn('The supernode {} should have only a single '
-                              'emanating edge. Merge tree is invalidly '
-                              'structured'.format(superNode))
+                warnings.warn(
+                    "The supernode {} should have only a single "
+                    "emanating edge. Merge tree is invalidly "
+                    "structured".format(superNode)
+                )
             endNode = superNodeEdge[0][1]
             startNode = superNode
             nxTree.remove_edge(startNode, endNode)
@@ -364,7 +340,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
+            sys.stderr.write("%f s\n" % (end - start))
 
         return nxTree
 
@@ -381,15 +357,19 @@ class ContourTree(TopologicalObject):
             @ Out, None
         """
         if self.debug:
-            sys.stderr.write('Processing Tree: ')
+            sys.stderr.write("Processing Tree: ")
             start = time.clock()
 
         # Get all of the leaf nodes that are not branches in the other
         # tree
         if len(thisTree.nodes()) > 1:
-            leaves = set([v for v in thisTree.nodes()
-                          if thisTree.in_degree(v) == 0 and
-                          thatTree.in_degree(v) < 2])
+            leaves = set(
+                [
+                    v
+                    for v in thisTree.nodes()
+                    if thisTree.in_degree(v) == 0 and thatTree.in_degree(v) < 2
+                ]
+            )
         else:
             leaves = set()
 
@@ -404,8 +384,9 @@ class ContourTree(TopologicalObject):
             # on the CT
             edges = list(thisTree.out_edges(v))
             if len(edges) != 1:
-                warnings.warn('The node {} should have a single emanating '
-                              'edge.\n'.format(v))
+                warnings.warn(
+                    "The node {} should have a single emanating " "edge.\n".format(v)
+                )
             e1 = edges[0][0]
             e2 = edges[0][1]
             # This may be a bit beside the point, but if we want all of
@@ -463,9 +444,13 @@ class ContourTree(TopologicalObject):
                 #                      .format(v, startNode, endNode))
 
             if len(thisTree.nodes()) > 1:
-                leaves = set([v for v in thisTree.nodes()
-                              if thisTree.in_degree(v) == 0 and
-                              thatTree.in_degree(v) < 2])
+                leaves = set(
+                    [
+                        v
+                        for v in thisTree.nodes()
+                        if thisTree.in_degree(v) == 0 and thatTree.in_degree(v) < 2
+                    ]
+                )
             else:
                 leaves = set()
 
@@ -479,4 +464,4 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write('%f s\n' % (end-start))
+            sys.stderr.write("%f s\n" % (end - start))
