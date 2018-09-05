@@ -1,38 +1,3 @@
-/******************************************************************************
- * Software License Agreement (BSD License)                                   *
- *                                                                            *
- * Copyright 2018 University of Utah                                          *
- * Scientific Computing and Imaging Institute                                 *
- * 72 S Central Campus Drive, Room 3750                                       *
- * Salt Lake City, UT 84112                                                   *
- *                                                                            *
- * THE BSD LICENSE                                                            *
- *                                                                            *
- * Redistribution and use in source and binary forms, with or without         *
- * modification, are permitted provided that the following conditions         *
- * are met:                                                                   *
- *                                                                            *
- * 1. Redistributions of source code must retain the above copyright          *
- *    notice, this list of conditions and the following disclaimer.           *
- * 2. Redistributions in binary form must reproduce the above copyright       *
- *    notice, this list of conditions and the following disclaimer in the     *
- *    documentation and/or other materials provided with the distribution.    *
- * 3. Neither the name of the copyright holder nor the names of its           *
- *    contributors may be used to endorse or promote products derived         *
- *    from this software without specific prior written permission.           *
- *                                                                            *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR       *
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES  *
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.    *
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,           *
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT   *
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,  *
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY      *
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT        *
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF   *
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.          *
- ******************************************************************************/
-
 #ifndef MC_H
 #define MC_H
 
@@ -63,12 +28,12 @@ struct Merge
 };
 
 /**
- * Approximate Morse-Smale Complex.
+ * Approximate Morse Complex.
  * Stores the hierarchical decomposition of an arbitrary point cloud according
  * to its estimated gradient flow.
  */
 template<typename T>
-class AMSC
+class MorseComplex
 {
  public:
   /* Here are a list of typedefs to make things more compact and readable */
@@ -89,9 +54,6 @@ class AMSC
    * @param Xin flattened vector of input data in row-major order
    * @param yin vector of response values in a one-to-one correspondence with
    *        Xin
-   * @param names a vector of string names for each dimension in the input data
-   *        and the name of the response value which should be at the end of the
-   *        vector
    * @param gradientMethod string identifier for what type of gradient
    *        estimation method is used
    * @param persistenceType string identifier for what type of persistence
@@ -99,11 +61,10 @@ class AMSC
    * @param win vector of probability values in a one-to-one correspondence with
    *        Xin
    * @param neighborhoods a map where the keys are individual indices and the
-   *        values are sets of indices that are connected to that key index 
+   *        values are sets of indices that are connected to that key index
    *       (TODO consider using a vector< set<int> > here)
    */
   MorseComplex(std::vector<T> &Xin, std::vector<T> &yin,
-       std::vector<std::string> &_names, 
        std::string gradientMethod, std::string persistenceType,
        std::vector<T> &win,
        std::map< int, std::set<int> > &neighborhoods, bool verbosity=false);
@@ -195,24 +156,10 @@ class AMSC
   int MaxLabel(int i, T pers);
 
   /**
-   * Returns the string name associated to the specified dimension index
-   * @param dim integer specifying the column of data where the specified input
-   *        dimension is stored
-   */
-  std::string Name(int dim);
-
-  /**
-   * Returns a list of indices marked as neighbors to the specified sample given
-   * given by "index"
-   * @param index integer specifying the unique sample queried
-   */
-  std::set<int> Neighbors(int index);
-
-  /**
    * Returns a formatted string that can be used to determine the merge
    * hierarchy of the topological decomposition of the associated dataset
    */
-  std::string PrintHierarchy();
+  std::string to_json();
 
   /**
    * Returns a sorted list of persistence values for this complex
@@ -220,29 +167,12 @@ class AMSC
    std::vector<T> SortedPersistences();
 
   /**
-   * Returns an xml-formatted string that can be used to determine the merge
-   * hierarchy of the topological decomposition of the associated dataset
-   */
-  std::string XMLFormattedHierarchy();
-
-  /**
-   * Returns a map where the key represent a minimum/maximum pair
-   * ('minIdx,maxIdx') and the value is a list of associated indices from the
-   * input data
+   * Returns a map where the key represents a maximum (maxIdx) and the
+   * value is a list of associated indices from the input data
    * @param persistence floating point value that optionally simplifies the
    *        topological decomposition before fetching the indices.
    */
-  std::map< std::string, std::vector<int> > GetPartitions(T persistence);
-
-  /**
-   * Returns a map where the key represent a maximum and the value is a list of
-   * associated indices from the input data
-   * @param persistence floating point value that optionally simplifies the
-   *        topological decomposition before fetching the indices.
-   */
-  std::map< int, std::vector<int> > GetStableManifolds(T persistence);
-
-//  std::string ComputeLinearRegressions(T persistence);
+  std::map< int, std::vector<int> > GetPartitions(T persistence);
 
  private:
   std::string persistenceType;          /** A string identifier specifying    *
@@ -251,8 +181,6 @@ class AMSC
   std::vector< std::vector<T> > X;                      /** Input data matrix */
   std::vector<T> y;                                    /** Output data vector */
   std::vector<T> w;                               /** Probability data vector */
-
-  std::vector<std::string> names;    /** Names of the input/output dimensions */
 
   std::map< int, std::set<int> > neighbors;         /** Maps a list of points *
                                                      *  that are neighbors of *
@@ -265,27 +193,17 @@ class AMSC
                                                      * represented by these   *
                                                      * indices                */
 
-  std::vector<FlowPair> neighborFlow;         /** Estimated neighbor gradient
+  std::vector<int> neighborFlow;              /** Estimated neighbor gradient
                                                * flow first=desc,second = asc */
 
-  std::vector<FlowPair> flow;               /** Local minimum/maximum index to
+  std::vector<int> flow;                    /** Local minimum/maximum index to
                                              *  which each point flows from/to
                                              *  first = min, second = max     */
 
-  int globalMinIdx;         /** The index of the overall global minimum point */
-  int globalMaxIdx;         /** The index of the overall global maximum point */
-
-  //////////////////////////////////////////////////////////////////////////////
   // Key is my index and the value is the persistence value, extrema index that
   // I merge to, and which saddle I go through
   persistence_map maxHierarchy;       /** The simplification hierarchy for all
                                         * of the maxima                       */
-
-  persistence_map minHierarchy;       /** The simplification hierarchy for all
-                                        * of the minima                       */
-  //////////////////////////////////////////////////////////////////////////////
-
-  // Private Methods
 
   /**
    * Returns the ascending neighbor of the sample specified by index
@@ -294,17 +212,12 @@ class AMSC
   int ascending(int index);
 
   /**
-   * Returns the descending neighbor of the sample specified by index
-   * @param index integer specifying the unique sample to query
-   */
-  int descending(int index);
-
-  /**
    * Compute and locally store the distances associated to each edge in the
    * graph. This will be used to estimate gradient magnitudes.
    */
   void computeDistances();
 
+  //////////////////////////////////////////////////////////////////////
   // Gradient estimation Methods
 
   /**
@@ -324,17 +237,13 @@ class AMSC
    */
   void SteepestEdge();
 
+  //////////////////////////////////////////////////////////////////////
   //Persistence Simplification
 
   /**
-   * Implements the Steepest Edge algorithm
+   * Creates the full merge hierarchy
    */
   void ComputeMaximaPersistence();
-
-  /**
-   * Implements the Steepest Edge algorithm
-   */
-  void ComputeMinimaPersistence();
 };
 
 #endif //MC_H
