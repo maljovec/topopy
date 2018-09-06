@@ -91,18 +91,14 @@ class MorseComplex(TopologicalObject):
         """
         super(MorseComplex, self).reset()
 
-        self.persistences = []
-
-        self.partitions = {}
         self.base_partitions = {}
+        self.merge_sequence = {}
+
+        self.persistences = []
+        self.max_indices = []
+
+        # State properties
         self.persistence = 0.
-
-        self.mergeSequence = {}
-
-        self.maxIdxs = []
-
-        self.__amc = None
-        self.hierarchy = None
 
     def build(self, X, Y, w=None, edges=None):
         """ Assigns data to this object and builds the Morse-Smale
@@ -123,7 +119,7 @@ class MorseComplex(TopologicalObject):
             sys.stderr.write("Decomposition: ")
             start = time.clock()
 
-        self.__amc = MorseComplexFloat(
+        morse_complex = MorseComplexFloat(
             vectorFloat(self.Xnorm.flatten()),
             vectorFloat(self.Y),
             str(self.gradient),
@@ -132,41 +128,95 @@ class MorseComplex(TopologicalObject):
             self.graph_rep.full_graph(),
             self.debug,
         )
+        self.__amc = morse_complex
+
+        self.persistences = []
+        self.merge_sequence = {}
+        morse_complex_json = json.loads(morse_complex.to_json())
+        hierarchy = morse_complex_json['Hierarchy']
+        for merge in hierarchy:
+            self.persistences.append(merge['Persistence'])
+            self.merge_sequence[merge['Dying']] = (merge['Persistence'], merge['Surviving'], merge['Saddle'])
+        self.persistences = sorted(list(set(self.persistences)))
+
+        partitions = morse_complex_json['Partitions']
+        self.base_partitions = {}
+        for i, label in enumerate(partitions):
+            if label not in self.base_partitions:
+                self.base_partitions[label] = []
+            self.base_partitions[label].append(i)
+
+        self.max_indices = list(self.base_partitions.keys())
 
         if self.debug:
             end = time.clock()
             sys.stderr.write("%f s\n" % (end - start))
 
-        print(self.__amc.to_json())
-        self.hierarchy = json.loads(self.__amc.to_json())
-        self.mergeSequence = {}
+    def build_for_morse_smale_complex(self, morse_smale_complex, negate=False):
+        Y = morse_smale_complex.Y
+        X = morse_smale_complex.Xnorm
+        N = len(Y) - 1
+        complex_type = "Stable"
+        if negate:
+            Y = -Y[::-1]
+            X = X[::-1]
+            complex_type = "Unstable"
+
+        if self.debug:
+            sys.stderr.write(complex_type + " Decomposition: ")
+            start = time.clock()
+
+        morse_complex = MorseComplexFloat(
+            vectorFloat(X.flatten()),
+            vectorFloat(Y),
+            str(morse_smale_complex.gradient),
+            str(morse_smale_complex.simplification),
+            vectorFloat(morse_smale_complex.w),
+            morse_smale_complex.graph_rep.full_graph(),
+            morse_smale_complex.debug,
+        )
+
+        self.persistences = []
+        self.merge_sequence = {}
+        morse_complex_json = json.loads(morse_complex.to_json())
+        hierarchy = morse_complex_json['Hierarchy']
+        for merge in hierarchy:
+            self.persistences.append(merge['Persistence'])
+            if negate:
+                self.merge_sequence[N - merge['Dying']] = (merge['Persistence'], N - merge['Surviving'], N - merge['Saddle'])
+            else:
+                self.merge_sequence[merge['Dying']] = (merge['Persistence'], merge['Surviving'], merge['Saddle'])
         self.persistences = sorted(list(set(self.persistences)))
 
-        ################################################################
-        # P Save starts here.
-        p_start = 0
-        self.base_partitions = self.get_partitions(p_start)
-        self.maxIdxs = np.unique(np.array(self.base_partitions.keys()))
-        globalMaxIdx = np.argmax(self.Y)
-        ################################################################
+        partitions = morse_complex_json['Partitions']
+        self.base_partitions = {}
+        for i, label in enumerate(partitions):
+            if negate:
+                real_label = N - label
+                real_index = N - i
+            else:
+                real_label = label
+                real_index = i
+            if real_label not in self.base_partitions:
+                self.base_partitions[real_label] = []
+            self.base_partitions[real_label].append(real_index)
 
-    def save(self, hierarchyFilename=None, partitionFilename=None):
+        self.max_indices = list(self.base_partitions.keys())
+
+        if self.debug:
+            end = time.clock()
+            sys.stderr.write("%f s\n" % (end - start))
+
+    def save(self, filename=None):
         """ Saves a constructed Morse Complex in json file
-            @ In, hierarchyFilename, a filename for storing the
-            hierarchical merging of features
-            @ In, partitionFilename, a filename for storing the base
-            level partitions in the data
+            @ In, filename, a filename for storing the
+            hierarchical merging of features and the base level
+            partitions of the data
         """
-        if partitionFilename is None:
-            partitionFilename = "Base_Partition.json"
-        with open(partitionFilename, "w") as fp:
-            json.dump(self.base_partitions, fp)
-            fp.close()
-
-        if hierarchyFilename is None:
-            hierarchyFilename = "Hierarchy.csv"
-        with open(hierarchyFilename, "w") as modified:
-            pass
+        if filename is None:
+            filename = "morse_complex.json"
+        with open(filename, "w") as fp:
+            fp.write(self.to_json())
 
     # Depending on the persistence simplification strategy, this could
     # alter the hierarchy, so let's remove this feature until further
@@ -191,7 +241,7 @@ class MorseComplex(TopologicalObject):
             and the saddle index associated to the dying index, in that
             order.
         """
-        return self.mergeSequence
+        return self.merge_sequence
 
     def get_partitions(self, persistence=None):
         """ Returns the partitioned data based on a specified
@@ -204,14 +254,30 @@ class MorseComplex(TopologicalObject):
             list of indices specifying points that are associated to
             this maximum.
         """
-        if self.__amc is None:
-            return None
         if persistence is None:
             persistence = self.persistence
-        if persistence not in self.partitions:
-            partitions = self.__amc.GetPartitions(persistence)
-            self.partitions[persistence] = partitions
-        return self.partitions[persistence]
+        partitions = {}
+        # TODO: Possibly cache at the critical persistence values,
+        # previously caching was done at every query level, but that
+        # does not make sense as the partitions will only change once
+        # the next value in self.persistences is attained. Honestly,
+        # this is probably not a necessary optimization that needs to
+        # be made. Consider instead, Yarden's way of storing the points
+        # such that merged arrays will be adjacent.
+        for key, items in self.base_partitions.items():
+            new_key = key
+            keys = []
+            while self.merge_sequence[new_key][0] < persistence and self.merge_sequence[new_key][1] != new_key:
+                keys.append(new_key)
+                new_key = self.merge_sequence[new_key][1]
+            if new_key not in partitions:
+                partitions[new_key] = []
+            partitions[new_key].extend(items + keys)
+
+        for key in partitions:
+            partitions[key] = sorted(list(set(partitions[key])))
+
+        return partitions
 
     def get_persistence(self):
         """ Sets the persistence simplfication level to be
@@ -245,11 +311,11 @@ class MorseComplex(TopologicalObject):
 
         if len(indices) == 0:
             return []
-        partitions = self.__amc.GetPartitions(self.persistence)
+        partitions = self.get_partitions(self.persistence)
         labels = self.X.shape[0] * [None]
-        for label in partitions.keys():
-            partIndices = partitions[maxIdx]
-            for idx in np.intersect1d(partIndices, indices):
+        for label, partition_indices in partitions.items():
+            partIndices = partitions[label]
+            for idx in np.intersect1d(partition_indices, indices):
                 labels[idx] = label
 
         labels = np.array(labels)
@@ -278,7 +344,7 @@ class MorseComplex(TopologicalObject):
         if key is None:
             return len(self.Y)
         else:
-            return len(self.partitions[self.persistence][key])
+            return len(self.get_partitions(self.persistence)[key])
 
     def get_classification(self, idx):
         """ Given an index, this function will report whether that
@@ -289,14 +355,24 @@ class MorseComplex(TopologicalObject):
             @ Out, a string specifying the classification type of the
             input sample: will be 'maximum,' 'minimum,' or 'regular.'
         """
-        if idx in self.maxIdxs:
+        if idx in self.max_indices:
             return "maximum"
         return "regular"
 
-    def print_hierarchy(self):
-        """ Writes the complete Morse-Smale merge hierarchy to a string
-            object.
+    def to_json(self):
+        """ Writes the complete Morse complex merge hierarchy to a
+            string object.
             @ Out, a string object storing the entire merge hierarchy of
-            all minima and maxima.
+            all maxima.
         """
-        return self.__amc.to_json()
+        capsule = {}
+        capsule['Hierarchy'] = []
+        for dying, (persistence, surviving, saddle) in self.merge_sequence.items():
+            capsule['Hierarchy'].append({'Persistence': persistence, 'Dying': dying, 'Surviving': surviving, 'Saddle': saddle})
+        capsule['Partitions'] = []
+        base = np.array([None]*len(self.Y))
+        for label, items in self.base_partitions.items():
+            base[items] = label
+        capsule['Partitions'] = base.tolist()
+
+        return json.dumps(capsule, separators=(',', ':'))

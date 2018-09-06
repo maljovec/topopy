@@ -106,11 +106,12 @@ void MorseComplex<T>::SteepestEdge()
   std::list<int> path;
   for(int i=0; i < Size(); i++)
   {
-    //If we have not identified this point's maximum, then we will do so now
+    //If we have not identified this point's maximum, then we will do so
+    // now
     if( flow[i] == -1)
     {
-      //Recursively trace the upward flow from this point along path, until
-      // we reach a point that has no upward flow
+      //Recursively trace the upward flow from this point along path,
+      // until we reach a point that has no upward flow
       path.clear();
       int prev = i;
       while(prev != -1 && flow[prev] == -1)
@@ -701,7 +702,7 @@ std::string MorseComplex<T>::to_json()
   persistence_map_it it;
   std::stringstream stream;
 
-  stream << "{\"Hierarchy\":";
+  stream << "{\"Hierarchy\":[";
   for(it = maxHierarchy.begin(); it != maxHierarchy.end(); it++)
   {
     if (it != maxHierarchy.begin()) {
@@ -711,7 +712,15 @@ std::string MorseComplex<T>::to_json()
            << it->first << ",\"Surviving\":" << it->second.parent
            << ",\"Saddle\":" << it->second.saddle << "}";
   }
-  stream << "}";
+  stream << "],\"Partitions\":[";
+  for(std::vector<int>::iterator i = flow.begin(); i != flow.end(); i++)
+  {
+      if (i != flow.begin()) {
+        stream << ",";
+      }
+      stream << *i;
+  }
+  stream << "]}";
   return stream.str();
 }
 
