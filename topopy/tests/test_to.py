@@ -15,8 +15,9 @@ class TestTO(TestCase):
     """
 
     def setup(self):
-        """ Setup function will create a fixed point set and parameter
-            settings for testing different aspects of this library.
+        """
+        Setup function will create a fixed point set and parameter
+        settings for testing different aspects of this library.
         """
         self.X = generate_test_grid_2d(10)
         self.Y = gerber(self.X)
@@ -149,27 +150,30 @@ class TestTO(TestCase):
         to.build(X, Y)
 
     def test_empty(self):
-        """ Test the ability to handle None objects as input
+        """
+        Test the ability to handle None objects as input
         """
         self.setup()
         self.to = topopy.TopologicalObject()
         self.to.build(None, None)
 
     def test_debug(self):
-        """ Test the debugging output of the TopologicalObject
+        """
+        Test the debugging output of the TopologicalObject
         """
         self.setup()
         self.to = topopy.TopologicalObject(debug=True, max_neighbors=10)
         self.to.build(self.X, self.Y)
 
     def test_get_normed_x(self):
-        """ Tests get_normed_x in several different contexts:
-                Single Element extraction
-                Single Column extraction
-                Single Row extraction
-                Multiple row extraction
-                Multiple column extraction
-                Full data extraction
+        """
+        Tests get_normed_x in several different contexts:
+            Single Element extraction
+            Single Column extraction
+            Single Row extraction
+            Multiple row extraction
+            Multiple column extraction
+            Full data extraction
         """
         self.setup()
 
@@ -235,13 +239,14 @@ class TestTO(TestCase):
             )
 
     def test_get_x(self):
-        """ Tests get_x in several different contexts:
-                Single Element extraction
-                Single Column extraction
-                Single Row extraction
-                Multiple row extraction
-                Multiple column extraction
-                Full data extraction
+        """
+        Tests get_x in several different contexts:
+            Single Element extraction
+            Single Column extraction
+            Single Row extraction
+            Multiple row extraction
+            Multiple column extraction
+            Full data extraction
         """
         self.setup()
 
@@ -302,10 +307,11 @@ class TestTO(TestCase):
         )
 
     def test_get_y(self):
-        """ Tests get_y in several different contexts:
-                Single Element extraction
-                Multiple row extraction
-                Full data extraction
+        """
+        Tests get_y in several different contexts:
+            Single Element extraction
+            Multiple row extraction
+            Full data extraction
         """
         self.setup()
 
@@ -341,7 +347,8 @@ class TestTO(TestCase):
         )
 
     def test_neighbors(self):
-        """ Tests the ability to retrieve the neighbors of a given index
+        """
+        Tests the ability to retrieve the neighbors of a given index
         """
         self.setup()
         self.assertSetEqual(
@@ -353,7 +360,8 @@ class TestTO(TestCase):
         )
 
     def test_reset(self):
-        """ Tests resetting of internal storage of the to object
+        """
+        Tests resetting of internal storage of the to object
         """
         self.setup()
         self.to.reset()
@@ -374,7 +382,8 @@ class TestTO(TestCase):
         )
 
     def test_shape_functions(self):
-        """ Test the get_dimensionality and get_sample_size functions
+        """
+        Test the get_dimensionality and get_sample_size functions
         """
         self.setup()
 
