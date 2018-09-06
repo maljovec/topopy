@@ -368,7 +368,7 @@ class TestMSC(TestCase):
     #     self.setup()
     #     self.msc.save("test.json")
 
-    #     with open("gold.json", "r") as data_file:
+    #     with open("msc_gold.json", "r") as data_file:
     #         gold_json = data_file.read()
     #         gold_json = json.loads(gold_json)
 

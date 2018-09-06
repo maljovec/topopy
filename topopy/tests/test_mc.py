@@ -324,7 +324,7 @@ class TestMC(TestCase):
         self.setup()
         self.test_object.save("test.json")
 
-        with open("gold.json", "r") as data_file:
+        with open("mc_gold.json", "r") as data_file:
             gold_json = data_file.read()
             gold_json = json.loads(gold_json)
 
