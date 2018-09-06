@@ -193,7 +193,7 @@ class TestMSC(TestCase):
         print(self.msc.get_merge_sequence())
         self.assertDictEqual(
             {
-                0: (0.500192, 39, 10),
+                0: (0.500192, 1560, 400),
                 960: (0.117402, 1560, 1160),
                 1189: (0.117402, 429, 989),
                 39: (0.500192, 1599, 439),
@@ -368,7 +368,7 @@ class TestMSC(TestCase):
     #     self.setup()
     #     self.msc.save("test.json")
 
-    #     with open("msc_gold.json", "r") as data_file:
+    #     with open("gold.json", "r") as data_file:
     #         gold_json = data_file.read()
     #         gold_json = json.loads(gold_json)
 
