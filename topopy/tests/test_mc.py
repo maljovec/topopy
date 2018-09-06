@@ -7,8 +7,9 @@ import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
 import sklearn
-import os
 import json
+import sys
+import os
 
 
 class TestMC(TestCase):
@@ -44,8 +45,27 @@ class TestMC(TestCase):
         Test the debugging output of the MorseComplex
         """
         self.setup()
+
+        test_file = 'mc_test_debug.txt'
+        sys.stdout = open(test_file, 'w')
+
         self.test_object = topopy.MorseComplex(debug=True, max_neighbors=10)
         self.test_object.build(self.X, self.Y)
+
+        sys.stdout.close()
+
+        lines = ["Graph Preparation:",
+                 "Decomposition:"]
+
+        with open(test_file, 'r') as fp:
+            debug_output = fp.read()
+            for line in lines:
+                self.assertIn(line, debug_output)
+
+        os.remove(test_file)
+
+        # Restore stdout
+        sys.stdout = sys.__stdout__
 
     def test_default(self):
         """

@@ -116,7 +116,7 @@ class MorseComplex(TopologicalObject):
         super(MorseComplex, self).build(X, Y, w, edges)
 
         if self.debug:
-            sys.stderr.write("Decomposition: ")
+            sys.stdout.write("Decomposition: ")
             start = time.clock()
 
         morse_complex = MorseComplexFloat(
@@ -150,7 +150,7 @@ class MorseComplex(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
     def build_for_morse_smale_complex(self, morse_smale_complex, negate=False):
         Y = morse_smale_complex.Y
@@ -163,7 +163,7 @@ class MorseComplex(TopologicalObject):
             complex_type = "Unstable"
 
         if self.debug:
-            sys.stderr.write(complex_type + " Decomposition: ")
+            sys.stdout.write(complex_type + " Decomposition: ")
             start = time.clock()
 
         morse_complex = MorseComplexFloat(
@@ -205,7 +205,7 @@ class MorseComplex(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
     def save(self, filename=None):
         """ Saves a constructed Morse Complex in json file

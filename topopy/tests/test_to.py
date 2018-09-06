@@ -7,6 +7,8 @@ import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
 import sklearn
+import sys
+import os
 
 
 class TestTO(TestCase):
@@ -162,8 +164,23 @@ class TestTO(TestCase):
         Test the debugging output of the TopologicalObject
         """
         self.setup()
+        test_file = 'to_test_debug.txt'
+        sys.stdout = open(test_file, 'w')
+
         self.to = topopy.TopologicalObject(debug=True, max_neighbors=10)
         self.to.build(self.X, self.Y)
+        sys.stdout.close()
+
+        lines = ["Graph Preparation:"]
+
+        with open(test_file, 'r') as fp:
+            debug_output = fp.read()
+            for line in lines:
+                self.assertIn(line, debug_output)
+
+        os.remove(test_file)
+        # Restore stdout
+        sys.stdout = sys.__stdout__
 
     def test_get_normed_x(self):
         """

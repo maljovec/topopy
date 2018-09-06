@@ -92,18 +92,15 @@ class MorseSmaleComplex(TopologicalObject):
         """
         super(MorseSmaleComplex, self).reset()
 
-        self.persistences = []
-
-        self.partitions = {}
         self.base_partitions = {}
+        self.merge_sequence = {}
+
+        self.persistences = []
+        self.min_indices = []
+        self.max_indices = []
+
+        # State properties
         self.persistence = 0.
-
-        self.mergeSequence = {}
-
-        self.minIdxs = []
-        self.maxIdxs = []
-
-        self.hierarchy = None
 
     def build(self, X, Y, w=None, edges=None):
         """ Assigns data to this object and builds the Morse-Smale
@@ -121,54 +118,50 @@ class MorseSmaleComplex(TopologicalObject):
         super(MorseSmaleComplex, self).build(X, Y, w, edges)
 
         if self.debug:
-            sys.stderr.write("Decomposition: ")
+            sys.stdout.write("Decomposition: ")
             start = time.clock()
 
-        stableManifolds = MorseComplex(
-            graph=self.graph,
-            gradient=self.gradient,
-            max_neighbors=self.max_neighbors,
-            beta=self.beta,
-            normalization=self.normalization,
-            simplification="difference",
-            connect=self.connect,
-            aggregator=self.aggregator,
-            debug=self.debug,
-        )
-        unstableManifolds = MorseComplex(
-            graph=self.graph,
-            gradient=self.gradient,
-            max_neighbors=self.max_neighbors,
-            beta=self.beta,
-            normalization=self.normalization,
-            simplification="difference",
-            connect=self.connect,
-            aggregator=self.aggregator,
-            debug=self.debug,
-        )
+        stableManifolds = MorseComplex(debug=self.debug)
+        unstableManifolds = MorseComplex(debug=self.debug)
 
-        stableManifolds.build(X, Y, w, edges)
-        X_reversed = X[::-1]
-        Y_negated_reversed = -Y[::-1]
-        unstableManifolds.build(X_reversed, Y_negated_reversed, w, edges)
+        stableManifolds.build_for_morse_smale_complex(self, False)
+        unstableManifolds.build_for_morse_smale_complex(self, True)
 
-    def save(self, hierarchyFilename=None, partitionFilename=None):
+        self.min_indices = unstableManifolds.max_indices
+        self.max_indices = stableManifolds.max_indices
+
+        # If a degenerate point is both a minimum and a maximum, it
+        # could potentially appear twice, but would be masked by the
+        # minimum key which would wipe the maximum merge
+        self.merge_sequence = stableManifolds.merge_sequence.copy()
+        self.merge_sequence.update(unstableManifolds.merge_sequence)
+        self.persistences = sorted(stableManifolds.persistences + unstableManifolds.persistences)
+
+        self.base_partitions = {}
+        base = np.array([[None, None]]*len(Y))
+        for key, items in unstableManifolds.base_partitions.items():
+            base[np.array(items), 0] = key
+        for key, items in stableManifolds.base_partitions.items():
+            base[np.array(items), 1] = key
+
+        keys = set(map(tuple, base))
+        for key in keys:
+            self.base_partitions[key] = np.where(np.logical_and(base[:, 0] == key[0], base[:, 1] == key[1]))[0]
+
+        if self.debug:
+            end = time.clock()
+            sys.stdout.write("%f s\n" % (end - start))
+
+    def save(self, filename=None):
         """ Saves a constructed Morse-Smale Complex in json file
-            @ In, hierarchyFilename, a filename for storing the
-            hierarchical merging of features
-            @ In, partitionFilename, a filename for storing the base
-            level partitions in the data
+            @ In, filename, a filename for storing the hierarchical
+            merging of features and the base level partitions of the
+            data
         """
-        if partitionFilename is None:
-            partitionFilename = "Base_Partition.json"
-        with open(partitionFilename, "w") as fp:
-            json.dump(self.base_partitions, fp)
-            fp.close()
-
-        if hierarchyFilename is None:
-            hierarchyFilename = "Hierarchy.csv"
-        with open(hierarchyFilename, "w") as modified:
-            pass
+        if filename is None:
+            filename = "morse_smale_complex.json"
+        with open(filename, "w") as fp:
+            fp.write(self.to_json())
 
     # Depending on the persistence simplification strategy, this could
     # alter the hierarchy, so let's remove this feature until further
@@ -193,7 +186,7 @@ class MorseSmaleComplex(TopologicalObject):
             and the saddle index associated to the dying index, in that
             order.
         """
-        return self.mergeSequence
+        return self.merge_sequence
 
     def get_partitions(self, persistence=None):
         """ Returns the partitioned data based on a specified
@@ -206,21 +199,35 @@ class MorseSmaleComplex(TopologicalObject):
             respectively. Each entry will hold a list of indices
             specifying points that are associated to this min-max pair.
         """
-        if self.__amsc is None:
-            return None
         if persistence is None:
             persistence = self.persistence
-        if persistence not in self.partitions:
-            partitions = self.__amsc.GetPartitions(persistence)
-            tupleKeyedPartitions = {}
-            minMaxKeys = partitions.keys()
-            for strMinMax in minMaxKeys:
-                indices = partitions[strMinMax]
-                minMax = tuple(map(int, strMinMax.split(",")))
-                tupleKeyedPartitions[minMax] = indices
-            self.partitions[persistence] = tupleKeyedPartitions
-            # self.partitions[persistence] = partitions
-        return self.partitions[persistence]
+        partitions = {}
+        # TODO: Possibly cache at the critical persistence values,
+        # previously caching was done at every query level, but that
+        # does not make sense as the partitions will only change once
+        # the next value in self.persistences is attained. Honestly,
+        # this is probably not a necessary optimization that needs to
+        # be made. Consider instead, Yarden's way of storing the points
+        # such that merged arrays will be adjacent.
+        for key, items in self.base_partitions.items():
+            min_index = key[0]
+            max_index = key[1]
+            min_indices = []
+            max_indices = []
+            while self.merge_sequence[min_index][0] < persistence and self.merge_sequence[min_index][1] != min_index:
+                min_indices.append(min_index)
+                min_index = self.merge_sequence[min_index][1]
+            while self.merge_sequence[max_index][0] < persistence and self.merge_sequence[max_index][1] != max_index:
+                max_indices.append(max_index)
+                max_index = self.merge_sequence[max_index][1]
+            new_key = (min_index, max_index)
+            if new_key not in partitions:
+                partitions[new_key] = []
+            partitions[new_key].extend(items.tolist() + min_indices + max_indices)
+
+        for key in partitions:
+            partitions[key] = sorted(list(set(partitions[key])))
+        return partitions
 
     def get_stable_manifolds(self, persistence=None):
         """ Returns the partitioned data based on a specified
@@ -235,7 +242,22 @@ class MorseSmaleComplex(TopologicalObject):
         """
         if persistence is None:
             persistence = self.persistence
-        pass
+        partitions = {}
+        for key, items in self.base_partitions.items():
+            max_index = key[1]
+            max_indices = []
+            while self.merge_sequence[max_index][0] < persistence and self.merge_sequence[max_index][1] != max_index:
+                max_indices.append(max_index)
+                max_index = self.merge_sequence[max_index][1]
+            new_key = max_index
+            if new_key not in partitions:
+                partitions[new_key] = []
+            partitions[new_key].extend(items.tolist() + max_indices)
+
+        for key in partitions:
+            partitions[key] = sorted(list(set(partitions[key])))
+
+        return partitions
 
     def get_unstable_manifolds(self, persistence=None):
         """ Returns the partitioned data based on a specified
@@ -250,7 +272,22 @@ class MorseSmaleComplex(TopologicalObject):
         """
         if persistence is None:
             persistence = self.persistence
-        pass
+        partitions = {}
+        for key, items in self.base_partitions.items():
+            min_index = key[0]
+            min_indices = []
+            while self.merge_sequence[min_index][0] < persistence and self.merge_sequence[min_index][1] != min_index:
+                min_indices.append(min_index)
+                min_index = self.merge_sequence[min_index][1]
+            new_key = min_index
+            if new_key not in partitions:
+                partitions[new_key] = []
+            partitions[new_key].extend(items.tolist() + min_indices)
+
+        for key in partitions:
+            partitions[key] = sorted(list(set(partitions[key])))
+
+        return partitions
 
     def get_persistence(self):
         """ Sets the persistence simplfication level to be
@@ -284,12 +321,10 @@ class MorseSmaleComplex(TopologicalObject):
 
         if len(indices) == 0:
             return []
-        partitions = self.__amsc.GetPartitions(self.persistence)
+        partitions = self.get_partitions(self.persistence)
         labels = self.X.shape[0] * [None]
-        for strMinMax in partitions.keys():
-            partIndices = partitions[strMinMax]
-            label = tuple(map(int, strMinMax.split(",")))
-            for idx in np.intersect1d(partIndices, indices):
+        for label, partition_indices in partitions.items():
+            for idx in np.intersect1d(partition_indices, indices):
                 labels[idx] = label
 
         labels = np.array(labels)
@@ -319,7 +354,7 @@ class MorseSmaleComplex(TopologicalObject):
         if key is None:
             return len(self.Y)
         else:
-            return len(self.partitions[self.persistence][key])
+            return len(self.get_partitions(self.persistence)[key])
 
     def get_classification(self, idx):
         """ Given an index, this function will report whether that
@@ -330,16 +365,26 @@ class MorseSmaleComplex(TopologicalObject):
             @ Out, a string specifying the classification type of the
             input sample: will be 'maximum,' 'minimum,' or 'regular.'
         """
-        if idx in self.minIdxs:
+        if idx in self.min_indices:
             return "minimum"
-        elif idx in self.maxIdxs:
+        elif idx in self.max_indices:
             return "maximum"
         return "regular"
 
-    def print_hierarchy(self):
+    def to_json(self):
         """ Writes the complete Morse-Smale merge hierarchy to a string
             object.
             @ Out, a string object storing the entire merge hierarchy of
             all minima and maxima.
         """
-        pass
+        capsule = {}
+        capsule['Hierarchy'] = []
+        for dying, (persistence, surviving, saddle) in self.merge_sequence.items():
+            capsule['Hierarchy'].append({'Dying': dying, 'Persistence': persistence, 'surviving': surviving, 'Saddle': saddle})
+        capsule['Partitions'] = []
+        base = np.array([None, None]*len(self.Y)).reshape(-1,2)
+        for (min_index, max_index), items in self.base_partitions.items():
+            base[items, :] = [min_index, max_index]
+        capsule['Partitions'] = base.tolist()
+
+        return json.dumps(capsule)

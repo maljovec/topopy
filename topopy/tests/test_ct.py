@@ -7,7 +7,8 @@ import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
 import sklearn
-
+import sys
+import os
 
 class TestCT(TestCase):
     """
@@ -42,11 +43,48 @@ class TestCT(TestCase):
         Test the debugging output of the CT
         """
         self.setup()
-        self.ct = topopy.ContourTree(debug=True, short_circuit=True, max_neighbors=10)
+        test_file = 'ct_test_debug.txt'
+        sys.stdout = open(test_file, 'w')
+
+        self.ct = topopy.ContourTree(
+            debug=True, short_circuit=True, max_neighbors=10)
         self.ct.build(self.X, self.Y)
 
-        self.ct = topopy.ContourTree(debug=True, short_circuit=False, max_neighbors=10)
+        self.ct = topopy.ContourTree(
+            debug=True, short_circuit=False, max_neighbors=10)
         self.ct.build(self.X, self.Y)
+
+        sys.stdout.close()
+
+        lines = ["Graph Preparation:",
+                 "Split Tree Computation:",
+                 "Join Tree Computation:",
+                 "Networkx Tree construction:",
+                 "Networkx Tree construction:",
+                 "Processing Tree:",
+                 "Processing Tree:",
+                 "Identifying branches:",
+                 "Condensing Graph: ",
+                 "Sorting Nodes:",
+                 "Graph Preparation:",
+                 "Split Tree Computation:",
+                 "Join Tree Computation:",
+                 "Networkx Tree construction:",
+                 "Networkx Tree construction:",
+                 "Processing Tree:",
+                 "Processing Tree:",
+                 "Identifying branches:",
+                 "Condensing Graph:",
+                 "Sorting Nodes:"]
+
+        with open(test_file, 'r') as fp:
+            debug_output = fp.read()
+            for line in lines:
+                self.assertIn(line, debug_output)
+
+        os.remove(test_file)
+        # Restore stdout
+        sys.stdout = sys.__stdout__
 
     def test_default(self):
         """

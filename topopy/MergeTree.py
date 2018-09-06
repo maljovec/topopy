@@ -115,7 +115,7 @@ class MergeTree(TopologicalObject):
         super(MergeTree, self).build(X, Y, w, edges)
 
         if self.debug:
-            sys.stderr.write("Merge Tree Computation: ")
+            sys.stdout.write("Merge Tree Computation: ")
             start = time.clock()
 
         self.__tree = MergeTreeFloat(
@@ -130,7 +130,7 @@ class MergeTree(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
     def build_for_contour_tree(self, contour_tree, negate=False):
         """ A helper function that will reduce duplication of data by
@@ -140,7 +140,7 @@ class MergeTree(TopologicalObject):
             tree_type = "Join"
             if negate:
                 tree_type = "Split"
-            sys.stderr.write("{} Tree Computation: ".format(tree_type))
+            sys.stdout.write("{} Tree Computation: ".format(tree_type))
             start = time.clock()
 
         Y = contour_tree.Y
@@ -157,4 +157,4 @@ class MergeTree(TopologicalObject):
         self._internal_build()
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))

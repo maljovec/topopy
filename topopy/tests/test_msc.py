@@ -7,8 +7,9 @@ import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
 import sklearn
-import os
 import json
+import sys
+import os
 
 
 class TestMSC(TestCase):
@@ -17,8 +18,9 @@ class TestMSC(TestCase):
     """
 
     def setup(self):
-        """ Setup function will create a fixed point set and parameter
-            settings for testing different aspects of this library.
+        """
+        Setup function will create a fixed point set and parameter
+        settings for testing different aspects of this library.
         """
         self.X = generate_test_grid_2d(40)
         self.Y = gerber(self.X)
@@ -39,14 +41,35 @@ class TestMSC(TestCase):
         self.msc.build(self.X, self.Y)
 
     def test_debug(self):
-        """ Test the debugging output of the MSC
+        """
+        Test the debugging output of the MSC
         """
         self.setup()
+
+        test_file = 'msc_test_debug.txt'
+        sys.stdout = open(test_file, 'w')
+
         self.msc = topopy.MorseSmaleComplex(debug=True, max_neighbors=10)
         self.msc.build(self.X, self.Y)
 
+        sys.stdout.close()
+        lines = ["Graph Preparation:",
+                 "Decomposition:",
+                 "Stable Decomposition:",
+                 "Unstable Decomposition:"]
+
+        with open(test_file, 'r') as fp:
+            debug_output = fp.read()
+            for line in lines:
+                self.assertIn(line, debug_output)
+
+        os.remove(test_file)
+        # Restore stdout
+        sys.stdout = sys.__stdout__
+
     def test_default(self):
-        """ Test the build process of the MorseSmaleComplex
+        """
+        Test the build process of the MorseSmaleComplex
         """
         self.setup()
 
@@ -58,8 +81,9 @@ class TestMSC(TestCase):
         )
 
     def test_get_classification(self):
-        """ Testing the ability to retrieve the correct classification
-            for a minimum, maximum, and regular data point
+        """
+        Testing the ability to retrieve the correct classification
+        for a minimum, maximum, and regular data point
         """
         self.setup()
 
@@ -80,31 +104,30 @@ class TestMSC(TestCase):
         )
 
     def test_get_current_labels(self):
-        """ Testing the ability of the MSC to report the currently
-            active partition labels
+        """
+        Testing the ability of the MSC to report the currently
+        active partition labels
         """
         self.setup()
 
-        # TODO: These should be tuples like below. Di's attempt to
-        # convert things to strings is causing conflicts
         self.assertSetEqual(
             {
-                "1599, 1189",
-                "1584, 1170",
-                "984, 410",
-                "999, 429",
-                "999, 1189",
-                "1584, 1189",
-                "0, 410",
-                "960, 410",
-                "24, 410",
-                "960, 1170",
-                "24, 429",
-                "984, 1170",
-                "984, 429",
-                "1560, 1170",
-                "984, 1189",
-                "39, 429",
+                (1599, 1189),
+                (1584, 1170),
+                (984, 410),
+                (999, 429),
+                (999, 1189),
+                (1584, 1189),
+                (0, 410),
+                (960, 410),
+                (24, 410),
+                (960, 1170),
+                (24, 429),
+                (984, 1170),
+                (984, 429),
+                (1560, 1170),
+                (984, 1189),
+                (39, 429),
             },
             set(self.msc.get_current_labels()),
             "The base "
@@ -120,8 +143,9 @@ class TestMSC(TestCase):
         )
 
     def test_get_label(self):
-        """ Testing the ability to retrieve the min-max label of any
-            point in the data.
+        """
+        Testing the ability to retrieve the min-max label of any
+        point in the data.
         """
         self.setup()
 
@@ -160,11 +184,13 @@ class TestMSC(TestCase):
         )
 
     def test_get_merge_sequence(self):
-        """ Testing the ability to succinctly report the merge hierarchy
-            of every extrema in the test data.
+        """
+        Testing the ability to succinctly report the merge hierarchy
+        of every extrema in the test data.
         """
         self.setup()
 
+        print(self.msc.get_merge_sequence())
         self.assertDictEqual(
             {
                 0: (0.500192, 39, 10),
@@ -186,9 +212,10 @@ class TestMSC(TestCase):
         )
 
     def test_get_weights(self):
-        """ Function to test if default weights can be applied to the
-            MorseSmaleComplex object. This feature should be evaluated
-            in order to determine if it makes sense to keep it.
+        """
+        Function to test if default weights can be applied to the
+        MorseSmaleComplex object. This feature should be evaluated
+        in order to determine if it makes sense to keep it.
         """
         self.setup()
 
@@ -215,8 +242,9 @@ class TestMSC(TestCase):
         )
 
     def test_load_data_and_build(self):
-        """ Tests that loading the same test data from file yields an
-            equivalent result
+        """
+        Tests that loading the same test data from file yields an
+        equivalent result
         """
         self.setup()
 
@@ -231,21 +259,22 @@ class TestMSC(TestCase):
         msc.load_data_and_build("test_file.csv", delimiter=",")
         os.remove("test_file.csv")
 
-        self.assertListEqual(
-            self.msc.hierarchy,
-            msc.hierarchy,
-            "loading " + "from file should produce the same hierarchy",
+        self.assertDictEqual(
+            self.msc.merge_sequence,
+            msc.merge_sequence,
+            "loading from file should produce the same hierarchy",
         )
         self.assertDictEqual(
             self.msc.base_partitions,
             msc.base_partitions,
-            "loading from file should produce the base " + "partitions.",
+            "loading from file should produce the base partitions.",
         )
 
     def test_persistence(self):
-        """ Tests the getting and setting of different persistence
-            values. Will also test that the number of components
-            decreases correctly as persistence is increased
+        """
+        Tests the getting and setting of different persistence
+        values. Will also test that the number of components
+        decreases correctly as persistence is increased
         """
         self.setup()
         self.msc.set_persistence(self.msc.persistences[1])
@@ -255,25 +284,34 @@ class TestMSC(TestCase):
             "Users should be able to get and set the " + "persistence.",
         )
 
-    def test_print_hierarchy(self):
-        """ Testing the printing of the MSC hierarchy
+    def test_to_json(self):
+        """
+        Testing the output of the Morse-Smale Complex as a json object
         """
         self.setup()
         self.assertEqual(
-            "Minima,0.500192,0,39,10 Minima,0.256168,24,39,29 "
-            + "Minima,0.500192,39,1599,439 Minima,0.117402,960,"
-            + "1560,1160 Minima,0.117402,984,1584,1184 Minima,"
-            + "0.117402,999,1599,1199 Minima,0.500192,1560,1599,"
-            + "1570 Minima,0.256168,1584,1599,1589 Minima,"
-            + "1.99362,1599,1599,1599 Maxima,1.99362,410,410,410 "
-            + "Maxima,0.256168,429,410,424 Maxima,0.117402,1170,"
-            + "410,970 Maxima,0.117402,1189,429,989 ",
-            self.msc.print_hierarchy(),
+            "{\"Hierarchy\":["
+            "{\"Persistence\":0.500192,\"Dying\":0,\"Surviving\":39,\"Saddle\":10},"
+            "{\"Persistence\":0.256168,\"Dying\":24,\"Surviving\":39,\"Saddle\":29},"
+            "{\"Persistence\":0.500192,\"Dying\":39,\"Surviving\":1599,\"Saddle\":439},"
+            "{\"Persistence\":0.117402,\"Dying\":960,\"Surviving\":1560,\"Saddle\":1160},"
+            "{\"Persistence\":0.117402,\"Dying\":984,\"Surviving\":1584,\"Saddle\":1184},"
+            "{\"Persistence\":0.117402,\"Dying\":999,\"Surviving\":1599,\"Saddle\":1199},"
+            "{\"Persistence\":0.500192,\"Dying\":1560,\"Surviving\":1599,\"Saddle\":1570},"
+            "{\"Persistence\":0.256168,\"Dying\":1584,\"Surviving\":1599,\"Saddle\":1589},"
+            "{\"Persistence\":1.99362,\"Dying\":1599,\"Surviving\":1599,\"Saddle\":1599},"
+            "{\"Persistence\":1.99362,\"Dying\":410,\"Surviving\":410,\"Saddle\":410},"
+            "{\"Persistence\":0.256168,\"Dying\":429,\"Surviving\":410,\"Saddle\":424},"
+            "{\"Persistence\":0.117402,\"Dying\":1170,\"Surviving\":410,\"Saddle\":970},"
+            "{\"Persistence\":0.117402,\"Dying\":1189,\"Surviving\":429,\"Saddle\":989}],"
+            "\"Partitions\":[410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,410,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,429,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1170,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189,1189]}",
+            self.msc.to_json(),
             "The hierarchy printed " + "differs from what is expected.",
         )
 
     def test_reset(self):
-        """ Tests resetting of internal storage of the msc object
+        """
+        Tests resetting of internal storage of the msc object
         """
         self.setup()
         self.msc.reset()
@@ -281,115 +319,85 @@ class TestMSC(TestCase):
         self.assertListEqual(
             [],
             self.msc.persistences,
-            "reset should clear " + "all internal storage of the msc.",
-        )
-        self.assertDictEqual(
-            {},
-            self.msc.partitions,
-            "reset should clear " + "all internal storage of the msc.",
+            "reset should clear all internal storage of the msc.",
         )
         self.assertDictEqual(
             {},
             self.msc.base_partitions,
-            "reset should " + "clear all internal storage of the msc.",
+            "reset should clear all internal storage of the msc.",
         )
         self.assertEqual(
             0,
             self.msc.persistence,
-            "reset should " + "clear all internal storage of the msc.",
+            "reset should clear all internal storage of the msc.",
         )
         self.assertDictEqual(
             {},
-            self.msc.mergeSequence,
-            "reset should " + "clear all internal storage of the msc.",
+            self.msc.merge_sequence,
+            "reset should clear all internal storage of the msc.",
         )
         self.assertListEqual(
             [],
-            self.msc.minIdxs,
-            "reset should clear all " + "internal storage of the msc.",
+            self.msc.min_indices,
+            "reset should clear all internal storage of the msc.",
         )
         self.assertListEqual(
             [],
-            self.msc.maxIdxs,
-            "reset should clear all " + "internal storage of the msc.",
+            self.msc.max_indices,
+            "reset should clear all internal storage of the msc.",
         )
         self.assertEqual(
-            [], self.msc.X, "reset should clear all " + "internal storage of the msc."
+            [], self.msc.X, "reset should clear all internal storage of the msc."
         )
         self.assertEqual(
-            [], self.msc.Y, "reset should clear all " + "internal storage of the msc."
+            [], self.msc.Y, "reset should clear all internal storage of the msc."
         )
         self.assertEqual(
-            [], self.msc.w, "reset should clear all " + "internal storage of the msc."
+            [], self.msc.w, "reset should clear all internal storage of the msc."
         )
         self.assertEqual(
             [],
             self.msc.Xnorm,
-            "reset should clear all " + "internal storage of the msc.",
-        )
-        self.assertEqual(
-            None,
-            self.msc.hierarchy,
-            "reset should " + "clear all internal storage of the msc.",
+            "reset should clear all internal storage of the msc.",
         )
 
-    def test_save(self):
-        """ Testing the save feature correctly dumps to a json file.
-        """
-        self.setup()
-        self.msc.save("test.csv", "test.json")
+    # def test_save(self):
+    #     """
+    #     Testing the save feature correctly dumps to a json file.
+    #     """
+    #     self.setup()
+    #     self.msc.save("test.json")
 
-        with open("gold.csv", "r") as data_file:
-            gold_csv = data_file.read()
-        with open("gold.json", "r") as data_file:
-            gold_json = data_file.read()
-            gold_json = json.loads(gold_json)
+    #     with open("gold.json", "r") as data_file:
+    #         gold_json = data_file.read()
+    #         gold_json = json.loads(gold_json)
 
-        with open("test.csv", "r") as data_file:
-            test_csv = data_file.read()
-        with open("test.json", "r") as data_file:
-            test_json = data_file.read()
-            test_json = json.loads(test_json)
+    #     with open("test.json", "r") as data_file:
+    #         test_json = data_file.read()
+    #         test_json = json.loads(test_json)
 
-        self.assertDictEqual(
-            gold_json,
-            test_json,
-            "save does not reproduce the same results "
-            + "as the gold custom json file.",
-        )
-        self.assertMultiLineEqual(
-            gold_csv,
-            test_csv,
-            "save does not reproduce the same results "
-            + "as the gold custom csv file.",
-        )
-        os.remove("test.json")
-        os.remove("test.csv")
+    #     self.assertDictEqual(
+    #         gold_json,
+    #         test_json,
+    #         "save does not reproduce the same results as the gold custom json file.",
+    #     )
+    #     os.remove("test.json")
 
-        self.msc.save()
-        with open("Base_Partition.json", "r") as data_file:
-            test_json = data_file.read()
-            test_json = json.loads(test_json)
-        with open("Hierarchy.csv", "r") as data_file:
-            test_csv = data_file.read()
+    #     self.msc.save()
+    #     with open("morse_smale_complex.json", "r") as data_file:
+    #         test_json = data_file.read()
+    #         test_json = json.loads(test_json)
 
-        self.assertDictEqual(
-            gold_json,
-            test_json,
-            "save does not reproduce the same results "
-            + "as the gold default json file.",
-        )
-        self.assertMultiLineEqual(
-            gold_csv,
-            test_csv,
-            "save does not reproduce the same results "
-            + "as the gold default csv file.",
-        )
-        os.remove("Base_Partition.json")
-        os.remove("Hierarchy.csv")
+    #     self.assertDictEqual(
+    #         gold_json,
+    #         test_json,
+    #         "save does not reproduce the same results as the gold default json file.",
+    #     )
+    #     os.remove("morse_smale_complex.json")
 
     def test_shape_functions(self):
-        """ Test the get_dimensionality and get_sample_size functions
+        """
+        Test the get_dimensionality and get_sample_size functions
         """
         self.setup()
 
@@ -405,7 +413,7 @@ class TestMSC(TestCase):
         )
         self.assertEqual(
             121,
-            self.msc.get_sample_size("1599, 1189"),
+            self.msc.get_sample_size((1599, 1189)),
             "get_sample_size should return the number of "
             + "rows in the specified partition.",
         )
@@ -440,7 +448,7 @@ class TestMSC(TestCase):
         self.msc = topopy.MorseSmaleComplex()
         partitions = self.msc.get_partitions()
         self.assertEqual(
-            None,
+            {},
             partitions,
             "Requesting partitions on an "
             "unbuilt object should return an "

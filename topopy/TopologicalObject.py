@@ -212,7 +212,7 @@ class TopologicalObject(object):
         self.__set_data(X, Y, w)
 
         if self.debug:
-            sys.stderr.write("Graph Preparation: ")
+            sys.stdout.write("Graph Preparation: ")
             start = time.clock()
 
         self.graph_rep = nglpy.Graph(
@@ -221,7 +221,7 @@ class TopologicalObject(object):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
     def load_data_and_build(self, filename, delimiter=","):
         """ Convenience function for directly working with a data file.
