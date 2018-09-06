@@ -15,8 +15,9 @@ class TestCT(TestCase):
     """
 
     def setup(self):
-        """ Setup function will create a fixed point set and parameter
-            settings for testing different aspects of this library.
+        """
+        Setup function will create a fixed point set and parameter
+        settings for testing different aspects of this library.
         """
         self.X = generate_test_grid_2d(40)
         self.Y = gerber(self.X)
@@ -37,7 +38,8 @@ class TestCT(TestCase):
         self.ct.build(self.X, self.Y)
 
     def test_debug(self):
-        """ Test the debugging output of the CT
+        """
+        Test the debugging output of the CT
         """
         self.setup()
         self.ct = topopy.ContourTree(debug=True, short_circuit=True, max_neighbors=10)
@@ -47,7 +49,8 @@ class TestCT(TestCase):
         self.ct.build(self.X, self.Y)
 
     def test_default(self):
-        """ Test the build process of the ContourTree
+        """
+        Test the build process of the ContourTree
         """
         self.setup()
 
@@ -64,7 +67,8 @@ class TestCT(TestCase):
         )
 
     def test_no_short_circuit(self):
-        """ Test the build process of the ContourTree
+        """
+        Test the build process of the ContourTree
         """
         self.setup()
         self.ct = topopy.ContourTree(short_circuit=False, max_neighbors=10)
@@ -83,7 +87,8 @@ class TestCT(TestCase):
         )
 
     def test_get_seeds(self):
-        """ Test the build process of the ContourTree
+        """
+        Test the build process of the ContourTree
         """
         self.setup()
         seeds = self.ct.get_seeds(np.min(self.Y))
@@ -110,42 +115,11 @@ class TestCT(TestCase):
             "have 2 seed points at the maximum levelset",
         )
 
-    def test_merge_tree(self):
-        """ Testing if we can build the Merge Tree directly
-        """
-        self.setup()
-
-        mt = topopy.MergeTree(debug=True, max_neighbors=10)
-        mt.build(self.X, self.Y)
-
-        self.assertEqual(
-            9,
-            len(mt.leaves),
-            "The 2D Gerber test function " "should have 9 leaves in its split tree",
-        )
-        self.assertEqual(
-            8,
-            len(mt.branches),
-            "The 2D Gerber test function " "should have 8 branches in its split tree",
-        )
-
-        mt.build(self.X, -self.Y)
-
-        self.assertEqual(
-            4,
-            len(mt.leaves),
-            "The 2D Gerber test function " "should have 4 leaves in its join tree",
-        )
-        self.assertEqual(
-            3,
-            len(mt.branches),
-            "The 2D Gerber test function " "should have 3 branches in its join tree",
-        )
-
     # def test_persistence(self):
-    #     """ Tests the getting and setting of different persistence
-    #         values. Will also test that the number of components
-    #         decreases correctly as persistence is increased
+    #     """
+    #     Tests the getting and setting of different persistence
+    #     values. Will also test that the number of components
+    #     decreases correctly as persistence is increased
     #     """
     #     self.setup()
     #     self.ct.set_persistence(self.ct.persistences[1])

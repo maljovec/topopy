@@ -68,6 +68,38 @@ class MergeTree(TopologicalObject):
             debug=debug,
         )
 
+    def _internal_build(self):
+        """ This function assumes the self.__tree object has been setup,
+            though it doesn't care how. It will then setup all python
+            side data structures to be used for querying this object.
+        """
+        self.nodes = self.__tree.Nodes()
+        self.edges = self.__tree.Edges()
+        self.augmentedEdges = {}
+        for key, val in self.__tree.AugmentedEdges().items():
+            self.augmentedEdges[key] = list(val)
+        self.root = self.__tree.Root()
+
+        seen = set()
+        self.branches = set()
+
+        # Find all of the branching nodes in the tree, degree > 1
+        # That is, they appear in more than one edge
+        for e1, e2 in self.edges:
+            if e1 not in seen:
+                seen.add(e1)
+            else:
+                self.branches.add(e1)
+
+            if e2 not in seen:
+                seen.add(e2)
+            else:
+                self.branches.add(e2)
+
+        # The nodes that are not branches are leaves
+        self.leaves = set(self.nodes.keys()) - self.branches
+        self.leaves.remove(self.root)
+
     def build(self, X, Y, w=None, edges=None):
         """ Assigns data to this object and builds the Merge Tree
             @ In, X, an m-by-n array of values specifying m
@@ -94,39 +126,15 @@ class MergeTree(TopologicalObject):
             self.debug,
         )
 
-        self.nodes = self.__tree.Nodes()
-        self.edges = self.__tree.Edges()
-        self.augmentedEdges = {}
-        for key, val in self.__tree.AugmentedEdges().items():
-            self.augmentedEdges[key] = list(val)
-        self.root = self.__tree.Root()
-
-        seen = set()
-        self.branches = set()
-
-        # Find all of the branching nodes in the tree, degree > 1
-        # That is, they appear in more than one edge
-        for e1, e2 in self.edges:
-            if e1 not in seen:
-                seen.add(e1)
-            else:
-                self.branches.add(e1)
-
-            if e2 not in seen:
-                seen.add(e2)
-            else:
-                self.branches.add(e2)
-
-        # The nodes that are not branches are leaves
-        self.leaves = set(self.nodes.keys()) - self.branches
-        self.leaves.remove(self.root)
+        self._internal_build()
 
         if self.debug:
             end = time.clock()
             sys.stderr.write("%f s\n" % (end - start))
 
-    def build_for_ContourTree(self, contour_tree, negate=False):
-        """
+    def build_for_contour_tree(self, contour_tree, negate=False):
+        """ A helper function that will reduce duplication of data by
+            reusing the parent contour tree's parameters and data
         """
         if self.debug:
             tree_type = "Join"
@@ -146,34 +154,7 @@ class MergeTree(TopologicalObject):
             contour_tree.graph_rep.full_graph(),
             self.debug,
         )
-
-        self.nodes = self.__tree.Nodes()
-        self.edges = self.__tree.Edges()
-        self.augmentedEdges = {}
-        for key, val in self.__tree.AugmentedEdges().items():
-            self.augmentedEdges[key] = list(val)
-        self.root = self.__tree.Root()
-
-        seen = set()
-        self.branches = set()
-
-        # Find all of the branching nodes in the tree, degree > 1
-        # That is, they appear in more than one edge
-        for e1, e2 in self.edges:
-            if e1 not in seen:
-                seen.add(e1)
-            else:
-                self.branches.add(e1)
-
-            if e2 not in seen:
-                seen.add(e2)
-            else:
-                self.branches.add(e2)
-
-        # The nodes that are not branches are leaves
-        self.leaves = set(self.nodes.keys()) - self.branches
-        self.leaves.remove(self.root)
-
+        self._internal_build()
         if self.debug:
             end = time.clock()
             sys.stderr.write("%f s\n" % (end - start))

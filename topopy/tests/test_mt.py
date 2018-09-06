@@ -15,8 +15,9 @@ class TestMT(TestCase):
     """
 
     def setup(self):
-        """ Setup function will create a fixed point set and parameter
-            settings for testing different aspects of this library.
+        """
+        Setup function will create a fixed point set and parameter
+        settings for testing different aspects of this library.
         """
         self.X = generate_test_grid_2d(40)
         self.Y = gerber(self.X)
@@ -29,12 +30,22 @@ class TestMT(TestCase):
         )
         self.norm_x["none"] = self.X
 
-    def test_merge_tree(self):
-        """ Testing if we can build the Merge Tree directly
+    def test_debug(self):
+        """
+        Testing if we can build the Merge Tree directly
         """
         self.setup()
 
         mt = topopy.MergeTree(debug=True, max_neighbors=10)
+        mt.build(self.X, self.Y)
+
+    def test_merge_tree(self):
+        """
+        Testing if we can build the Merge Tree directly
+        """
+        self.setup()
+
+        mt = topopy.MergeTree(debug=False, max_neighbors=10)
         mt.build(self.X, self.Y)
 
         self.assertEqual(
