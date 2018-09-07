@@ -1,6 +1,6 @@
 """
     This module will test the basic functionalities of
-    topopy.MorseSmaleComplex and by proxy the topopy.MorseComplex
+    topopy.MorseComplex
 """
 from unittest import TestCase
 import numpy as np
@@ -12,17 +12,10 @@ import sys
 import os
 
 
-class TestMSC(TestCase):
+class TestMC(TestCase):
     """
-    Class for testing the Morse-Smale Complex
+    Class for testing the Morse Complex
     """
-
-    def __init__(self, *args, **kwargs):
-        super(TestMSC, self).__init__(*args, **kwargs)
-
-        # Python 2.7 compatibility
-        if not hasattr(self, "assertCountEqual"):
-            self.assertCountEqual = self.assertItemsEqual
 
     def setup(self):
         """
@@ -44,10 +37,10 @@ class TestMSC(TestCase):
         # __init__
         # build
         # __set_data
-        self.test_object = topopy.MorseSmaleComplex(debug=False, max_neighbors=10)
+        self.test_object = topopy.MorseComplex(debug=False, max_neighbors=10)
         self.test_object.build(self.X, self.Y)
 
-        gold_path = os.path.join("topopy", "tests", "msc_gold.json")
+        gold_path = os.path.join("topopy", "tests", "mc_gold.json")
         with open(gold_path, "r") as data_file:
             gold_json = data_file.read()
             gold_json = json.loads(gold_json)
@@ -55,23 +48,19 @@ class TestMSC(TestCase):
 
     def test_debug(self):
         """
-        Test the debugging output of the MSC
+        Test the debugging output of the MorseComplex
         """
         self.setup()
 
-        test_file = "msc_test_debug.txt"
+        test_file = "mc_test_debug.txt"
         sys.stdout = open(test_file, "w")
 
-        self.test_object = topopy.MorseSmaleComplex(debug=True, max_neighbors=10)
+        self.test_object = topopy.MorseComplex(debug=True, max_neighbors=10)
         self.test_object.build(self.X, self.Y)
 
         sys.stdout.close()
-        lines = [
-            "Graph Preparation:",
-            "Decomposition:",
-            "Stable Decomposition:",
-            "Unstable Decomposition:",
-        ]
+
+        lines = ["Graph Preparation:", "Decomposition:"]
 
         with open(test_file, "r") as fp:
             debug_output = fp.read()
@@ -79,20 +68,20 @@ class TestMSC(TestCase):
                 self.assertIn(line, debug_output)
 
         os.remove(test_file)
+
         # Restore stdout
         sys.stdout = sys.__stdout__
 
     def test_default(self):
         """
-        Test the build process of the MorseSmaleComplex
+        Test the build process of the MorseComplex
         """
         self.setup()
 
         self.assertEqual(
             len(self.test_object.base_partitions.keys()),
-            16,
-            "The 2D Gerber test function should have 16 "
-            "partitions at the base level.",
+            4,
+            "The 2D Gerber test function should have 4 stable manifolds at the base level.",
         )
 
     def test_get_classification(self):
@@ -102,11 +91,6 @@ class TestMSC(TestCase):
         """
         self.setup()
 
-        self.assertEqual(
-            "minimum",
-            self.test_object.get_classification(0),
-            "get_classification has misidentified a local minimum",
-        )
         self.assertEqual(
             "maximum",
             self.test_object.get_classification(429),
@@ -126,35 +110,16 @@ class TestMSC(TestCase):
         self.setup()
 
         self.assertSetEqual(
-            {
-                (1599, 1189),
-                (1584, 1170),
-                (984, 410),
-                (999, 429),
-                (999, 1189),
-                (1584, 1189),
-                (0, 410),
-                (960, 410),
-                (24, 410),
-                (960, 1170),
-                (24, 429),
-                (984, 1170),
-                (984, 429),
-                (1560, 1170),
-                (984, 1189),
-                (39, 429),
-            },
+            {1189, 1170, 410, 429},
             set(self.test_object.get_current_labels()),
-            "The base "
-            "partition labels returned from " + "get_current_labels does not match.",
+            "The base partition labels returned from get_current_labels does not match.",
         )
 
         self.test_object.set_persistence(self.test_object.persistences[-1])
         self.assertSetEqual(
-            {(1599, 410)},
+            {410},
             set(self.test_object.get_current_labels()),
-            "The base "
-            "partition labels returned from " + "get_current_labels does not match.",
+            "The base partition labels returned from get_current_labels does not match.",
         )
 
     def test_get_label(self):
@@ -165,7 +130,7 @@ class TestMSC(TestCase):
         self.setup()
 
         self.assertEqual(
-            (0, 410),
+            410,
             self.test_object.get_label(0),
             "The label of a single index should be retrievable.",
         )
@@ -176,7 +141,7 @@ class TestMSC(TestCase):
             "The label of the entire dataset should be retrievable.",
         )
 
-        gold_labels = np.array([[0, 410], [0, 410]])
+        gold_labels = np.array([410, 410])
         test_labels = np.array(self.test_object.get_label([0, 1]).flatten().tolist())
         np.testing.assert_array_equal(
             gold_labels,
@@ -187,9 +152,7 @@ class TestMSC(TestCase):
         self.assertEqual(
             len(self.Y),
             len(self.test_object.get_label()),
-            "Requesting "
-            "labels without specifying an index should return a "
-            "list of all labels",
+            "Requesting labels without specifying an index should return a list of all labels",
         )
 
         self.assertEqual(
@@ -205,24 +168,21 @@ class TestMSC(TestCase):
         """
         self.setup()
 
-        merge_sequence = {}
-        for item in self.gold["Hierarchy"]:
-            merge_sequence[item["Dying"]] = (
-                item["Persistence"],
-                item["Surviving"],
-                item["Saddle"],
-            )
-
         self.assertDictEqual(
-            merge_sequence,
+            {
+                1189: (0.117402, 429, 989),
+                429: (0.256168, 410, 424),
+                1170: (0.117402, 410, 970),
+                410: (1.99362, 410, 410),
+            },
             self.test_object.get_merge_sequence(),
-            "The merge sequence does not match the " + "expected output.",
+            "The merge sequence does not match the expected output.",
         )
 
     def test_get_weights(self):
         """
         Function to test if default weights can be applied to the
-        MorseSmaleComplex object. This feature should be evaluated
+        MorseComplex object. This feature should be evaluated
         in order to determine if it makes sense to keep it.
         """
         self.setup()
@@ -258,7 +218,7 @@ class TestMSC(TestCase):
         """
         self.setup()
 
-        local_object = topopy.MorseSmaleComplex()
+        test_object = topopy.MorseComplex()
 
         np.savetxt(
             "test_file.csv",
@@ -266,26 +226,19 @@ class TestMSC(TestCase):
             delimiter=",",
             header="x0,x1,y",
         )
-        local_object.load_data_and_build("test_file.csv", delimiter=",")
+        test_object.load_data_and_build("test_file.csv", delimiter=",")
         os.remove("test_file.csv")
 
         self.assertDictEqual(
             self.test_object.merge_sequence,
-            local_object.merge_sequence,
-            "loading from file should produce the same hierarchy",
+            test_object.merge_sequence,
+            "loading from file should produce the same merge sequence",
         )
-        self.assertSetEqual(
-            set(self.test_object.base_partitions.keys()),
-            set(local_object.base_partitions.keys()),
+        self.assertDictEqual(
+            dict(self.test_object.base_partitions),
+            dict(test_object.base_partitions),
             "loading from file should produce the base partitions.",
         )
-
-        for key in self.test_object.base_partitions.keys():
-            self.assertListEqual(
-                self.test_object.base_partitions[key].tolist(),
-                local_object.base_partitions[key].tolist(),
-                "loading from file should produce the base partitions.",
-            )
 
     def test_persistence(self):
         """
@@ -298,32 +251,24 @@ class TestMSC(TestCase):
         self.assertEqual(
             self.test_object.persistences[1],
             self.test_object.get_persistence(),
-            "Users should be able to get and set the " + "persistence.",
+            "Users should be able to get and set the persistence.",
         )
 
     def test_to_json(self):
         """
-        Testing the output of the Morse-Smale Complex as a json object
+        Testing the output of the Morse Complex as a json object
         """
         self.setup()
 
         test_json = json.loads(self.test_object.to_json())
 
-        self.assertCountEqual(
-            self.gold["Hierarchy"],
-            test_json["Hierarchy"],
-            "The hierarchy printed differs from what is expected.",
-        )
-
-        self.assertListEqual(
-            self.gold["Partitions"],
-            test_json["Partitions"],
-            "The base partitions do not match",
+        self.assertDictEqual(
+            self.gold, test_json, "The hierarchy printed differs from what is expected."
         )
 
     def test_reset(self):
         """
-        Tests resetting of internal storage of the msc object
+        Tests resetting of internal storage of the Morse Complex object
         """
         self.setup()
         self.test_object.reset()
@@ -331,52 +276,47 @@ class TestMSC(TestCase):
         self.assertListEqual(
             [],
             self.test_object.persistences,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
         self.assertDictEqual(
             {},
             self.test_object.base_partitions,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
         self.assertEqual(
             0,
             self.test_object.persistence,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
         self.assertDictEqual(
             {},
             self.test_object.merge_sequence,
-            "reset should clear all internal storage of the msc.",
-        )
-        self.assertListEqual(
-            [],
-            self.test_object.min_indices,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
         self.assertListEqual(
             [],
             self.test_object.max_indices,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
         self.assertEqual(
             [],
             self.test_object.X,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
         self.assertEqual(
             [],
             self.test_object.Y,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
         self.assertEqual(
             [],
             self.test_object.w,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
         self.assertEqual(
             [],
             self.test_object.Xnorm,
-            "reset should clear all internal storage of the msc.",
+            "reset should clear all internal storage of the Morse Complex.",
         )
 
     def test_save(self):
@@ -390,38 +330,24 @@ class TestMSC(TestCase):
             test_json = data_file.read()
             test_json = json.loads(test_json)
 
-        self.assertCountEqual(
-            self.gold["Hierarchy"],
-            test_json["Hierarchy"],
-            "The hierarchy differs from what is expected.",
+        self.assertDictEqual(
+            self.gold,
+            test_json,
+            "save does not reproduce the same results as the gold custom json file.",
         )
-
-        self.assertListEqual(
-            self.gold["Partitions"],
-            test_json["Partitions"],
-            "The base partitions do not match",
-        )
-
         os.remove("test.json")
 
         self.test_object.save()
-        with open("morse_smale_complex.json", "r") as data_file:
+        with open("morse_complex.json", "r") as data_file:
             test_json = data_file.read()
             test_json = json.loads(test_json)
 
-        self.assertCountEqual(
-            self.gold["Hierarchy"],
-            test_json["Hierarchy"],
-            "The hierarchy differs from what is expected.",
+        self.assertDictEqual(
+            self.gold,
+            test_json,
+            "save does not reproduce the same results as the gold default json file.",
         )
-
-        self.assertListEqual(
-            self.gold["Partitions"],
-            test_json["Partitions"],
-            "The base partitions do not match.",
-        )
-
-        os.remove("morse_smale_complex.json")
+        os.remove("morse_complex.json")
 
     def test_shape_functions(self):
         """
@@ -432,78 +358,42 @@ class TestMSC(TestCase):
         self.assertEqual(
             self.X.shape[1],
             self.test_object.get_dimensionality(),
-            "get_dimensionality should return the number of " + "columns in X.",
+            "get_dimensionality should return the number of columns in X.",
         )
         self.assertEqual(
             self.X.shape[0],
             self.test_object.get_sample_size(),
-            "get_sample_size should return the number of " + "rows in X.",
+            "get_sample_size should return the number of rows in X.",
         )
         self.assertEqual(
-            121,
-            self.test_object.get_sample_size((1599, 1189)),
-            "get_sample_size should return the number of "
-            + "rows in the specified partition.",
+            240,
+            self.test_object.get_sample_size(1189),
+            "get_sample_size should return the number of rows in the specified partition.",
         )
 
     def test_get_partitions(self):
+        """
+        Test the ability to retrieve partition labels for individual
+        query points and the entire dataset if not specified
+        """
         self.setup()
 
-        gold_msc_partitions = {}
         gold_stable_partitions = {}
-        gold_unstable_partitions = {}
-        for i, (min_label, max_label) in enumerate(self.gold["Partitions"]):
+        for i, max_label in enumerate(self.gold["Partitions"]):
             if max_label not in gold_stable_partitions:
                 gold_stable_partitions[max_label] = []
             gold_stable_partitions[max_label].append(i)
 
-            if min_label not in gold_unstable_partitions:
-                gold_unstable_partitions[min_label] = []
-            gold_unstable_partitions[min_label].append(i)
-
-            if (min_label, max_label) not in gold_msc_partitions:
-                gold_msc_partitions[(min_label, max_label)] = []
-            gold_msc_partitions[(min_label, max_label)].append(i)
-
         partitions = self.test_object.get_partitions()
-        self.assertEqual(
-            16,
-            len(partitions),
-            "The number of partitions "
-            "without specifying the "
-            "persistence should be the "
-            "same as requesting the base "
-            "(0) persistence level",
-        )
-
-        self.assertDictEqual(
-            gold_msc_partitions,
-            partitions,
-            "The base partitions of the Morse-Smale complex should match",
-        )
-
-        partitions = self.test_object.get_stable_manifolds()
         self.assertEqual(
             4,
             len(partitions),
-            "The number of stable manifolds should be 4 at the base level",
+            "The number of partitions without specifying the persistence should be the same as requesting the base (0) persistence level",
         )
         self.assertDictEqual(
             gold_stable_partitions,
             partitions,
             "The base partitions of the stable manifolds should match",
-        )
-
-        partitions = self.test_object.get_unstable_manifolds()
-        self.assertEqual(
-            9,
-            len(partitions),
-            "The number of unstable manifolds should be 9 at the base level",
-        )
-        self.assertDictEqual(
-            gold_unstable_partitions,
-            partitions,
-            "The base partitions of the unstable manifolds should match",
         )
 
         test_p = 0.5
@@ -520,73 +410,32 @@ class TestMSC(TestCase):
                     merge_pattern[merge["Surviving"]] = merge["Surviving"]
                 merge_pattern[merge["Dying"]] = merge_pattern[merge["Surviving"]]
 
-        gold_msc_partitions = {}
         gold_stable_partitions = {}
-        gold_unstable_partitions = {}
-        for i, (min_label, max_label) in enumerate(self.gold["Partitions"]):
-            min_label = merge_pattern[min_label]
+        for i, max_label in enumerate(self.gold["Partitions"]):
             max_label = merge_pattern[max_label]
 
             if max_label not in gold_stable_partitions:
                 gold_stable_partitions[max_label] = []
             gold_stable_partitions[max_label].append(i)
 
-            if min_label not in gold_unstable_partitions:
-                gold_unstable_partitions[min_label] = []
-            gold_unstable_partitions[min_label].append(i)
-
-            if (min_label, max_label) not in gold_msc_partitions:
-                gold_msc_partitions[(min_label, max_label)] = []
-            gold_msc_partitions[(min_label, max_label)].append(i)
-
         partitions = self.test_object.get_partitions(test_p)
-        self.assertEqual(
-            4, len(partitions), "The number of partitions at the 0.5 level should be 4"
-        )
-        self.assertDictEqual(
-            gold_msc_partitions,
-            partitions,
-            "The partitions of the Morse-Samle complex should match at the test level p={}".format(
-                test_p
-            ),
-        )
-
-        partitions = self.test_object.get_stable_manifolds(test_p)
         self.assertEqual(
             1,
             len(partitions),
-            "The number of stable manifolds should be 1 at the test level p={}".format(
-                test_p
-            ),
+            "The number of partitions without specifying the persistence should be the same as requesting the base (0) persistence level",
         )
         self.assertDictEqual(
             gold_stable_partitions,
             partitions,
-            "The base partitions of the stable manifolds should match at the test level p={}".format(
+            "The partitions of the stable manifolds should match at the test level p={}".format(
                 test_p
             ),
         )
 
-        partitions = self.test_object.get_unstable_manifolds(0.5)
-        self.assertEqual(
-            4,
-            len(partitions),
-            "The number of unstable manifolds should be 9 at the test level p={}".format(
-                test_p
-            ),
-        )
-        self.assertDictEqual(
-            gold_unstable_partitions,
-            partitions,
-            "The base partitions of the unstable manifolds should match at the test level p={}".format(
-                test_p
-            ),
-        )
-
-        self.test_object = topopy.MorseSmaleComplex()
+        self.test_object = topopy.MorseComplex()
         partitions = self.test_object.get_partitions()
         self.assertEqual(
             {},
             partitions,
-            "Requesting partitions on an unbuilt object should return an empty dict",
+            "Requesting partitions on an unbuilt object should return an empty dictionary",
         )

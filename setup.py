@@ -24,7 +24,13 @@ def get_property(prop, project):
     return result.group(1)
 
 
-FILES = ["UnionFind.cpp", "MergeTree.cpp", "AMSC.cpp", "utils.cpp", "topology_wrap.cpp"]
+FILES = [
+    "UnionFind.cpp",
+    "MergeTree.cpp",
+    "MorseComplex.cpp",
+    "utils.cpp",
+    "topology_wrap.cpp",
+]
 VERSION = get_property("__version__", "topopy")
 
 # Consult here: https://packaging.python.org/tutorials/distributing-packages/

@@ -7,14 +7,14 @@
 %include "stl.i"
 
 %{
-#include "AMSC.h"
+#include "MorseComplex.h"
 #include "MergeTree.h"
 %}
-%include "AMSC.h"
+%include "MorseComplex.h"
 %include "MergeTree.h"
 
-%template(AMSCFloat) AMSC<float>;
-%template(AMSCDouble) AMSC<double>;
+%template(MorseComplexFloat) MorseComplex<float>;
+%template(MorseComplexDouble) MorseComplex<double>;
 
 %template(MergeTreeFloat) MergeTree<float>;
 %template(MergeTreeDouble) MergeTree<double>;

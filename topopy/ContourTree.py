@@ -88,7 +88,7 @@ class ContourTree(TopologicalObject):
         self.superNodes = []
         self.superArcs = []
 
-    def build(self, X, Y, w=None, names=None, edges=None):
+    def build(self, X, Y, w=None, edges=None):
         """ Assigns data to this object and builds the Morse-Smale
             Complex
             @ In, X, an m-by-n array of values specifying m
@@ -98,22 +98,18 @@ class ContourTree(TopologicalObject):
             @ In, w, an optional m vector of values specifying the
             weights associated to each of the m samples used. Default of
             None means all points will be equally weighted
-            @ In, names, an optional list of strings that specify the
-            names to associate to the n input dimensions and 1 output
-            dimension. Default of None means input variables will be x0,
-            x1, ..., x(n-1) and the output will be y
             @ In, edges, an optional list of custom edges to use as a
             starting point for pruning, or in place of a computed graph.
         """
-        super(ContourTree, self).build(X, Y, w, names, edges)
+        super(ContourTree, self).build(X, Y, w, edges)
 
         # Build the join and split trees that we will merge into the
         # contour tree
         joinTree = MergeTree(debug=self.debug)
         splitTree = MergeTree(debug=self.debug)
 
-        joinTree.build_for_ContourTree(self, True)
-        splitTree.build_for_ContourTree(self, False)
+        joinTree.build_for_contour_tree(self, True)
+        splitTree.build_for_contour_tree(self, False)
 
         self.augmentedEdges = dict(joinTree.augmentedEdges)
         self.augmentedEdges.update(dict(splitTree.augmentedEdges))
@@ -135,14 +131,14 @@ class ContourTree(TopologicalObject):
         self._identifySuperGraph()
 
         if self.debug:
-            sys.stderr.write("Sorting Nodes: ")
+            sys.stdout.write("Sorting Nodes: ")
             start = time.clock()
 
         self.sortedNodes = sorted(enumerate(self.Y), key=operator.itemgetter(1))
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
     def _identifyBranches(self):
         """ A helper function for determining all of the branches in the
@@ -151,7 +147,7 @@ class ContourTree(TopologicalObject):
         """
 
         if self.debug:
-            sys.stderr.write("Identifying branches: ")
+            sys.stdout.write("Identifying branches: ")
             start = time.clock()
 
         seen = set()
@@ -172,7 +168,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
     def _identifySuperGraph(self):
         """ A helper function for determining the condensed
@@ -185,7 +181,7 @@ class ContourTree(TopologicalObject):
         """
 
         if self.debug:
-            sys.stderr.write("Condensing Graph: ")
+            sys.stdout.write("Condensing Graph: ")
             start = time.clock()
 
         G = nx.DiGraph()
@@ -257,7 +253,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
     def get_seeds(self, threshold):
         """ Returns a list of seed points for isosurface extraction
@@ -306,7 +302,7 @@ class ContourTree(TopologicalObject):
                 details of the input tree.
         """
         if self.debug:
-            sys.stderr.write("Networkx Tree construction: ")
+            sys.stdout.write("Networkx Tree construction: ")
             start = time.clock()
 
         nxTree = nx.DiGraph()
@@ -340,7 +336,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
         return nxTree
 
@@ -357,7 +353,7 @@ class ContourTree(TopologicalObject):
             @ Out, None
         """
         if self.debug:
-            sys.stderr.write("Processing Tree: ")
+            sys.stdout.write("Processing Tree: ")
             start = time.clock()
 
         # Get all of the leaf nodes that are not branches in the other
@@ -377,7 +373,7 @@ class ContourTree(TopologicalObject):
             v = leaves.pop()
 
             # if self.debug:
-            #     sys.stderr.write('\tProcessing {} -> {}\n'
+            #     sys.stdout.write('\tProcessing {} -> {}\n'
             #                      .format(v, thisTree.edges(v)[0][1]))
 
             # Take the leaf and edge out of the input tree and place it
@@ -408,7 +404,7 @@ class ContourTree(TopologicalObject):
             if thatTree.out_degree(v) == 0:
                 thatTree.remove_node(v)
                 # if self.debug:
-                #     sys.stderr.write('\t\tRemoving root {} from other tree\n'
+                #     sys.stdout.write('\t\tRemoving root {} from other tree\n'
                 #                      .format(v))
             # This is a "regular" node in the other tree, suppress it
             # there, but be sure to glue the upper and lower portions
@@ -439,7 +435,7 @@ class ContourTree(TopologicalObject):
                 thatTree.remove_node(v)
 
                 # if self.debug:
-                #     sys.stderr.write('\t\tSuppressing {} in other tree and '
+                #     sys.stdout.write('\t\tSuppressing {} in other tree and '
                 #                      'gluing {} to {}\n'
                 #                      .format(v, startNode, endNode))
 
@@ -460,8 +456,8 @@ class ContourTree(TopologicalObject):
             #     for leaf in leaves:
             #         myMessage += sep + str(leaf)
             #         sep = ','
-            #     sys.stderr.write(myMessage+'\n')
+            #     sys.stdout.write(myMessage+'\n')
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))

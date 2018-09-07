@@ -5,8 +5,11 @@
 from unittest import TestCase
 import numpy as np
 import topopy
-from .testFunctions import gerber, generate_test_grid_2d
+from .test_functions import gerber, generate_test_grid_2d
 import sklearn
+import sys
+import os
+import warnings
 
 
 class TestTO(TestCase):
@@ -15,8 +18,9 @@ class TestTO(TestCase):
     """
 
     def setup(self):
-        """ Setup function will create a fixed point set and parameter
-            settings for testing different aspects of this library.
+        """
+        Setup function will create a fixed point set and parameter
+        settings for testing different aspects of this library.
         """
         self.X = generate_test_grid_2d(10)
         self.Y = gerber(self.X)
@@ -33,7 +37,7 @@ class TestTO(TestCase):
         # __init__
         # build
         # __set_data
-        self.to = topopy.TopologicalObject(debug=False)
+        self.to = topopy.TopologicalObject(debug=False, max_neighbors=10)
         self.to.build(self.X, self.Y)
 
     def test_aggregation(self):
@@ -42,6 +46,8 @@ class TestTO(TestCase):
         X = np.ones((11, 2))
         X[10] = [0, 0]
         Y = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
+
+        warnings.filterwarnings("ignore")
 
         x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y)
         self.assertEqual(
@@ -116,7 +122,6 @@ class TestTO(TestCase):
         self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
         self.assertListEqual(y.tolist(), [[100, 0], [0, 9]])
 
-        # Testing custom callable aggregator
         x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, "last")
         self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
         self.assertListEqual(y.tolist(), [[100, 0], [9, 0]])
@@ -126,10 +131,19 @@ class TestTO(TestCase):
         self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
         self.assertListEqual(y.tolist(), [[100, 0], [0, 9]])
 
+        warnings.filterwarnings("always")
         # Testing an invalid aggregator
-        x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, "invalid")
-        self.assertListEqual(x.tolist(), X.tolist())
-        self.assertListEqual(y.tolist(), Y.tolist())
+        with warnings.catch_warnings(record=True) as w:
+            x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, "invalid")
+
+            self.assertTrue(issubclass(w[-1].category, UserWarning))
+            self.assertEqual(
+                'Aggregator "invalid" not understood. Skipping sample aggregation.',
+                str(w[-1].message),
+            )
+
+            self.assertListEqual(x.tolist(), X.tolist())
+            self.assertListEqual(y.tolist(), Y.tolist())
 
         # Testing aggregator on non-duplicate data
         X = np.array([[0, 0], [0, 1]])
@@ -138,6 +152,7 @@ class TestTO(TestCase):
         self.assertListEqual(x.tolist(), X.tolist())
         self.assertListEqual(y.tolist(), Y.tolist())
 
+        warnings.filterwarnings("ignore")
         # Testing use of the aggregator in the check_duplicates function
         X = np.ones((11, 2))
         X[10] = [0, 0]
@@ -145,68 +160,55 @@ class TestTO(TestCase):
 
         to = topopy.TopologicalObject()
         self.assertRaises(ValueError, to.build, **{"X": X, "Y": Y})
-        to = topopy.TopologicalObject(aggregator="mean")
+        to = topopy.TopologicalObject(aggregator="mean", max_neighbors=10)
         to.build(X, Y)
+        warnings.filterwarnings("always")
 
     def test_empty(self):
-        """ Test the ability to handle None objects as input
+        """
+        Test the ability to handle None objects as input
         """
         self.setup()
         self.to = topopy.TopologicalObject()
         self.to.build(None, None)
 
     def test_debug(self):
-        """ Test the debugging output of the TopologicalObject
+        """
+        Test the debugging output of the TopologicalObject
         """
         self.setup()
-        self.to = topopy.TopologicalObject(debug=True)
+        test_file = "to_test_debug.txt"
+        sys.stdout = open(test_file, "w")
+
+        self.to = topopy.TopologicalObject(debug=True, max_neighbors=10)
         self.to.build(self.X, self.Y)
+        sys.stdout.close()
 
-    def test_get_names(self):
-        """ Test the ability for the code to generate dummy names
-            and also correctly use passed in names.
-        """
-        self.setup()
+        lines = ["Graph Preparation:"]
 
-        default_names = []
-        for d in range(self.to.get_dimensionality()):
-            default_names.append("x%d" % d)
-        default_names.append("y")
+        with open(test_file, "r") as fp:
+            debug_output = fp.read()
+            for line in lines:
+                self.assertIn(line, debug_output)
 
-        test_names = self.to.get_names()
-        for i in range(len(default_names)):
-            self.assertEqual(
-                default_names[i],
-                test_names[i],
-                self.to.__class__.__name__ + " should generate "
-                "default value names for labeling purposes.",
-            )
-
-        custom_names = ["a", "b", "c"]
-        self.to.build(self.X, self.Y, names=custom_names)
-        test_names = self.to.get_names()
-        for i in range(len(custom_names)):
-            self.assertEqual(
-                custom_names[i],
-                test_names[i],
-                self.to.__class__.__name__ + " object should use "
-                "any custom names passed in for labeling "
-                "purposes.",
-            )
+        os.remove(test_file)
+        # Restore stdout
+        sys.stdout = sys.__stdout__
 
     def test_get_normed_x(self):
-        """ Tests get_normed_x in several different contexts:
-                Single Element extraction
-                Single Column extraction
-                Single Row extraction
-                Multiple row extraction
-                Multiple column extraction
-                Full data extraction
+        """
+        Tests get_normed_x in several different contexts:
+            Single Element extraction
+            Single Column extraction
+            Single Row extraction
+            Multiple row extraction
+            Multiple column extraction
+            Full data extraction
         """
         self.setup()
 
         for norm, X in self.norm_x.items():
-            to = topopy.TopologicalObject(normalization=norm)
+            to = topopy.TopologicalObject(normalization=norm, max_neighbors=10)
             to.build(self.X, self.Y)
 
             # Test single column extraction
@@ -267,13 +269,14 @@ class TestTO(TestCase):
             )
 
     def test_get_x(self):
-        """ Tests get_x in several different contexts:
-                Single Element extraction
-                Single Column extraction
-                Single Row extraction
-                Multiple row extraction
-                Multiple column extraction
-                Full data extraction
+        """
+        Tests get_x in several different contexts:
+            Single Element extraction
+            Single Column extraction
+            Single Row extraction
+            Multiple row extraction
+            Multiple column extraction
+            Full data extraction
         """
         self.setup()
 
@@ -334,10 +337,11 @@ class TestTO(TestCase):
         )
 
     def test_get_y(self):
-        """ Tests get_y in several different contexts:
-                Single Element extraction
-                Multiple row extraction
-                Full data extraction
+        """
+        Tests get_y in several different contexts:
+            Single Element extraction
+            Multiple row extraction
+            Full data extraction
         """
         self.setup()
 
@@ -373,7 +377,8 @@ class TestTO(TestCase):
         )
 
     def test_neighbors(self):
-        """ Tests the ability to retrieve the neighbors of a given index
+        """
+        Tests the ability to retrieve the neighbors of a given index
         """
         self.setup()
         self.assertSetEqual(
@@ -385,7 +390,8 @@ class TestTO(TestCase):
         )
 
     def test_reset(self):
-        """ Tests resetting of internal storage of the to object
+        """
+        Tests resetting of internal storage of the to object
         """
         self.setup()
         self.to.reset()
@@ -397,9 +403,6 @@ class TestTO(TestCase):
             [], self.to.Y, "reset should clear all " + "internal storage of the to."
         )
         self.assertEqual(
-            [], self.to.names, "reset should clear all " + "internal storage of the to."
-        )
-        self.assertEqual(
             [], self.to.Xnorm, "reset should clear all " + "internal storage of the to."
         )
         self.assertEqual(
@@ -409,7 +412,8 @@ class TestTO(TestCase):
         )
 
     def test_shape_functions(self):
-        """ Test the get_dimensionality and get_sample_size functions
+        """
+        Test the get_dimensionality and get_sample_size functions
         """
         self.setup()
 

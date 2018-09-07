@@ -143,7 +143,6 @@ class TopologicalObject(object):
         self.max_neighbors = max_neighbors
         self.beta = beta
         self.normalization = normalization
-        self.gradient = gradient
         self.connect = connect
         self.debug = debug
         self.aggregator = aggregator
@@ -156,12 +155,11 @@ class TopologicalObject(object):
         self.Y = []
         self.w = []
 
-        self.names = []
         self.Xnorm = []
 
         self.graph_rep = None
 
-    def __set_data(self, X, Y, w=None, names=None):
+    def __set_data(self, X, Y, w=None):
         """ Internally assigns the input data and normalizes it
             according to the user's specifications
             @ In, X, an m-by-n array of values specifying m
@@ -171,10 +169,6 @@ class TopologicalObject(object):
             @ In, w, an optional m vector of values specifying the
             weights associated to each of the m samples used. Default of
             None means all points will be equally weighted
-            @ In, names, an optional list of strings that specify the
-            names to associate to the n input dimensions and 1 output
-            dimension. Default of None means input variables will be x0,
-            x1, ..., x(n-1) and the output will be y
         """
         self.X = X
         self.Y = Y
@@ -184,14 +178,6 @@ class TopologicalObject(object):
             self.w = np.array(w)
         else:
             self.w = np.ones(len(Y)) * 1.0 / float(len(Y))
-
-        self.names = names
-
-        if self.names is None:
-            self.names = []
-            for d in range(self.get_dimensionality()):
-                self.names.append("x%d" % d)
-            self.names.append("y")
 
         if self.normalization == "feature":
             # This doesn't work with one-dimensional arrays on older
@@ -205,7 +191,7 @@ class TopologicalObject(object):
         else:
             self.Xnorm = np.array(self.X)
 
-    def build(self, X, Y, w=None, names=None, edges=None):
+    def build(self, X, Y, w=None, edges=None):
         """ Assigns data to this object and builds the requested topological
             structure
             @ In, X, an m-by-n array of values specifying m
@@ -215,10 +201,6 @@ class TopologicalObject(object):
             @ In, w, an optional m vector of values specifying the
             weights associated to each of the m samples used. Default of
             None means all points will be equally weighted
-            @ In, names, an optional list of strings that specify the
-            names to associate to the n input dimensions and 1 output
-            dimension. Default of None means input variables will be x0,
-            x1, ..., x(n-1) and the output will be y
             @ In, edges, an optional list of custom edges to use as a
             starting point for pruning, or in place of a computed graph.
         """
@@ -227,10 +209,10 @@ class TopologicalObject(object):
         if X is None or Y is None:
             return
 
-        self.__set_data(X, Y, w, names)
+        self.__set_data(X, Y, w)
 
         if self.debug:
-            sys.stderr.write("Graph Preparation: ")
+            sys.stdout.write("Graph Preparation: ")
             start = time.clock()
 
         self.graph_rep = nglpy.Graph(
@@ -239,7 +221,7 @@ class TopologicalObject(object):
 
         if self.debug:
             end = time.clock()
-            sys.stderr.write("%f s\n" % (end - start))
+            sys.stdout.write("%f s\n" % (end - start))
 
     def load_data_and_build(self, filename, delimiter=","):
         """ Convenience function for directly working with a data file.
@@ -248,21 +230,12 @@ class TopologicalObject(object):
             @ In, filename, string representing the data file
         """
         data = np.genfromtxt(filename, dtype=float, delimiter=delimiter, names=True)
-        names = list(data.dtype.names)
         data = data.view(np.float64).reshape(data.shape + (-1,))
 
         X = data[:, 0:-1]
         Y = data[:, -1]
 
-        self.build(X=X, Y=Y, names=names)
-
-    def get_names(self):
-        """ Returns the names of the input and output dimensions in the
-            order they appear in the input data.
-            @ Out, a list of strings specifying the input + output
-            variable names.
-        """
-        return self.names
+        self.build(X=X, Y=Y)
 
     def get_normed_x(self, rows=None, cols=None):
         """ Returns the normalized input data requested by the user

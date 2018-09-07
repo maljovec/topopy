@@ -12,9 +12,16 @@ from __future__ import absolute_import
 # 'from contrib.MorseSmaleComplex import MorseSmaleComplex' outside of
 # this submodule
 from .TopologicalObject import TopologicalObject
+from .MorseComplex import MorseComplex
 from .MorseSmaleComplex import MorseSmaleComplex
 from .MergeTree import MergeTree
 from .ContourTree import ContourTree
 
-__all__ = ["TopologicalObject", "MorseSmaleComplex", "MergeTree", "ContourTree"]
-__version__ = "0.0.6"
+__all__ = [
+    "TopologicalObject",
+    "MorseComplex",
+    "MorseSmaleComplex",
+    "MergeTree",
+    "ContourTree",
+]
+__version__ = "0.1.0"
