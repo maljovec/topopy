@@ -149,6 +149,7 @@ class TestTO(TestCase):
         self.assertListEqual(x.tolist(), X.tolist())
         self.assertListEqual(y.tolist(), Y.tolist())
 
+        warnings.filterwarnings("ignore")
         # Testing use of the aggregator in the check_duplicates function
         X = np.ones((11, 2))
         X[10] = [0, 0]
@@ -158,6 +159,7 @@ class TestTO(TestCase):
         self.assertRaises(ValueError, to.build, **{"X": X, "Y": Y})
         to = topopy.TopologicalObject(aggregator="mean", max_neighbors=10)
         to.build(X, Y)
+        warnings.filterwarnings("always")
 
     def test_empty(self):
         """
