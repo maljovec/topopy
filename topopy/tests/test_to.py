@@ -9,6 +9,7 @@ from .test_functions import gerber, generate_test_grid_2d
 import sklearn
 import sys
 import os
+import warnings
 
 
 class TestTO(TestCase):
@@ -45,6 +46,8 @@ class TestTO(TestCase):
         X = np.ones((11, 2))
         X[10] = [0, 0]
         Y = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
+
+        warnings.filterwarnings("ignore")
 
         x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y)
         self.assertEqual(
@@ -119,7 +122,6 @@ class TestTO(TestCase):
         self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
         self.assertListEqual(y.tolist(), [[100, 0], [0, 9]])
 
-        # Testing custom callable aggregator
         x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, "last")
         self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
         self.assertListEqual(y.tolist(), [[100, 0], [9, 0]])
@@ -129,10 +131,16 @@ class TestTO(TestCase):
         self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
         self.assertListEqual(y.tolist(), [[100, 0], [0, 9]])
 
+        warnings.filterwarnings("always")
         # Testing an invalid aggregator
-        x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, "invalid")
-        self.assertListEqual(x.tolist(), X.tolist())
-        self.assertListEqual(y.tolist(), Y.tolist())
+        with warnings.catch_warnings(record=True) as w:
+            x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, "invalid")
+
+            self.assertTrue(issubclass(w[-1].category, UserWarning))
+            self.assertEqual("Aggregator \"invalid\" not understood. Skipping sample aggregation.", str(w[-1].message))
+
+            self.assertListEqual(x.tolist(), X.tolist())
+            self.assertListEqual(y.tolist(), Y.tolist())
 
         # Testing aggregator on non-duplicate data
         X = np.array([[0, 0], [0, 1]])
