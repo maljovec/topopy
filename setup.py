@@ -72,5 +72,5 @@ setup(
     setup_requires=["scipy", "numpy"],
     install_requires=["scipy", "numpy", "scikit-learn", "networkx", "nglpy"],
     python_requires=">=2.7, <4",
-    ext_modules=[Extension("_topology", FILES, **extra_args)],
+    ext_modules=[Extension('_topology', FILES, extra_compile_args=['-O3', '-march=native'], **extra_args)])
 )
