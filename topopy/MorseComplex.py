@@ -278,16 +278,14 @@ class MorseComplex(TopologicalObject):
         # such that merged arrays will be adjacent.
         for key, items in self.base_partitions.items():
             new_key = key
-            keys = []
             while (
                 self.merge_sequence[new_key][0] < persistence
                 and self.merge_sequence[new_key][1] != new_key
             ):
-                keys.append(new_key)
                 new_key = self.merge_sequence[new_key][1]
             if new_key not in partitions:
                 partitions[new_key] = []
-            partitions[new_key].extend(items + keys)
+            partitions[new_key].extend(items)
 
         for key in partitions:
             partitions[key] = sorted(list(set(partitions[key])))

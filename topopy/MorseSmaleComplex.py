@@ -216,24 +216,20 @@ class MorseSmaleComplex(TopologicalObject):
         for key, items in self.base_partitions.items():
             min_index = key[0]
             max_index = key[1]
-            min_indices = []
-            max_indices = []
             while (
                 self.merge_sequence[min_index][0] < persistence
                 and self.merge_sequence[min_index][1] != min_index
             ):
-                min_indices.append(min_index)
                 min_index = self.merge_sequence[min_index][1]
             while (
                 self.merge_sequence[max_index][0] < persistence
                 and self.merge_sequence[max_index][1] != max_index
             ):
-                max_indices.append(max_index)
                 max_index = self.merge_sequence[max_index][1]
             new_key = (min_index, max_index)
             if new_key not in partitions:
                 partitions[new_key] = []
-            partitions[new_key].extend(items.tolist() + min_indices + max_indices)
+            partitions[new_key].extend(items.tolist())
 
         for key in partitions:
             partitions[key] = sorted(list(set(partitions[key])))
@@ -255,17 +251,15 @@ class MorseSmaleComplex(TopologicalObject):
         partitions = {}
         for key, items in self.base_partitions.items():
             max_index = key[1]
-            max_indices = []
             while (
                 self.merge_sequence[max_index][0] < persistence
                 and self.merge_sequence[max_index][1] != max_index
             ):
-                max_indices.append(max_index)
                 max_index = self.merge_sequence[max_index][1]
             new_key = max_index
             if new_key not in partitions:
                 partitions[new_key] = []
-            partitions[new_key].extend(items.tolist() + max_indices)
+            partitions[new_key].extend(items.tolist())
 
         for key in partitions:
             partitions[key] = sorted(list(set(partitions[key])))
@@ -288,17 +282,15 @@ class MorseSmaleComplex(TopologicalObject):
         partitions = {}
         for key, items in self.base_partitions.items():
             min_index = key[0]
-            min_indices = []
             while (
                 self.merge_sequence[min_index][0] < persistence
                 and self.merge_sequence[min_index][1] != min_index
             ):
-                min_indices.append(min_index)
                 min_index = self.merge_sequence[min_index][1]
             new_key = min_index
             if new_key not in partitions:
                 partitions[new_key] = []
-            partitions[new_key].extend(items.tolist() + min_indices)
+            partitions[new_key].extend(items.tolist())
 
         for key in partitions:
             partitions[key] = sorted(list(set(partitions[key])))
