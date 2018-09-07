@@ -40,6 +40,11 @@ class TestMC(TestCase):
         self.test_object = topopy.MorseComplex(debug=False, max_neighbors=10)
         self.test_object.build(self.X, self.Y)
 
+        with open("mc_gold.json", "r") as data_file:
+            gold_json = data_file.read()
+            gold_json = json.loads(gold_json)
+        self.gold = gold_json
+
     def test_debug(self):
         """
         Test the debugging output of the MorseComplex
@@ -254,14 +259,10 @@ class TestMC(TestCase):
         """
         self.setup()
 
-        with open("mc_gold.json", "r") as data_file:
-            gold_json = data_file.read()
-            gold_json = json.loads(gold_json)
-
         test_json = json.loads(self.test_object.to_json())
 
         self.assertDictEqual(
-            gold_json, test_json, "The hierarchy printed differs from what is expected."
+            self.gold, test_json, "The hierarchy printed differs from what is expected."
         )
 
     def test_reset(self):
@@ -324,16 +325,12 @@ class TestMC(TestCase):
         self.setup()
         self.test_object.save("test.json")
 
-        with open("mc_gold.json", "r") as data_file:
-            gold_json = data_file.read()
-            gold_json = json.loads(gold_json)
-
         with open("test.json", "r") as data_file:
             test_json = data_file.read()
             test_json = json.loads(test_json)
 
         self.assertDictEqual(
-            gold_json,
+            self.gold,
             test_json,
             "save does not reproduce the same results as the gold custom json file.",
         )
@@ -345,7 +342,7 @@ class TestMC(TestCase):
             test_json = json.loads(test_json)
 
         self.assertDictEqual(
-            gold_json,
+            self.gold,
             test_json,
             "save does not reproduce the same results as the gold default json file.",
         )
@@ -379,11 +376,59 @@ class TestMC(TestCase):
         query points and the entire dataset if not specified
         """
         self.setup()
+
+        gold_stable_partitions = {}
+        for i, max_label in enumerate(self.gold["Partitions"]):
+            if max_label not in gold_stable_partitions:
+                gold_stable_partitions[max_label] = []
+            gold_stable_partitions[max_label].append(i)
+
         partitions = self.test_object.get_partitions()
         self.assertEqual(
             4,
             len(partitions),
             "The number of partitions without specifying the persistence should be the same as requesting the base (0) persistence level",
+        )
+        self.assertDictEqual(
+            gold_stable_partitions,
+            partitions,
+            "The base partitions of the stable manifolds should match",
+        )
+
+        test_p = 0.5
+
+        merge_pattern = {}
+        # Initialize every extrema to point to itself
+        for merge in self.gold["Hierarchy"]:
+            merge_pattern[merge["Dying"]] = merge["Dying"]
+
+        # Now point to the correct label for the specified persistence
+        for merge in self.gold["Hierarchy"]:
+            if merge["Persistence"] < test_p:
+                if merge["Surviving"] not in merge_pattern:
+                    merge_pattern[merge["Surviving"]] = merge["Surviving"]
+                merge_pattern[merge["Dying"]] = merge_pattern[merge["Surviving"]]
+
+        gold_stable_partitions = {}
+        for i, max_label in enumerate(self.gold["Partitions"]):
+            max_label = merge_pattern[max_label]
+
+            if max_label not in gold_stable_partitions:
+                gold_stable_partitions[max_label] = []
+            gold_stable_partitions[max_label].append(i)
+
+        partitions = self.test_object.get_partitions(test_p)
+        self.assertEqual(
+            1,
+            len(partitions),
+            "The number of partitions without specifying the persistence should be the same as requesting the base (0) persistence level",
+        )
+        self.assertDictEqual(
+            gold_stable_partitions,
+            partitions,
+            "The partitions of the stable manifolds should match at the test level p={}".format(
+                test_p
+            ),
         )
 
         self.test_object = topopy.MorseComplex()
