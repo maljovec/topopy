@@ -47,7 +47,8 @@ class TestMSC(TestCase):
         self.test_object = topopy.MorseSmaleComplex(debug=False, max_neighbors=10)
         self.test_object.build(self.X, self.Y)
 
-        with open("msc_gold.json", "r") as data_file:
+        gold_path = os.path.join("topopy", "tests", "msc_gold.json")
+        with open(gold_path, "r") as data_file:
             gold_json = data_file.read()
             gold_json = json.loads(gold_json)
         self.gold = gold_json
