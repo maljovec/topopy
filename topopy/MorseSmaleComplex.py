@@ -135,10 +135,12 @@ class MorseSmaleComplex(TopologicalObject):
         # minimum key which would wipe the maximum merge
         self.merge_sequence = stableManifolds.merge_sequence.copy()
         self.merge_sequence.update(unstableManifolds.merge_sequence)
-        self.persistences = sorted(stableManifolds.persistences + unstableManifolds.persistences)
+        self.persistences = sorted(
+            stableManifolds.persistences + unstableManifolds.persistences
+        )
 
         self.base_partitions = {}
-        base = np.array([[None, None]]*len(Y))
+        base = np.array([[None, None]] * len(Y))
         for key, items in unstableManifolds.base_partitions.items():
             base[np.array(items), 0] = key
         for key, items in stableManifolds.base_partitions.items():
@@ -146,7 +148,9 @@ class MorseSmaleComplex(TopologicalObject):
 
         keys = set(map(tuple, base))
         for key in keys:
-            self.base_partitions[key] = np.where(np.logical_and(base[:, 0] == key[0], base[:, 1] == key[1]))[0]
+            self.base_partitions[key] = np.where(
+                np.logical_and(base[:, 0] == key[0], base[:, 1] == key[1])
+            )[0]
 
         if self.debug:
             end = time.clock()
@@ -214,10 +218,16 @@ class MorseSmaleComplex(TopologicalObject):
             max_index = key[1]
             min_indices = []
             max_indices = []
-            while self.merge_sequence[min_index][0] < persistence and self.merge_sequence[min_index][1] != min_index:
+            while (
+                self.merge_sequence[min_index][0] < persistence
+                and self.merge_sequence[min_index][1] != min_index
+            ):
                 min_indices.append(min_index)
                 min_index = self.merge_sequence[min_index][1]
-            while self.merge_sequence[max_index][0] < persistence and self.merge_sequence[max_index][1] != max_index:
+            while (
+                self.merge_sequence[max_index][0] < persistence
+                and self.merge_sequence[max_index][1] != max_index
+            ):
                 max_indices.append(max_index)
                 max_index = self.merge_sequence[max_index][1]
             new_key = (min_index, max_index)
@@ -246,7 +256,10 @@ class MorseSmaleComplex(TopologicalObject):
         for key, items in self.base_partitions.items():
             max_index = key[1]
             max_indices = []
-            while self.merge_sequence[max_index][0] < persistence and self.merge_sequence[max_index][1] != max_index:
+            while (
+                self.merge_sequence[max_index][0] < persistence
+                and self.merge_sequence[max_index][1] != max_index
+            ):
                 max_indices.append(max_index)
                 max_index = self.merge_sequence[max_index][1]
             new_key = max_index
@@ -276,7 +289,10 @@ class MorseSmaleComplex(TopologicalObject):
         for key, items in self.base_partitions.items():
             min_index = key[0]
             min_indices = []
-            while self.merge_sequence[min_index][0] < persistence and self.merge_sequence[min_index][1] != min_index:
+            while (
+                self.merge_sequence[min_index][0] < persistence
+                and self.merge_sequence[min_index][1] != min_index
+            ):
                 min_indices.append(min_index)
                 min_index = self.merge_sequence[min_index][1]
             new_key = min_index
@@ -378,13 +394,20 @@ class MorseSmaleComplex(TopologicalObject):
             all minima and maxima.
         """
         capsule = {}
-        capsule['Hierarchy'] = []
+        capsule["Hierarchy"] = []
         for dying, (persistence, surviving, saddle) in self.merge_sequence.items():
-            capsule['Hierarchy'].append({'Dying': dying, 'Persistence': persistence, 'Surviving': surviving, 'Saddle': saddle})
-        capsule['Partitions'] = []
-        base = np.array([None, None]*len(self.Y)).reshape(-1,2)
+            capsule["Hierarchy"].append(
+                {
+                    "Dying": dying,
+                    "Persistence": persistence,
+                    "Surviving": surviving,
+                    "Saddle": saddle,
+                }
+            )
+        capsule["Partitions"] = []
+        base = np.array([None, None] * len(self.Y)).reshape(-1, 2)
         for (min_index, max_index), items in self.base_partitions.items():
             base[items, :] = [min_index, max_index]
-        capsule['Partitions'] = base.tolist()
+        capsule["Partitions"] = base.tolist()
 
         return json.dumps(capsule)

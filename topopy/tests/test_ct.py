@@ -10,6 +10,7 @@ import sklearn
 import sys
 import os
 
+
 class TestCT(TestCase):
     """
     Class for testing the Contour Tree and its prerequisite the Merge Tree
@@ -43,41 +44,41 @@ class TestCT(TestCase):
         Test the debugging output of the CT
         """
         self.setup()
-        test_file = 'ct_test_debug.txt'
-        sys.stdout = open(test_file, 'w')
+        test_file = "ct_test_debug.txt"
+        sys.stdout = open(test_file, "w")
 
-        self.ct = topopy.ContourTree(
-            debug=True, short_circuit=True, max_neighbors=10)
+        self.ct = topopy.ContourTree(debug=True, short_circuit=True, max_neighbors=10)
         self.ct.build(self.X, self.Y)
 
-        self.ct = topopy.ContourTree(
-            debug=True, short_circuit=False, max_neighbors=10)
+        self.ct = topopy.ContourTree(debug=True, short_circuit=False, max_neighbors=10)
         self.ct.build(self.X, self.Y)
 
         sys.stdout.close()
 
-        lines = ["Graph Preparation:",
-                 "Split Tree Computation:",
-                 "Join Tree Computation:",
-                 "Networkx Tree construction:",
-                 "Networkx Tree construction:",
-                 "Processing Tree:",
-                 "Processing Tree:",
-                 "Identifying branches:",
-                 "Condensing Graph: ",
-                 "Sorting Nodes:",
-                 "Graph Preparation:",
-                 "Split Tree Computation:",
-                 "Join Tree Computation:",
-                 "Networkx Tree construction:",
-                 "Networkx Tree construction:",
-                 "Processing Tree:",
-                 "Processing Tree:",
-                 "Identifying branches:",
-                 "Condensing Graph:",
-                 "Sorting Nodes:"]
+        lines = [
+            "Graph Preparation:",
+            "Split Tree Computation:",
+            "Join Tree Computation:",
+            "Networkx Tree construction:",
+            "Networkx Tree construction:",
+            "Processing Tree:",
+            "Processing Tree:",
+            "Identifying branches:",
+            "Condensing Graph: ",
+            "Sorting Nodes:",
+            "Graph Preparation:",
+            "Split Tree Computation:",
+            "Join Tree Computation:",
+            "Networkx Tree construction:",
+            "Networkx Tree construction:",
+            "Processing Tree:",
+            "Processing Tree:",
+            "Identifying branches:",
+            "Condensing Graph:",
+            "Sorting Nodes:",
+        ]
 
-        with open(test_file, 'r') as fp:
+        with open(test_file, "r") as fp:
             debug_output = fp.read()
             for line in lines:
                 self.assertIn(line, debug_output)

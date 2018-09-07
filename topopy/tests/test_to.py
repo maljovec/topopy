@@ -137,7 +137,10 @@ class TestTO(TestCase):
             x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, "invalid")
 
             self.assertTrue(issubclass(w[-1].category, UserWarning))
-            self.assertEqual("Aggregator \"invalid\" not understood. Skipping sample aggregation.", str(w[-1].message))
+            self.assertEqual(
+                'Aggregator "invalid" not understood. Skipping sample aggregation.',
+                str(w[-1].message),
+            )
 
             self.assertListEqual(x.tolist(), X.tolist())
             self.assertListEqual(y.tolist(), Y.tolist())
@@ -174,8 +177,8 @@ class TestTO(TestCase):
         Test the debugging output of the TopologicalObject
         """
         self.setup()
-        test_file = 'to_test_debug.txt'
-        sys.stdout = open(test_file, 'w')
+        test_file = "to_test_debug.txt"
+        sys.stdout = open(test_file, "w")
 
         self.to = topopy.TopologicalObject(debug=True, max_neighbors=10)
         self.to.build(self.X, self.Y)
@@ -183,7 +186,7 @@ class TestTO(TestCase):
 
         lines = ["Graph Preparation:"]
 
-        with open(test_file, 'r') as fp:
+        with open(test_file, "r") as fp:
             debug_output = fp.read()
             for line in lines:
                 self.assertIn(line, debug_output)

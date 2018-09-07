@@ -10,6 +10,7 @@ import sklearn
 import sys
 import os
 
+
 class TestMT(TestCase):
     """
     Class for testing the Contour Tree and its prerequisite the Merge Tree
@@ -36,18 +37,17 @@ class TestMT(TestCase):
         Testing if we can build the Merge Tree directly
         """
         self.setup()
-        test_file = 'mt_test_debug.txt'
-        sys.stdout = open(test_file, 'w')
+        test_file = "mt_test_debug.txt"
+        sys.stdout = open(test_file, "w")
 
         mt = topopy.MergeTree(debug=True, max_neighbors=10)
         mt.build(self.X, self.Y)
 
         sys.stdout.close()
 
-        lines = ["Graph Preparation:",
-                 "Merge Tree Computation:"]
+        lines = ["Graph Preparation:", "Merge Tree Computation:"]
 
-        with open(test_file, 'r') as fp:
+        with open(test_file, "r") as fp:
             debug_output = fp.read()
             for line in lines:
                 self.assertIn(line, debug_output)

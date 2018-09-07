@@ -133,13 +133,17 @@ class MorseComplex(TopologicalObject):
         self.persistences = []
         self.merge_sequence = {}
         morse_complex_json = json.loads(morse_complex.to_json())
-        hierarchy = morse_complex_json['Hierarchy']
+        hierarchy = morse_complex_json["Hierarchy"]
         for merge in hierarchy:
-            self.persistences.append(merge['Persistence'])
-            self.merge_sequence[merge['Dying']] = (merge['Persistence'], merge['Surviving'], merge['Saddle'])
+            self.persistences.append(merge["Persistence"])
+            self.merge_sequence[merge["Dying"]] = (
+                merge["Persistence"],
+                merge["Surviving"],
+                merge["Saddle"],
+            )
         self.persistences = sorted(list(set(self.persistences)))
 
-        partitions = morse_complex_json['Partitions']
+        partitions = morse_complex_json["Partitions"]
         self.base_partitions = {}
         for i, label in enumerate(partitions):
             if label not in self.base_partitions:
@@ -179,16 +183,24 @@ class MorseComplex(TopologicalObject):
         self.persistences = []
         self.merge_sequence = {}
         morse_complex_json = json.loads(morse_complex.to_json())
-        hierarchy = morse_complex_json['Hierarchy']
+        hierarchy = morse_complex_json["Hierarchy"]
         for merge in hierarchy:
-            self.persistences.append(merge['Persistence'])
+            self.persistences.append(merge["Persistence"])
             if negate:
-                self.merge_sequence[N - merge['Dying']] = (merge['Persistence'], N - merge['Surviving'], N - merge['Saddle'])
+                self.merge_sequence[N - merge["Dying"]] = (
+                    merge["Persistence"],
+                    N - merge["Surviving"],
+                    N - merge["Saddle"],
+                )
             else:
-                self.merge_sequence[merge['Dying']] = (merge['Persistence'], merge['Surviving'], merge['Saddle'])
+                self.merge_sequence[merge["Dying"]] = (
+                    merge["Persistence"],
+                    merge["Surviving"],
+                    merge["Saddle"],
+                )
         self.persistences = sorted(list(set(self.persistences)))
 
-        partitions = morse_complex_json['Partitions']
+        partitions = morse_complex_json["Partitions"]
         self.base_partitions = {}
         for i, label in enumerate(partitions):
             if negate:
@@ -267,7 +279,10 @@ class MorseComplex(TopologicalObject):
         for key, items in self.base_partitions.items():
             new_key = key
             keys = []
-            while self.merge_sequence[new_key][0] < persistence and self.merge_sequence[new_key][1] != new_key:
+            while (
+                self.merge_sequence[new_key][0] < persistence
+                and self.merge_sequence[new_key][1] != new_key
+            ):
                 keys.append(new_key)
                 new_key = self.merge_sequence[new_key][1]
             if new_key not in partitions:
@@ -366,13 +381,20 @@ class MorseComplex(TopologicalObject):
             all maxima.
         """
         capsule = {}
-        capsule['Hierarchy'] = []
+        capsule["Hierarchy"] = []
         for dying, (persistence, surviving, saddle) in self.merge_sequence.items():
-            capsule['Hierarchy'].append({'Persistence': persistence, 'Dying': dying, 'Surviving': surviving, 'Saddle': saddle})
-        capsule['Partitions'] = []
-        base = np.array([None]*len(self.Y))
+            capsule["Hierarchy"].append(
+                {
+                    "Persistence": persistence,
+                    "Dying": dying,
+                    "Surviving": surviving,
+                    "Saddle": saddle,
+                }
+            )
+        capsule["Partitions"] = []
+        base = np.array([None] * len(self.Y))
         for label, items in self.base_partitions.items():
             base[items] = label
-        capsule['Partitions'] = base.tolist()
+        capsule["Partitions"] = base.tolist()
 
-        return json.dumps(capsule, separators=(',', ':'))
+        return json.dumps(capsule, separators=(",", ":"))

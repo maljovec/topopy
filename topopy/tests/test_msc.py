@@ -46,19 +46,21 @@ class TestMSC(TestCase):
         """
         self.setup()
 
-        test_file = 'msc_test_debug.txt'
-        sys.stdout = open(test_file, 'w')
+        test_file = "msc_test_debug.txt"
+        sys.stdout = open(test_file, "w")
 
         self.msc = topopy.MorseSmaleComplex(debug=True, max_neighbors=10)
         self.msc.build(self.X, self.Y)
 
         sys.stdout.close()
-        lines = ["Graph Preparation:",
-                 "Decomposition:",
-                 "Stable Decomposition:",
-                 "Unstable Decomposition:"]
+        lines = [
+            "Graph Preparation:",
+            "Decomposition:",
+            "Stable Decomposition:",
+            "Unstable Decomposition:",
+        ]
 
-        with open(test_file, 'r') as fp:
+        with open(test_file, "r") as fp:
             debug_output = fp.read()
             for line in lines:
                 self.assertIn(line, debug_output)
@@ -360,9 +362,7 @@ class TestMSC(TestCase):
             [], self.msc.w, "reset should clear all internal storage of the msc."
         )
         self.assertEqual(
-            [],
-            self.msc.Xnorm,
-            "reset should clear all internal storage of the msc.",
+            [], self.msc.Xnorm, "reset should clear all internal storage of the msc."
         )
 
     def test_save(self):
