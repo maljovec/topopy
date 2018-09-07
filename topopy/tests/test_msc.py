@@ -263,11 +263,23 @@ class TestMSC(TestCase):
             msc.merge_sequence,
             "loading from file should produce the same hierarchy",
         )
-        self.assertDictEqual(
-            self.msc.base_partitions,
-            msc.base_partitions,
+        # self.assertDictEqual(
+        #     self.msc.base_partitions,
+        #     msc.base_partitions,
+        #     "loading from file should produce the base partitions.",
+        # )
+        self.assertSetEqual(
+            set(self.msc.base_partitions.keys()),
+            set(msc.base_partitions.keys()),
             "loading from file should produce the base partitions.",
         )
+
+        for key in self.msc.base_partitions.keys():
+            self.assertListEqual(
+                self.msc.base_partitions[key].tolist(),
+                msc.base_partitions[key].tolist(),
+                "loading from file should produce the base partitions.",
+            )
 
     def test_persistence(self):
         """
