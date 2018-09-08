@@ -79,7 +79,7 @@ setup(
             "_topology",
             FILES,
             extra_compile_args=["-O3", "-march=native"],
-            **extra_args,
+            **extra_args
         )
     ],
 )
