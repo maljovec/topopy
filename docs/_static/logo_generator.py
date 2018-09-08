@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-import seaborn as sns
 import topopy
 
 set3_cmap = matplotlib.cm.get_cmap("Set3")
@@ -120,31 +119,6 @@ def df(_x):
         for c, covar, power in zip(centers, covars, powers)
     ]
 
-    centers2 = [[0.4, 0.6], [1.0, 1.0]]
-    powers2 = [2, 1.38511464016]
-    covars2 = []
-    covars2.append(
-        np.array(
-            [
-                [4.053108367744338913e+00, 2.245412739483759967e+00],
-                [2.245412739483759967e+00, 1.817496301681578785e+01],
-            ]
-        )
-    )
-    covars2.append(
-        np.array(
-            [
-                [6.861127634772008044e+00, 5.713205235351410671e+00],
-                [5.713205235351410671e+00, 1.182733672915492917e+01],
-            ]
-        )
-    )
-
-    dist2 = [
-        math.pow(math.sqrt(np.dot(p - c, np.dot(covar, (p - c)))), power)
-        for c, covar, power in zip(centers2, covars2, powers2)
-    ]
-
     min_dist = min(dist)
     x, y = unpack2D(_x)
     return (
@@ -181,7 +155,7 @@ def dxdy(x, foo=test_function):
 
 
 x, y = np.mgrid[
-    min_x : max_x : (resolution * 1j), min_x : max_x : (resolution * 1j)
+    min_x:max_x:(resolution * 1j), min_x:max_x:(resolution * 1j)
 ]
 X = np.vstack([x.ravel(), y.ravel()]).T
 
@@ -205,14 +179,13 @@ saddle_ptrs = {}
 for key in msc.get_partitions().keys():
     mins.append(key[0])
     maxs.append(key[1])
-for line in msc.print_hierarchy().strip().split(" "):
-    tokens = line.split(",")
-    if p <= float(tokens[1]):
-        saddles.append(int(tokens[-1]))
+for merge in msc.to_json()['Hierarchy']:
+    if p <= merge['Persistence']:
+        saddles.append(merge['Saddle'])
         if saddles[-1] not in saddle_ptrs:
             saddle_ptrs[saddles[-1]] = []
-        saddle_ptrs[saddles[-1]].append(int(tokens[2]))
-        saddle_ptrs[saddles[-1]].append(int(tokens[3]))
+        saddle_ptrs[saddles[-1]].append(merge['Dying'])
+        saddle_ptrs[saddles[-1]].append(merge['Surviving'])
 
 saddles.remove(129428)
 saddles.remove(188237)
