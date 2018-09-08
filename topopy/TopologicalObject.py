@@ -48,9 +48,15 @@ class TopologicalObject(object):
         elif aggregator.lower() in ["average", "mean"]:
             aggregator = np.mean
         elif "first" in aggregator.lower():
-            aggregator = lambda x: x[0]
+
+            def aggregator(x):
+                return x[0]
+
         elif "last" in aggregator.lower():
-            aggregator = lambda x: x[-1]
+
+            def aggregator(x):
+                return x[-1]
+
         else:
             warnings.warn(
                 'Aggregator "{}" not understood. Skipping sample '
