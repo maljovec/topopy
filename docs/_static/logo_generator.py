@@ -13,8 +13,12 @@ set3_cmap = matplotlib.cm.get_cmap("Set3")
 unique_colors = 12
 set3 = []
 for i in range(unique_colors):
-    set3.append([float(i) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))])
-    set3.append([float(i + 1) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))])
+    set3.append(
+        [float(i) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))]
+    )
+    set3.append(
+        [float(i + 1) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))]
+    )
 
 
 def color_msc(X, Y, p):
@@ -61,7 +65,13 @@ def df(_x):
         np.array([0.693347266615, 0.764874190406]),
         np.array([0.415066271455, 0.181807048897]),
     ]
-    powers = [1.17269364563, 1.38511464016, 1.93062086148, 1.71429326706, 1.7429854611]
+    powers = [
+        1.17269364563,
+        1.38511464016,
+        1.93062086148,
+        1.71429326706,
+        1.7429854611,
+    ]
 
     covars = []
     covars.append(
@@ -170,7 +180,9 @@ def dxdy(x, foo=test_function):
     return grad_x / mag * step_size
 
 
-x, y = np.mgrid[min_x : max_x : (resolution * 1j), min_x : max_x : (resolution * 1j)]
+x, y = np.mgrid[
+    min_x : max_x : (resolution * 1j), min_x : max_x : (resolution * 1j)
+]
 X = np.vstack([x.ravel(), y.ravel()]).T
 
 Z = np.empty(X.shape[0])
@@ -294,7 +306,13 @@ for name in ["min", "max", "saddle"]:
     idxs = cps[name]
     color = colors[name]
     plt.scatter(
-        X[idxs, 0], X[idxs, 1], s=50, c=color, edgecolor="k", linewidth=lw, zorder=8
+        X[idxs, 0],
+        X[idxs, 1],
+        s=50,
+        c=color,
+        edgecolor="k",
+        linewidth=lw,
+        zorder=8,
     )
 
 for trace in traces:
@@ -320,10 +338,24 @@ plt.contour(
 print(saddles)
 
 plt.contour(
-    x, y, z, colors="#000000", linewidths=4, linestyles="solid", levels=[0.52], zorder=4
+    x,
+    y,
+    z,
+    colors="#000000",
+    linewidths=4,
+    linestyles="solid",
+    levels=[0.52],
+    zorder=4,
 )
 plt.contour(
-    x, y, z, colors="#ff7f00", linewidths=2, linestyles="solid", levels=[0.52], zorder=5
+    x,
+    y,
+    z,
+    colors="#ff7f00",
+    linewidths=2,
+    linestyles="solid",
+    levels=[0.52],
+    zorder=5,
 )
 
 start_x = 0

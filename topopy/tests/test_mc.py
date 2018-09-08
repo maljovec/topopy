@@ -142,7 +142,9 @@ class TestMC(TestCase):
         )
 
         gold_labels = np.array([410, 410])
-        test_labels = np.array(self.test_object.get_label([0, 1]).flatten().tolist())
+        test_labels = np.array(
+            self.test_object.get_label([0, 1]).flatten().tolist()
+        )
         np.testing.assert_array_equal(
             gold_labels,
             test_labels,
@@ -263,7 +265,9 @@ class TestMC(TestCase):
         test_json = json.loads(self.test_object.to_json())
 
         self.assertDictEqual(
-            self.gold, test_json, "The hierarchy printed differs from what is expected."
+            self.gold,
+            test_json,
+            "The hierarchy printed differs from what is expected.",
         )
 
     def test_reset(self):
@@ -408,7 +412,9 @@ class TestMC(TestCase):
             if merge["Persistence"] < test_p:
                 if merge["Surviving"] not in merge_pattern:
                     merge_pattern[merge["Surviving"]] = merge["Surviving"]
-                merge_pattern[merge["Dying"]] = merge_pattern[merge["Surviving"]]
+                merge_pattern[merge["Dying"]] = merge_pattern[
+                    merge["Surviving"]
+                ]
 
         gold_stable_partitions = {}
         for i, max_label in enumerate(self.gold["Partitions"]):

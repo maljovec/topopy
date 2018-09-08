@@ -168,16 +168,26 @@ def ridge(_x):
     theta = math.pi / 3.
     sigx = .05
     sigy = .04
-    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (2 * sigy ** 2)
-    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (4 * sigy ** 2)
-    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (2 * sigy ** 2)
+    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (
+        2 * sigy ** 2
+    )
+    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (
+        4 * sigy ** 2
+    )
+    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (
+        2 * sigy ** 2
+    )
 
     return 0.01 * y + 0.5 * (
         np.exp(-((x - .75) ** 2) / 0.01)
         + np.exp(-((x) ** 2 + (y - 1) ** 2) / 0.1)
         + np.exp(-((x) ** 2 + (y) ** 2) / 0.005)
         - np.exp(
-            -(a * (x - .25) ** 2 + 2 * b * (x - .25) * (y - .25) + c * (y - .25) ** 2)
+            -(
+                a * (x - .25) ** 2
+                + 2 * b * (x - .25) * (y - .25)
+                + c * (y - .25) ** 2
+            )
         )
     )
 
@@ -187,16 +197,26 @@ def ridge2(_x):
     theta = math.pi / 3.
     sigx = .05
     sigy = .04
-    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (2 * sigy ** 2)
-    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (4 * sigy ** 2)
-    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (2 * sigy ** 2)
+    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (
+        2 * sigy ** 2
+    )
+    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (
+        4 * sigy ** 2
+    )
+    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (
+        2 * sigy ** 2
+    )
 
     return 0.01 * y + 0.5 * (
         np.exp(-(((x - .75) ** 2) / 0.01 + ((y - .5) ** 2) / 0.4))
         + np.exp(-((x - .1) ** 2 + (y - 1) ** 2) / 0.1)
         + np.exp(-((x - .1) ** 2 + (y - .1) ** 2) / 0.005)
         - np.exp(
-            -(a * (x - .3) ** 2 + 2 * b * (x - .3) * (y - .25) + c * (y - .25) ** 2)
+            -(
+                a * (x - .3) ** 2
+                + 2 * b * (x - .3) * (y - .25)
+                + c * (y - .25) ** 2
+            )
         )
     )
 

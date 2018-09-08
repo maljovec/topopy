@@ -218,7 +218,9 @@ class ContourTree(TopologicalObject):
                 # Trace down to a non-internal node
 
                 lowerLink = list(G.in_edges(node))[0][0]
-                while G.in_degree(lowerLink) == 1 and G.out_degree(lowerLink) == 1:
+                while (
+                    G.in_degree(lowerLink) == 1 and G.out_degree(lowerLink) == 1
+                ):
                     newLowerLink = list(G.in_edges(lowerLink))[0][0]
                     G.add_edge(newLowerLink, node)
                     G.remove_node(lowerLink)
@@ -230,7 +232,9 @@ class ContourTree(TopologicalObject):
 
                 # Trace up to a non-internal node
                 upperLink = list(G.out_edges(node))[0][1]
-                while G.in_degree(upperLink) == 1 and G.out_degree(upperLink) == 1:
+                while (
+                    G.in_degree(upperLink) == 1 and G.out_degree(upperLink) == 1
+                ):
                     newUpperLink = list(G.out_edges(upperLink))[0][1]
                     G.add_edge(node, newUpperLink)
                     G.remove_node(upperLink)
@@ -381,7 +385,8 @@ class ContourTree(TopologicalObject):
             edges = list(thisTree.out_edges(v))
             if len(edges) != 1:
                 warnings.warn(
-                    "The node {} should have a single emanating " "edge.\n".format(v)
+                    "The node {} should have a single emanating "
+                    "edge.\n".format(v)
                 )
             e1 = edges[0][0]
             e2 = edges[0][1]
@@ -444,7 +449,8 @@ class ContourTree(TopologicalObject):
                     [
                         v
                         for v in thisTree.nodes()
-                        if thisTree.in_degree(v) == 0 and thatTree.in_degree(v) < 2
+                        if thisTree.in_degree(v) == 0
+                        and thatTree.in_degree(v) < 2
                     ]
                 )
             else:

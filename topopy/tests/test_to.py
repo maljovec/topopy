@@ -53,7 +53,8 @@ class TestTO(TestCase):
         self.assertEqual(
             2,
             len(x),
-            "aggregate_duplicates should return a list of " "unique items in X.",
+            "aggregate_duplicates should return a list of "
+            "unique items in X.",
         )
         self.assertEqual(
             2,
@@ -127,14 +128,18 @@ class TestTO(TestCase):
         self.assertListEqual(y.tolist(), [[100, 0], [9, 0]])
 
         # Testing custom callable aggregator
-        x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, lambda x: x[0])
+        x, y = topopy.TopologicalObject.aggregate_duplicates(
+            X, Y, lambda x: x[0]
+        )
         self.assertListEqual(x.tolist(), [[0, 0], [1, 1]])
         self.assertListEqual(y.tolist(), [[100, 0], [0, 9]])
 
         warnings.filterwarnings("always")
         # Testing an invalid aggregator
         with warnings.catch_warnings(record=True) as w:
-            x, y = topopy.TopologicalObject.aggregate_duplicates(X, Y, "invalid")
+            x, y = topopy.TopologicalObject.aggregate_duplicates(
+                X, Y, "invalid"
+            )
 
             self.assertTrue(issubclass(w[-1].category, UserWarning))
             self.assertEqual(
@@ -265,7 +270,8 @@ class TestTO(TestCase):
             np.testing.assert_array_equal(
                 X,
                 to.get_normed_x(),
-                "get_normed_x should be able to " + "access the entire input data.",
+                "get_normed_x should be able to "
+                + "access the entire input data.",
             )
 
     def test_get_x(self):
@@ -286,7 +292,8 @@ class TestTO(TestCase):
             np.testing.assert_array_equal(
                 self.X[:, col],
                 column_values,
-                "get_x should be able to access a " + "full column of the input data.",
+                "get_x should be able to access a "
+                + "full column of the input data.",
             )
 
         # Test single row extraction
@@ -295,7 +302,8 @@ class TestTO(TestCase):
             np.testing.assert_array_equal(
                 self.X[row, :],
                 row_values,
-                "get_x should be able to access a " + "full row of the input data.",
+                "get_x should be able to access a "
+                + "full row of the input data.",
             )
             # Test single element extraction
             for col in range(self.X.shape[1]):
@@ -311,7 +319,8 @@ class TestTO(TestCase):
         np.testing.assert_array_equal(
             self.X[:, 0],
             row_values,
-            "get_x should be able to access " + "multiple rows of the input data.",
+            "get_x should be able to access "
+            + "multiple rows of the input data.",
         )
 
         # Multiple column extraction
@@ -319,7 +328,8 @@ class TestTO(TestCase):
         np.testing.assert_array_equal(
             self.X[0, :],
             col_values,
-            "get_x should be able to access " + "multiple columns of the input data.",
+            "get_x should be able to access "
+            + "multiple columns of the input data.",
         )
 
         # Full data extraction
@@ -333,7 +343,8 @@ class TestTO(TestCase):
         np.testing.assert_array_equal(
             [],
             self.to.get_x([]),
-            "get_x should be able to access " + "return an empty array on null filter.",
+            "get_x should be able to access "
+            + "return an empty array on null filter.",
         )
 
     def test_get_y(self):
@@ -359,7 +370,8 @@ class TestTO(TestCase):
         np.testing.assert_array_equal(
             self.Y,
             row_values,
-            "get_y should be able to access " + "multiple rows of the input data.",
+            "get_y should be able to access "
+            + "multiple rows of the input data.",
         )
 
         # Full data extraction
@@ -373,7 +385,8 @@ class TestTO(TestCase):
         np.testing.assert_array_equal(
             [],
             self.to.get_y([]),
-            "get_y should be able to access " + "return an empty array on null filter.",
+            "get_y should be able to access "
+            + "return an empty array on null filter.",
         )
 
     def test_neighbors(self):
@@ -397,13 +410,19 @@ class TestTO(TestCase):
         self.to.reset()
 
         self.assertEqual(
-            [], self.to.X, "reset should clear all " + "internal storage of the to."
+            [],
+            self.to.X,
+            "reset should clear all " + "internal storage of the to.",
         )
         self.assertEqual(
-            [], self.to.Y, "reset should clear all " + "internal storage of the to."
+            [],
+            self.to.Y,
+            "reset should clear all " + "internal storage of the to.",
         )
         self.assertEqual(
-            [], self.to.Xnorm, "reset should clear all " + "internal storage of the to."
+            [],
+            self.to.Xnorm,
+            "reset should clear all " + "internal storage of the to.",
         )
         self.assertEqual(
             None,

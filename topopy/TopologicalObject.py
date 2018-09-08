@@ -216,7 +216,11 @@ class TopologicalObject(object):
             start = time.clock()
 
         self.graph_rep = nglpy.Graph(
-            self.Xnorm, self.graph, self.max_neighbors, self.beta, connect=self.connect
+            self.Xnorm,
+            self.graph,
+            self.max_neighbors,
+            self.beta,
+            connect=self.connect,
         )
 
         if self.debug:
@@ -229,7 +233,9 @@ class TopologicalObject(object):
             data as an nparray and list of dimnames
             @ In, filename, string representing the data file
         """
-        data = np.genfromtxt(filename, dtype=float, delimiter=delimiter, names=True)
+        data = np.genfromtxt(
+            filename, dtype=float, delimiter=delimiter, names=True
+        )
         data = data.view(np.float64).reshape(data.shape + (-1,))
 
         X = data[:, 0:-1]

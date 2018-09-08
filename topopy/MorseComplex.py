@@ -380,7 +380,10 @@ class MorseComplex(TopologicalObject):
         """
         capsule = {}
         capsule["Hierarchy"] = []
-        for dying, (persistence, surviving, saddle) in self.merge_sequence.items():
+        for (
+            dying,
+            (persistence, surviving, saddle),
+        ) in self.merge_sequence.items():
             capsule["Hierarchy"].append(
                 {
                     "Persistence": persistence,
