@@ -4,6 +4,7 @@ import numpy as np
 
 import matplotlib
 import matplotlib.pyplot as plt
+import json
 
 import topopy
 
@@ -179,7 +180,9 @@ saddle_ptrs = {}
 for key in msc.get_partitions().keys():
     mins.append(key[0])
     maxs.append(key[1])
-for merge in msc.to_json()['Hierarchy']:
+
+json_object = json.loads(msc.to_json())
+for merge in json_object["Hierarchy"]:
     if p <= merge['Persistence']:
         saddles.append(merge['Saddle'])
         if saddles[-1] not in saddle_ptrs:
@@ -196,6 +199,7 @@ for m in mins + maxs:
 
 C = color_msc(X, Z, p)
 c = C.reshape(z.shape)
+C /= np.max(C)
 
 end = time.time()
 print("Extract Extrema and Color: {} s".format(end - start))
@@ -204,7 +208,7 @@ start = time.time()
 plt.figure(num=None, figsize=(8, 8), dpi=100, facecolor="w")
 
 plt.scatter(
-    X[:, 0], X[:, 1], c=C / np.max(C), cmap=set3_cmap, zorder=1, s=1, marker=","
+    X[:, 0], X[:, 1], c=C, cmap=set3_cmap, zorder=1, s=1, marker=","
 )
 
 
@@ -305,7 +309,7 @@ plt.contourf(
     zorder=2,
 )
 plt.contour(
-    x, y, z, colors="k", alpha=0.5, linewidths=lws, linestyles="solid", zorder=3
+    x, y, z, colors="k", alpha=0.5, linewidths=lws, zorder=3
 )
 
 print(saddles)
