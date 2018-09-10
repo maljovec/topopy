@@ -134,7 +134,8 @@ class ContourTree(TopologicalObject):
             sys.stdout.write("Sorting Nodes: ")
             start = time.clock()
 
-        self.sortedNodes = sorted(enumerate(self.Y), key=operator.itemgetter(1))
+        self.sortedNodes = sorted(enumerate(self.Y),
+                                  key=operator.itemgetter(1))
 
         if self.debug:
             end = time.clock()
