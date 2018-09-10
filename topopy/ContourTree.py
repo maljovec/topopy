@@ -220,7 +220,7 @@ class ContourTree(TopologicalObject):
 
                 lower_link = list(G.in_edges(node))[0][0]
                 while (
-                    G.in_degree(lower_link) == 1 \
+                    G.in_degree(lower_link) == 1
                     and G.out_degree(lower_link) == 1
                 ):
                     new_lower_link = list(G.in_edges(lower_link))[0][0]
@@ -235,7 +235,7 @@ class ContourTree(TopologicalObject):
                 # Trace up to a non-internal node
                 upper_link = list(G.out_edges(node))[0][1]
                 while (
-                    G.in_degree(upper_link) == 1 \
+                    G.in_degree(upper_link) == 1
                     and G.out_degree(upper_link) == 1
                 ):
                     new_upper_link = list(G.out_edges(upper_link))[0][1]
