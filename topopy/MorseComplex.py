@@ -5,7 +5,7 @@ import json
 
 import numpy as np
 
-from .topology import MorseComplexFloat, vectorFloat, vectorString
+from .topology import MorseComplexFloat, vectorFloat
 from . import TopologicalObject
 
 
