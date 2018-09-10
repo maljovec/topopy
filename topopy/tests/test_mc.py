@@ -81,7 +81,8 @@ class TestMC(TestCase):
         self.assertEqual(
             len(self.test_object.base_partitions.keys()),
             4,
-            "The 2D Gerber test function should have 4 stable manifolds at the base level.",
+            "The 2D Gerber test function should have 4 stable manifolds "
+            "at the base level.",
         )
 
     def test_get_classification(self):
@@ -112,14 +113,16 @@ class TestMC(TestCase):
         self.assertSetEqual(
             {1189, 1170, 410, 429},
             set(self.test_object.get_current_labels()),
-            "The base partition labels returned from get_current_labels does not match.",
+            "The base partition labels returned from get_current_labels "
+            "does not match.",
         )
 
         self.test_object.set_persistence(self.test_object.persistences[-1])
         self.assertSetEqual(
             {410},
             set(self.test_object.get_current_labels()),
-            "The base partition labels returned from get_current_labels does not match.",
+            "The base partition labels returned from get_current_labels "
+            "does not match.",
         )
 
     def test_get_label(self):
@@ -154,7 +157,8 @@ class TestMC(TestCase):
         self.assertEqual(
             len(self.Y),
             len(self.test_object.get_label()),
-            "Requesting labels without specifying an index should return a list of all labels",
+            "Requesting labels without specifying an index should return "
+            "a list of all labels",
         )
 
         self.assertEqual(
@@ -204,13 +208,16 @@ class TestMC(TestCase):
         np.testing.assert_array_equal(
             equal_weights,
             test_weights,
-            "User should be able to filter the rows retrieved from get_weights.",
+            "User should be able to filter the rows retrieved from "
+            "get_weights.",
         )
 
         test_weights = self.test_object.get_weights([])
 
         np.testing.assert_array_equal(
-            [], test_weights, "An empty query should return empty results."
+            [],
+            test_weights,
+            "An empty query should return empty results."
         )
 
     def test_load_data_and_build(self):
@@ -337,7 +344,8 @@ class TestMC(TestCase):
         self.assertDictEqual(
             self.gold,
             test_json,
-            "save does not reproduce the same results as the gold custom json file.",
+            "save does not reproduce the same results as the gold custom "
+            "json file.",
         )
         os.remove("test.json")
 
@@ -349,7 +357,8 @@ class TestMC(TestCase):
         self.assertDictEqual(
             self.gold,
             test_json,
-            "save does not reproduce the same results as the gold default json file.",
+            "save does not reproduce the same results as the gold default "
+            "json file.",
         )
         os.remove("morse_complex.json")
 
@@ -372,7 +381,8 @@ class TestMC(TestCase):
         self.assertEqual(
             240,
             self.test_object.get_sample_size(1189),
-            "get_sample_size should return the number of rows in the specified partition.",
+            "get_sample_size should return the number of rows in the "
+            "specified partition.",
         )
 
     def test_get_partitions(self):
@@ -392,7 +402,8 @@ class TestMC(TestCase):
         self.assertEqual(
             4,
             len(partitions),
-            "The number of partitions without specifying the persistence should be the same as requesting the base (0) persistence level",
+            "The number of partitions without specifying the persistence "
+            "should be the same as requesting the base (0) persistence level",
         )
         self.assertDictEqual(
             gold_stable_partitions,
@@ -428,14 +439,14 @@ class TestMC(TestCase):
         self.assertEqual(
             1,
             len(partitions),
-            "The number of partitions without specifying the persistence should be the same as requesting the base (0) persistence level",
+            "The number of partitions without specifying the persistence "
+            "should be the same as requesting the base (0) persistence level",
         )
         self.assertDictEqual(
             gold_stable_partitions,
             partitions,
-            "The partitions of the stable manifolds should match at the test level p={}".format(
-                test_p
-            ),
+            "The partitions of the stable manifolds should match at the "
+            "test level p={}".format(test_p),
         )
 
         self.test_object = topopy.MorseComplex()
@@ -443,5 +454,6 @@ class TestMC(TestCase):
         self.assertEqual(
             {},
             partitions,
-            "Requesting partitions on an unbuilt object should return an empty dictionary",
+            "Requesting partitions on an unbuilt object should return an "
+            "empty dictionary",
         )

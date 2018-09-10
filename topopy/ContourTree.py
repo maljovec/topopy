@@ -218,34 +218,36 @@ class ContourTree(TopologicalObject):
 
                 # Trace down to a non-internal node
 
-                lowerLink = list(G.in_edges(node))[0][0]
+                lower_link = list(G.in_edges(node))[0][0]
                 while (
-                    G.in_degree(lowerLink) == 1 and G.out_degree(lowerLink) == 1
+                    G.in_degree(lower_link) == 1 \
+                    and G.out_degree(lower_link) == 1
                 ):
-                    newLowerLink = list(G.in_edges(lowerLink))[0][0]
-                    G.add_edge(newLowerLink, node)
-                    G.remove_node(lowerLink)
-                    removedNodes.append(lowerLink)
-                    lowerLink = newLowerLink
+                    new_lower_link = list(G.in_edges(lower_link))[0][0]
+                    G.add_edge(new_lower_link, node)
+                    G.remove_node(lower_link)
+                    removedNodes.append(lower_link)
+                    lower_link = new_lower_link
 
                 removedNodes.reverse()
                 removedNodes.append(node)
 
                 # Trace up to a non-internal node
-                upperLink = list(G.out_edges(node))[0][1]
+                upper_link = list(G.out_edges(node))[0][1]
                 while (
-                    G.in_degree(upperLink) == 1 and G.out_degree(upperLink) == 1
+                    G.in_degree(upper_link) == 1 \
+                    and G.out_degree(upper_link) == 1
                 ):
-                    newUpperLink = list(G.out_edges(upperLink))[0][1]
-                    G.add_edge(node, newUpperLink)
-                    G.remove_node(upperLink)
-                    removedNodes.append(upperLink)
-                    upperLink = newUpperLink
+                    new_upper_link = list(G.out_edges(upper_link))[0][1]
+                    G.add_edge(node, new_upper_link)
+                    G.remove_node(upper_link)
+                    removedNodes.append(upper_link)
+                    upper_link = new_upper_link
 
-                G.add_edge(lowerLink, upperLink)
+                G.add_edge(lower_link, upper_link)
                 G.remove_node(node)
 
-                self.augmentedEdges[(lowerLink, upperLink)] = removedNodes
+                self.augmentedEdges[(lower_link, upper_link)] = removedNodes
 
                 # This is to help speed up the process by skipping nodes
                 # we have already condensed, and to prevent us from not

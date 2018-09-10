@@ -143,7 +143,8 @@ class TestTO(TestCase):
 
             self.assertTrue(issubclass(w[-1].category, UserWarning))
             self.assertEqual(
-                'Aggregator "invalid" not understood. Skipping sample aggregation.',
+                'Aggregator "invalid" not understood. Skipping sample '
+                'aggregation.',
                 str(w[-1].message),
             )
 
@@ -336,7 +337,7 @@ class TestTO(TestCase):
         np.testing.assert_array_equal(
             self.X,
             self.to.get_x(),
-            "get_x should be able to access " + "the entire input data.",
+            "get_x should be able to access the entire input data.",
         )
 
         # Empty query
@@ -378,7 +379,7 @@ class TestTO(TestCase):
         np.testing.assert_array_equal(
             self.Y,
             self.to.get_y(),
-            "get_y should be able to access " + "the entire input data.",
+            "get_y should be able to access the entire input data.",
         )
 
         # Empty query
@@ -412,22 +413,22 @@ class TestTO(TestCase):
         self.assertEqual(
             [],
             self.to.X,
-            "reset should clear all " + "internal storage of the to.",
+            "reset should clear all internal storage of the to.",
         )
         self.assertEqual(
             [],
             self.to.Y,
-            "reset should clear all " + "internal storage of the to.",
+            "reset should clear all internal storage of the to.",
         )
         self.assertEqual(
             [],
             self.to.Xnorm,
-            "reset should clear all " + "internal storage of the to.",
+            "reset should clear all internal storage of the to.",
         )
         self.assertEqual(
             None,
             self.to.graph_rep,
-            "reset should " + "clear all internal storage of the to.",
+            "reset should clear all internal storage of the to.",
         )
 
     def test_shape_functions(self):
@@ -439,10 +440,10 @@ class TestTO(TestCase):
         self.assertEqual(
             self.X.shape[1],
             self.to.get_dimensionality(),
-            "get_dimensionality should return the number of " + "columns in X.",
+            "get_dimensionality should return the number of columns in X.",
         )
         self.assertEqual(
             self.X.shape[0],
             self.to.get_sample_size(),
-            "get_sample_size should return the number of " + "rows in X.",
+            "get_sample_size should return the number of rows in X.",
         )
