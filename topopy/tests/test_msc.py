@@ -44,7 +44,9 @@ class TestMSC(TestCase):
         # __init__
         # build
         # __set_data
-        self.test_object = topopy.MorseSmaleComplex(debug=False, max_neighbors=10)
+        self.test_object = topopy.MorseSmaleComplex(
+            debug=False, max_neighbors=10
+        )
         self.test_object.build(self.X, self.Y)
 
         gold_path = os.path.join("topopy", "tests", "msc_gold.json")
@@ -62,7 +64,9 @@ class TestMSC(TestCase):
         test_file = "msc_test_debug.txt"
         sys.stdout = open(test_file, "w")
 
-        self.test_object = topopy.MorseSmaleComplex(debug=True, max_neighbors=10)
+        self.test_object = topopy.MorseSmaleComplex(
+            debug=True, max_neighbors=10
+        )
         self.test_object.build(self.X, self.Y)
 
         sys.stdout.close()
@@ -146,7 +150,8 @@ class TestMSC(TestCase):
             },
             set(self.test_object.get_current_labels()),
             "The base "
-            "partition labels returned from " + "get_current_labels does not match.",
+            "partition labels returned from "
+            + "get_current_labels does not match.",
         )
 
         self.test_object.set_persistence(self.test_object.persistences[-1])
@@ -154,7 +159,8 @@ class TestMSC(TestCase):
             {(1599, 410)},
             set(self.test_object.get_current_labels()),
             "The base "
-            "partition labels returned from " + "get_current_labels does not match.",
+            "partition labels returned from "
+            + "get_current_labels does not match.",
         )
 
     def test_get_label(self):
@@ -177,7 +183,9 @@ class TestMSC(TestCase):
         )
 
         gold_labels = np.array([[0, 410], [0, 410]])
-        test_labels = np.array(self.test_object.get_label([0, 1]).flatten().tolist())
+        test_labels = np.array(
+            self.test_object.get_label([0, 1]).flatten().tolist()
+        )
         np.testing.assert_array_equal(
             gold_labels,
             test_labels,
@@ -242,13 +250,15 @@ class TestMSC(TestCase):
         np.testing.assert_array_equal(
             equal_weights,
             test_weights,
-            "User should be able to filter the rows retrieved from get_weights.",
+            "Should be able to filter the rows retrieved from get_weights.",
         )
 
         test_weights = self.test_object.get_weights([])
 
         np.testing.assert_array_equal(
-            [], test_weights, "An empty query should return empty results."
+            [],
+            test_weights,
+            "An empty query should return empty results."
         )
 
     def test_load_data_and_build(self):
@@ -432,12 +442,12 @@ class TestMSC(TestCase):
         self.assertEqual(
             self.X.shape[1],
             self.test_object.get_dimensionality(),
-            "get_dimensionality should return the number of " + "columns in X.",
+            "get_dimensionality should return the number of columns in X.",
         )
         self.assertEqual(
             self.X.shape[0],
             self.test_object.get_sample_size(),
-            "get_sample_size should return the number of " + "rows in X.",
+            "get_sample_size should return the number of rows in X.",
         )
         self.assertEqual(
             121,
@@ -518,7 +528,9 @@ class TestMSC(TestCase):
             if merge["Persistence"] < test_p:
                 if merge["Surviving"] not in merge_pattern:
                     merge_pattern[merge["Surviving"]] = merge["Surviving"]
-                merge_pattern[merge["Dying"]] = merge_pattern[merge["Surviving"]]
+                merge_pattern[merge["Dying"]] = merge_pattern[
+                    merge["Surviving"]
+                ]
 
         gold_msc_partitions = {}
         gold_stable_partitions = {}
@@ -541,46 +553,43 @@ class TestMSC(TestCase):
 
         partitions = self.test_object.get_partitions(test_p)
         self.assertEqual(
-            4, len(partitions), "The number of partitions at the 0.5 level should be 4"
+            4,
+            len(partitions),
+            "The number of partitions at the 0.5 level should be 4",
         )
         self.assertDictEqual(
             gold_msc_partitions,
             partitions,
-            "The partitions of the Morse-Samle complex should match at the test level p={}".format(
-                test_p
-            ),
+            "The partitions of the Morse-Samle complex should match at "
+            "the test level p={}".format(test_p),
         )
 
         partitions = self.test_object.get_stable_manifolds(test_p)
         self.assertEqual(
             1,
             len(partitions),
-            "The number of stable manifolds should be 1 at the test level p={}".format(
-                test_p
-            ),
+            "The number of stable manifolds should be 1 at the test "
+            "level p={}".format(test_p),
         )
         self.assertDictEqual(
             gold_stable_partitions,
             partitions,
-            "The base partitions of the stable manifolds should match at the test level p={}".format(
-                test_p
-            ),
+            "The base partitions of the stable manifolds should match "
+            "at the test level p={}".format(test_p),
         )
 
         partitions = self.test_object.get_unstable_manifolds(0.5)
         self.assertEqual(
             4,
             len(partitions),
-            "The number of unstable manifolds should be 9 at the test level p={}".format(
-                test_p
-            ),
+            "The number of unstable manifolds should be 9 at the test "
+            "level p={}".format(test_p),
         )
         self.assertDictEqual(
             gold_unstable_partitions,
             partitions,
-            "The base partitions of the unstable manifolds should match at the test level p={}".format(
-                test_p
-            ),
+            "The base partitions of the unstable manifolds should "
+            "match at the test level p={}".format(test_p),
         )
 
         self.test_object = topopy.MorseSmaleComplex()
@@ -588,5 +597,6 @@ class TestMSC(TestCase):
         self.assertEqual(
             {},
             partitions,
-            "Requesting partitions on an unbuilt object should return an empty dict",
+            "Requesting partitions on an unbuilt object should return "
+            "an empty dict",
         )

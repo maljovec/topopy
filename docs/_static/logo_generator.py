@@ -4,8 +4,8 @@ import numpy as np
 
 import matplotlib
 import matplotlib.pyplot as plt
+import json
 
-import seaborn as sns
 import topopy
 
 set3_cmap = matplotlib.cm.get_cmap("Set3")
@@ -13,8 +13,12 @@ set3_cmap = matplotlib.cm.get_cmap("Set3")
 unique_colors = 12
 set3 = []
 for i in range(unique_colors):
-    set3.append([float(i) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))])
-    set3.append([float(i + 1) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))])
+    set3.append(
+        [float(i) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))]
+    )
+    set3.append(
+        [float(i + 1) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))]
+    )
 
 
 def color_msc(X, Y, p):
@@ -61,7 +65,13 @@ def df(_x):
         np.array([0.693347266615, 0.764874190406]),
         np.array([0.415066271455, 0.181807048897]),
     ]
-    powers = [1.17269364563, 1.38511464016, 1.93062086148, 1.71429326706, 1.7429854611]
+    powers = [
+        1.17269364563,
+        1.38511464016,
+        1.93062086148,
+        1.71429326706,
+        1.7429854611,
+    ]
 
     covars = []
     covars.append(
@@ -110,31 +120,6 @@ def df(_x):
         for c, covar, power in zip(centers, covars, powers)
     ]
 
-    centers2 = [[0.4, 0.6], [1.0, 1.0]]
-    powers2 = [2, 1.38511464016]
-    covars2 = []
-    covars2.append(
-        np.array(
-            [
-                [4.053108367744338913e+00, 2.245412739483759967e+00],
-                [2.245412739483759967e+00, 1.817496301681578785e+01],
-            ]
-        )
-    )
-    covars2.append(
-        np.array(
-            [
-                [6.861127634772008044e+00, 5.713205235351410671e+00],
-                [5.713205235351410671e+00, 1.182733672915492917e+01],
-            ]
-        )
-    )
-
-    dist2 = [
-        math.pow(math.sqrt(np.dot(p - c, np.dot(covar, (p - c)))), power)
-        for c, covar, power in zip(centers2, covars2, powers2)
-    ]
-
     min_dist = min(dist)
     x, y = unpack2D(_x)
     return (
@@ -170,7 +155,9 @@ def dxdy(x, foo=test_function):
     return grad_x / mag * step_size
 
 
-x, y = np.mgrid[min_x : max_x : (resolution * 1j), min_x : max_x : (resolution * 1j)]
+x, y = np.mgrid[
+    min_x:max_x:(resolution * 1j), min_x:max_x:(resolution * 1j)
+]
 X = np.vstack([x.ravel(), y.ravel()]).T
 
 Z = np.empty(X.shape[0])
@@ -193,14 +180,15 @@ saddle_ptrs = {}
 for key in msc.get_partitions().keys():
     mins.append(key[0])
     maxs.append(key[1])
-for line in msc.print_hierarchy().strip().split(" "):
-    tokens = line.split(",")
-    if p <= float(tokens[1]):
-        saddles.append(int(tokens[-1]))
+
+json_object = json.loads(msc.to_json())
+for merge in json_object["Hierarchy"]:
+    if p <= merge['Persistence']:
+        saddles.append(merge['Saddle'])
         if saddles[-1] not in saddle_ptrs:
             saddle_ptrs[saddles[-1]] = []
-        saddle_ptrs[saddles[-1]].append(int(tokens[2]))
-        saddle_ptrs[saddles[-1]].append(int(tokens[3]))
+        saddle_ptrs[saddles[-1]].append(merge['Dying'])
+        saddle_ptrs[saddles[-1]].append(merge['Surviving'])
 
 saddles.remove(129428)
 saddles.remove(188237)
@@ -211,6 +199,7 @@ for m in mins + maxs:
 
 C = color_msc(X, Z, p)
 c = C.reshape(z.shape)
+C /= np.max(C)
 
 end = time.time()
 print("Extract Extrema and Color: {} s".format(end - start))
@@ -219,7 +208,7 @@ start = time.time()
 plt.figure(num=None, figsize=(8, 8), dpi=100, facecolor="w")
 
 plt.scatter(
-    X[:, 0], X[:, 1], c=C / np.max(C), cmap=set3_cmap, zorder=1, s=1, marker=","
+    X[:, 0], X[:, 1], c=C, cmap=set3_cmap, zorder=1, s=1, marker=","
 )
 
 
@@ -294,7 +283,13 @@ for name in ["min", "max", "saddle"]:
     idxs = cps[name]
     color = colors[name]
     plt.scatter(
-        X[idxs, 0], X[idxs, 1], s=50, c=color, edgecolor="k", linewidth=lw, zorder=8
+        X[idxs, 0],
+        X[idxs, 1],
+        s=50,
+        c=color,
+        edgecolor="k",
+        linewidth=lw,
+        zorder=8,
     )
 
 for trace in traces:
@@ -314,16 +309,30 @@ plt.contourf(
     zorder=2,
 )
 plt.contour(
-    x, y, z, colors="k", alpha=0.5, linewidths=lws, linestyles="solid", zorder=3
+    x, y, z, colors="k", alpha=0.5, linewidths=lws, zorder=3
 )
 
 print(saddles)
 
 plt.contour(
-    x, y, z, colors="#000000", linewidths=4, linestyles="solid", levels=[0.52], zorder=4
+    x,
+    y,
+    z,
+    colors="#000000",
+    linewidths=4,
+    linestyles="solid",
+    levels=[0.52],
+    zorder=4,
 )
 plt.contour(
-    x, y, z, colors="#ff7f00", linewidths=2, linestyles="solid", levels=[0.52], zorder=5
+    x,
+    y,
+    z,
+    colors="#ff7f00",
+    linewidths=2,
+    linestyles="solid",
+    levels=[0.52],
+    zorder=5,
 )
 
 start_x = 0

@@ -48,9 +48,15 @@ class TopologicalObject(object):
         elif aggregator.lower() in ["average", "mean"]:
             aggregator = np.mean
         elif "first" in aggregator.lower():
-            aggregator = lambda x: x[0]
+
+            def aggregator(x):
+                return x[0]
+
         elif "last" in aggregator.lower():
-            aggregator = lambda x: x[-1]
+
+            def aggregator(x):
+                return x[-1]
+
         else:
             warnings.warn(
                 'Aggregator "{}" not understood. Skipping sample '
@@ -216,7 +222,11 @@ class TopologicalObject(object):
             start = time.clock()
 
         self.graph_rep = nglpy.Graph(
-            self.Xnorm, self.graph, self.max_neighbors, self.beta, connect=self.connect
+            self.Xnorm,
+            self.graph,
+            self.max_neighbors,
+            self.beta,
+            connect=self.connect,
         )
 
         if self.debug:
@@ -229,7 +239,9 @@ class TopologicalObject(object):
             data as an nparray and list of dimnames
             @ In, filename, string representing the data file
         """
-        data = np.genfromtxt(filename, dtype=float, delimiter=delimiter, names=True)
+        data = np.genfromtxt(
+            filename, dtype=float, delimiter=delimiter, names=True
+        )
         data = data.view(np.float64).reshape(data.shape + (-1,))
 
         X = data[:, 0:-1]

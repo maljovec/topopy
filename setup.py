@@ -48,7 +48,9 @@ setup(
     license="BSD",
     test_suite="topopy.tests",
     url="https://github.com/maljovec/topopy",
-    download_url="https://github.com/maljovec/topopy/archive/" + VERSION + ".tar.gz",
+    download_url="https://github.com/maljovec/topopy/archive/"
+    + VERSION
+    + ".tar.gz",
     keywords=[
         "topological data analysis",
         "computational topology",
@@ -72,5 +74,12 @@ setup(
     setup_requires=["scipy", "numpy"],
     install_requires=["scipy", "numpy", "scikit-learn", "networkx", "nglpy"],
     python_requires=">=2.7, <4",
-    ext_modules=[Extension("_topology", FILES, **extra_args)],
+    ext_modules=[
+        Extension(
+            "_topology",
+            FILES,
+            extra_compile_args=["-O3", "-march=native"],
+            **extra_args
+        )
+    ],
 )

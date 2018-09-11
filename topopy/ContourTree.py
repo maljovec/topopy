@@ -134,7 +134,8 @@ class ContourTree(TopologicalObject):
             sys.stdout.write("Sorting Nodes: ")
             start = time.clock()
 
-        self.sortedNodes = sorted(enumerate(self.Y), key=operator.itemgetter(1))
+        self.sortedNodes = sorted(enumerate(self.Y),
+                                  key=operator.itemgetter(1))
 
         if self.debug:
             end = time.clock()
@@ -217,30 +218,36 @@ class ContourTree(TopologicalObject):
 
                 # Trace down to a non-internal node
 
-                lowerLink = list(G.in_edges(node))[0][0]
-                while G.in_degree(lowerLink) == 1 and G.out_degree(lowerLink) == 1:
-                    newLowerLink = list(G.in_edges(lowerLink))[0][0]
-                    G.add_edge(newLowerLink, node)
-                    G.remove_node(lowerLink)
-                    removedNodes.append(lowerLink)
-                    lowerLink = newLowerLink
+                lower_link = list(G.in_edges(node))[0][0]
+                while (
+                    G.in_degree(lower_link) == 1
+                    and G.out_degree(lower_link) == 1
+                ):
+                    new_lower_link = list(G.in_edges(lower_link))[0][0]
+                    G.add_edge(new_lower_link, node)
+                    G.remove_node(lower_link)
+                    removedNodes.append(lower_link)
+                    lower_link = new_lower_link
 
                 removedNodes.reverse()
                 removedNodes.append(node)
 
                 # Trace up to a non-internal node
-                upperLink = list(G.out_edges(node))[0][1]
-                while G.in_degree(upperLink) == 1 and G.out_degree(upperLink) == 1:
-                    newUpperLink = list(G.out_edges(upperLink))[0][1]
-                    G.add_edge(node, newUpperLink)
-                    G.remove_node(upperLink)
-                    removedNodes.append(upperLink)
-                    upperLink = newUpperLink
+                upper_link = list(G.out_edges(node))[0][1]
+                while (
+                    G.in_degree(upper_link) == 1
+                    and G.out_degree(upper_link) == 1
+                ):
+                    new_upper_link = list(G.out_edges(upper_link))[0][1]
+                    G.add_edge(node, new_upper_link)
+                    G.remove_node(upper_link)
+                    removedNodes.append(upper_link)
+                    upper_link = new_upper_link
 
-                G.add_edge(lowerLink, upperLink)
+                G.add_edge(lower_link, upper_link)
                 G.remove_node(node)
 
-                self.augmentedEdges[(lowerLink, upperLink)] = removedNodes
+                self.augmentedEdges[(lower_link, upper_link)] = removedNodes
 
                 # This is to help speed up the process by skipping nodes
                 # we have already condensed, and to prevent us from not
@@ -381,7 +388,8 @@ class ContourTree(TopologicalObject):
             edges = list(thisTree.out_edges(v))
             if len(edges) != 1:
                 warnings.warn(
-                    "The node {} should have a single emanating " "edge.\n".format(v)
+                    "The node {} should have a single emanating "
+                    "edge.\n".format(v)
                 )
             e1 = edges[0][0]
             e2 = edges[0][1]
@@ -444,7 +452,8 @@ class ContourTree(TopologicalObject):
                     [
                         v
                         for v in thisTree.nodes()
-                        if thisTree.in_degree(v) == 0 and thatTree.in_degree(v) < 2
+                        if thisTree.in_degree(v) == 0
+                        and thatTree.in_degree(v) < 2
                     ]
                 )
             else:

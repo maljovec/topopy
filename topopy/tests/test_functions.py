@@ -8,14 +8,14 @@ import copy
 def generate_test_grid_2d(resolution=40):
     """
     """
-    x, y = np.mgrid[0 : 1 : (resolution * 1j), 0 : 1 : (resolution * 1j)]
+    x, y = np.mgrid[0:1:(resolution * 1j), 0:1:(resolution * 1j)]
     return np.vstack([x.ravel(), y.ravel()]).T
 
 
 def unpack2D(_x):
     """
-        Helper function for splitting 2D data into x and y component to make
-        equations simpler
+        Helper function for splitting 2D data into x and y component to
+        make equations simpler
     """
     _x = np.atleast_2d(_x)
     x = _x[:, 0]
@@ -28,7 +28,7 @@ def unpack2D(_x):
 ###############################################################################
 
 ###############################################################################
-# http://math.stackexchange.com/questions/152256/implicit-equation-for-double-torus-genus-2-orientable-surface
+# https://bit.ly/2wWSJs4
 
 
 def torusPolyGeneratorF(x, n):
@@ -91,7 +91,7 @@ def genTorusInputSampleSet(N):
     return (x, y, z)
 
 
-# End http://np.stackexchange.com/questions/152256/implicit-equation-for-double-torus-genus-2-orientable-surface
+# End https://bit.ly/2wWSJs4
 ###############################################################################
 
 
@@ -168,16 +168,26 @@ def ridge(_x):
     theta = math.pi / 3.
     sigx = .05
     sigy = .04
-    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (2 * sigy ** 2)
-    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (4 * sigy ** 2)
-    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (2 * sigy ** 2)
+    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (
+        2 * sigy ** 2
+    )
+    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (
+        4 * sigy ** 2
+    )
+    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (
+        2 * sigy ** 2
+    )
 
     return 0.01 * y + 0.5 * (
         np.exp(-((x - .75) ** 2) / 0.01)
         + np.exp(-((x) ** 2 + (y - 1) ** 2) / 0.1)
         + np.exp(-((x) ** 2 + (y) ** 2) / 0.005)
         - np.exp(
-            -(a * (x - .25) ** 2 + 2 * b * (x - .25) * (y - .25) + c * (y - .25) ** 2)
+            -(
+                a * (x - .25) ** 2
+                + 2 * b * (x - .25) * (y - .25)
+                + c * (y - .25) ** 2
+            )
         )
     )
 
@@ -187,16 +197,26 @@ def ridge2(_x):
     theta = math.pi / 3.
     sigx = .05
     sigy = .04
-    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (2 * sigy ** 2)
-    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (4 * sigy ** 2)
-    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (2 * sigy ** 2)
+    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (
+        2 * sigy ** 2
+    )
+    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (
+        4 * sigy ** 2
+    )
+    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (
+        2 * sigy ** 2
+    )
 
     return 0.01 * y + 0.5 * (
         np.exp(-(((x - .75) ** 2) / 0.01 + ((y - .5) ** 2) / 0.4))
         + np.exp(-((x - .1) ** 2 + (y - 1) ** 2) / 0.1)
         + np.exp(-((x - .1) ** 2 + (y - .1) ** 2) / 0.005)
         - np.exp(
-            -(a * (x - .3) ** 2 + 2 * b * (x - .3) * (y - .25) + c * (y - .25) ** 2)
+            -(
+                a * (x - .3) ** 2
+                + 2 * b * (x - .3) * (y - .25)
+                + c * (y - .25) ** 2
+            )
         )
     )
 

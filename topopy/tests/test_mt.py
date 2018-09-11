@@ -68,12 +68,14 @@ class TestMT(TestCase):
         self.assertEqual(
             9,
             len(mt.leaves),
-            "The 2D Gerber test function " "should have 9 leaves in its split tree",
+            "The 2D Gerber test function "
+            "should have 9 leaves in its split tree",
         )
         self.assertEqual(
             8,
             len(mt.branches),
-            "The 2D Gerber test function " "should have 8 branches in its split tree",
+            "The 2D Gerber test function "
+            "should have 8 branches in its split tree",
         )
 
         mt.build(self.X, -self.Y)
@@ -81,10 +83,12 @@ class TestMT(TestCase):
         self.assertEqual(
             4,
             len(mt.leaves),
-            "The 2D Gerber test function " "should have 4 leaves in its join tree",
+            "The 2D Gerber test function "
+            "should have 4 leaves in its join tree",
         )
         self.assertEqual(
             3,
             len(mt.branches),
-            "The 2D Gerber test function " "should have 3 branches in its join tree",
+            "The 2D Gerber test function "
+            "should have 3 branches in its join tree",
         )
