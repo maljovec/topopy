@@ -14,8 +14,8 @@ def generate_test_grid_2d(resolution=40):
 
 def unpack2D(_x):
     """
-        Helper function for splitting 2D data into x and y component to make
-        equations simpler
+        Helper function for splitting 2D data into x and y component to
+        make equations simpler
     """
     _x = np.atleast_2d(_x)
     x = _x[:, 0]
