@@ -5,7 +5,7 @@ import json
 
 import numpy as np
 
-from .topology import MorseComplexFloat, vectorFloat
+from .topology import MorseComplexFloat, vectorFloat, mapIntSetInt
 from . import TopologicalObject
 
 
@@ -161,10 +161,15 @@ class MorseComplex(TopologicalObject):
         X = morse_smale_complex.Xnorm
         N = len(Y) - 1
         complex_type = "Stable"
+        edges = dict(morse_smale_complex.graph_rep.full_graph())
         if negate:
             Y = -Y[::-1]
             X = X[::-1]
             complex_type = "Unstable"
+            reversed_edges = {}
+            for key, neighbors in edges.items():
+                reversed_edges[N - key] = tuple([N - i for i in neighbors])
+            edges = reversed_edges
 
         if self.debug:
             sys.stdout.write(complex_type + " Decomposition: ")
@@ -176,7 +181,7 @@ class MorseComplex(TopologicalObject):
             str(morse_smale_complex.gradient),
             str(morse_smale_complex.simplification),
             vectorFloat(morse_smale_complex.w),
-            morse_smale_complex.graph_rep.full_graph(),
+            mapIntSetInt(edges),
             morse_smale_complex.debug,
         )
 
