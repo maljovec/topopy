@@ -256,9 +256,7 @@ class TestMSC(TestCase):
         test_weights = self.test_object.get_weights([])
 
         np.testing.assert_array_equal(
-            [],
-            test_weights,
-            "An empty query should return empty results."
+            [], test_weights, "An empty query should return empty results."
         )
 
     def test_load_data_and_build(self):
@@ -599,4 +597,58 @@ class TestMSC(TestCase):
             partitions,
             "Requesting partitions on an unbuilt object should return "
             "an empty dict",
+        )
+
+    def test_unstructured(self):
+        """
+        Tests functionality on something other than a regular grid
+        """
+        self.X = np.array(
+            [
+                [0, 0],
+                [1, 1],
+                [1, 0],
+                [0, 1],
+                [0.25, 0.25],
+                [0.25, 0.75],
+                [0.75, 0.75],
+                [0.75, 0.25],
+                [0.0, 0.6],
+                [0.0, 0.25],
+                [0.0, 0.75],
+                [0.25, 0.0],
+                [0.6, 0.0],
+                [0.6, 0.25],
+                [0.625, 0.55],
+                [0.6, 0.75],
+                [0.75, 0.0],
+                [0.25, 0.55],
+                [1, 0.25],
+                [0.65, 1],
+                [1, 0.55],
+                [1, 0.75],
+                [0.75, 1],
+                [0.25, 1],
+                [0.75, 0.6]
+            ]
+        )
+        self.Y = gerber(self.X)
+
+        self.test_object = topopy.MorseSmaleComplex(
+            graph="beta skeleton",
+            gradient="steepest",
+            max_neighbors=-1,
+            beta=1.0,
+            normalization=None,
+            simplification="difference",
+            connect=False,
+            aggregator=None,
+            debug=False,
+        )
+        self.test_object.build(self.X, self.Y)
+
+        self.assertEqual(
+            13,
+            len(self.test_object.get_merge_sequence()),
+            "The merge sequence does not match the expected output.",
         )
