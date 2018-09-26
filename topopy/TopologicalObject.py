@@ -95,35 +95,18 @@ class TopologicalObject(object):
 
     def __init__(
         self,
-        graph="beta skeleton",
+        graph=None,
         gradient="steepest",
-        max_neighbors=-1,
-        beta=1.0,
         normalization=None,
-        connect=False,
         aggregator=None,
         debug=False,
     ):
         """ Initialization method that takes at minimum a set of input
             points and corresponding output responses.
-            @ In, graph, an optional string specifying the type of
-            neighborhood graph to use. Default is 'beta skeleton,' but
-            other valid types are: 'delaunay,' 'relaxed beta skeleton,'
-            'none', or 'approximate knn'
+            @ In, graph, an ngl.Graph object to use for neighborhoods
             @ In, gradient, an optional string specifying the type of
             gradient estimator to use. Currently the only available
             option is 'steepest'
-            @ In, max_neighbors, an optional integer value specifying
-            the maximum number of k-nearest neighbors used to begin a
-            neighborhood search. In the case of graph='[relaxed] beta
-            skeleton', we will begin with the specified approximate knn
-            graph and prune edges that do not satisfy the empty region
-            criteria.
-            @ In, beta, an optional floating point value between 0 and
-            2. This value is only used when graph='[relaxed] beta
-            skeleton' and specifies the radius for the empty region
-            graph computation (1=Gabriel graph, 2=Relative neighbor
-            graph)
             @ In, normalization, an optional string specifying whether
             the inputs/output should be scaled before computing.
             Currently, two modes are supported 'zscore' and 'feature'.
@@ -131,9 +114,6 @@ class TopologicalObject(object):
             standard deviation of 1 by subtracting the mean and dividing
             by the variance. 'feature' scales the data into the unit
             hypercube.
-            @ In, connect, an optional boolean flag for whether the
-            algorithm should enforce the data to be a single connected
-            component.
             @ In, aggregator, an optional string that specifies what
             type of aggregation to do when duplicates are found in the
             domain space. Default value is None meaning the code will
@@ -144,12 +124,11 @@ class TopologicalObject(object):
         super(TopologicalObject, self).__init__()
         self.reset()
 
+        if graph is None:
+            graph = nglpy.Graph()
         self.graph = graph
         self.gradient = gradient
-        self.max_neighbors = max_neighbors
-        self.beta = beta
         self.normalization = normalization
-        self.connect = connect
         self.debug = debug
         self.aggregator = aggregator
 
@@ -162,8 +141,6 @@ class TopologicalObject(object):
         self.w = []
 
         self.Xnorm = []
-
-        self.graph_rep = None
 
     def __set_data(self, X, Y, w=None):
         """ Internally assigns the input data and normalizes it
@@ -197,7 +174,7 @@ class TopologicalObject(object):
         else:
             self.Xnorm = np.array(self.X)
 
-    def build(self, X, Y, w=None, edges=None):
+    def build(self, X, Y, w=None):
         """ Assigns data to this object and builds the requested topological
             structure
             @ In, X, an m-by-n array of values specifying m
@@ -207,8 +184,6 @@ class TopologicalObject(object):
             @ In, w, an optional m vector of values specifying the
             weights associated to each of the m samples used. Default of
             None means all points will be equally weighted
-            @ In, edges, an optional list of custom edges to use as a
-            starting point for pruning, or in place of a computed graph.
         """
         self.reset()
 
@@ -221,13 +196,7 @@ class TopologicalObject(object):
             sys.stdout.write("Graph Preparation: ")
             start = time.clock()
 
-        self.graph_rep = nglpy.Graph(
-            self.Xnorm,
-            self.graph,
-            self.max_neighbors,
-            self.beta,
-            connect=self.connect,
-        )
+        self.graph.build(self.Xnorm)
 
         if self.debug:
             end = time.clock()
@@ -348,7 +317,7 @@ class TopologicalObject(object):
             @ In, an integer specifying the query point
             @ Out, a integer list of neighbors indices
         """
-        return self.graph_rep.neighbors(int(idx))
+        return self.graph.neighbors(int(idx))
 
     def check_duplicates(self):
         """ Function to test whether duplicates exist in the input or

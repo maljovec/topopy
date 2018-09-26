@@ -425,11 +425,6 @@ class TestTO(TestCase):
             self.to.Xnorm,
             "reset should clear all internal storage of the to.",
         )
-        self.assertEqual(
-            None,
-            self.to.graph_rep,
-            "reset should clear all internal storage of the to.",
-        )
 
     def test_shape_functions(self):
         """

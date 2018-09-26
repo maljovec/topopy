@@ -15,36 +15,19 @@ class MorseComplex(TopologicalObject):
 
     def __init__(
         self,
-        graph="beta skeleton",
+        graph=None,
         gradient="steepest",
-        max_neighbors=-1,
-        beta=1.0,
         normalization=None,
         simplification="difference",
-        connect=False,
         aggregator=None,
         debug=False,
     ):
         """ Initialization method that takes at minimum a set of input
             points and corresponding output responses.
-            @ In, graph, an optional string specifying the type of
-            neighborhood graph to use. Default is 'beta skeleton,' but
-            other valid types are: 'delaunay,' 'relaxed beta skeleton,'
-            'none', or 'approximate knn'
+            @ In, graph, an ngl.Graph object to use for neighborhoods
             @ In, gradient, an optional string specifying the type of
             gradient estimator to use. Currently the only available
             option is 'steepest'
-            @ In, max_neighbors, an optional integer value specifying
-            the maximum number of k-nearest neighbors used to begin a
-            neighborhood search. In the case of graph='[relaxed] beta
-            skeleton', we will begin with the specified approximate knn
-            graph and prune edges that do not satisfy the empty region
-            criteria.
-            @ In, beta, an optional floating point value between 0 and
-            2. This value is only used when graph='[relaxed] beta
-            skeleton' and specifies the radius for the empty region
-            graph computation (1=Gabriel graph, 2=Relative neighbor
-            graph)
             @ In, normalization, an optional string specifying whether
             the inputs/output should be scaled before computing.
             Currently, two modes are supported 'zscore' and 'feature'.
@@ -63,9 +46,6 @@ class MorseComplex(TopologicalObject):
             simplification by the size (number of points) in each
             manifold such that smaller features will be absorbed into
             neighboring larger features first.
-            @ In, connect, an optional boolean flag for whether the
-            algorithm should enforce the data to be a single connected
-            component.
             @ In, aggregator, an optional string that specifies what
             type of aggregation to do when duplicates are found in the
             domain space. Default value is None meaning the code will
@@ -76,10 +56,7 @@ class MorseComplex(TopologicalObject):
         super(MorseComplex, self).__init__(
             graph=graph,
             gradient=gradient,
-            max_neighbors=max_neighbors,
-            beta=beta,
             normalization=normalization,
-            connect=connect,
             aggregator=aggregator,
             debug=debug,
         )
@@ -100,7 +77,7 @@ class MorseComplex(TopologicalObject):
         # State properties
         self.persistence = 0.
 
-    def build(self, X, Y, w=None, edges=None):
+    def build(self, X, Y, w=None):
         """ Assigns data to this object and builds the Morse-Smale
             Complex
             @ In, X, an m-by-n array of values specifying m
@@ -113,11 +90,16 @@ class MorseComplex(TopologicalObject):
             @ In, edges, an optional list of custom edges to use as a
             starting point for pruning, or in place of a computed graph.
         """
-        super(MorseComplex, self).build(X, Y, w, edges)
+        super(MorseComplex, self).build(X, Y, w)
 
         if self.debug:
             sys.stdout.write("Decomposition: ")
             start = time.clock()
+
+        edges = mapIntSetInt()
+        for key, items in self.graph.full_graph().items():
+            items = tuple(items)
+            edges[key] = items
 
         morse_complex = MorseComplexFloat(
             vectorFloat(self.Xnorm.flatten()),
@@ -125,7 +107,7 @@ class MorseComplex(TopologicalObject):
             str(self.gradient),
             str(self.simplification),
             vectorFloat(self.w),
-            self.graph_rep.full_graph(),
+            edges,
             self.debug,
         )
         self.__amc = morse_complex
@@ -161,7 +143,12 @@ class MorseComplex(TopologicalObject):
         X = morse_smale_complex.Xnorm
         N = len(Y) - 1
         complex_type = "Stable"
-        edges = dict(morse_smale_complex.graph_rep.full_graph())
+
+        edges = mapIntSetInt()
+        for key, items in morse_smale_complex.graph.full_graph().items():
+            items = tuple(items)
+            edges[key] = items
+
         if negate:
             Y = -Y[::-1]
             X = X[::-1]
