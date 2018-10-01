@@ -5,7 +5,8 @@ import warnings
 import numpy as np
 import sklearn.preprocessing
 
-import nglpy
+# import nglpy as ngl
+import nglpy_cuda as ngl
 
 
 class TopologicalObject(object):
@@ -125,7 +126,7 @@ class TopologicalObject(object):
         self.reset()
 
         if graph is None:
-            graph = nglpy.Graph()
+            graph = ngl.Graph()
         self.graph = graph
         self.gradient = gradient
         self.normalization = normalization
