@@ -126,7 +126,7 @@ class TopologicalObject(object):
         self.reset()
 
         if graph is None:
-            graph = ngl.Graph()
+            graph = ngl.EmptyRegionGraph()
         self.graph = graph
         self.gradient = gradient
         self.normalization = normalization
