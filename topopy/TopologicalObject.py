@@ -5,8 +5,8 @@ import warnings
 import numpy as np
 import sklearn.preprocessing
 
-# import nglpy as ngl
-import nglpy_cuda as ngl
+import nglpy as ngl
+# import nglpy_cuda as ngl
 
 
 class TopologicalObject(object):
