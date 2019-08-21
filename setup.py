@@ -78,7 +78,7 @@ setup(
         Extension(
             "_topology",
             FILES,
-            extra_compile_args=["-O3", "-march=native"],
+            extra_compile_args=["-stdlib=libc++", "-O3", "-march=native"],
             **extra_args
         )
     ],
