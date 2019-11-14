@@ -7,7 +7,7 @@ import platform
 
 requirements = open('requirements.txt').read().strip().split('\n')
 
-extra_compile_args = []
+extra_compile_args = ["-O3", "-march=native", ]
 if platform.system() == 'Darwin':
     extra_compile_args.append('-stdlib=libc++')
 
@@ -71,7 +71,6 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: C++",
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering :: Mathematics",
     ],
@@ -81,8 +80,6 @@ setup(
     ext_modules=[
         Extension("_topology",
                   FILES,
-                  extra_compile_args=["-O3",
-                                      "-march=native",
-                                      *extra_compile_args])
+                  extra_compile_args=extra_compile_args)
     ],
 )
