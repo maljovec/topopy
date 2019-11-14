@@ -3,9 +3,13 @@
 """
 from setuptools import setup, Extension
 import re
+import platform
 
+requirements = open('requirements.txt').read().strip().split('\n')
 
-extra_args = {}
+extra_compile_args = []
+if platform.system() == 'Darwin':
+    extra_compile_args.append('-stdlib=libc++')
 
 
 def get_property(prop, project):
@@ -72,14 +76,13 @@ setup(
         "Topic :: Scientific/Engineering :: Mathematics",
     ],
     setup_requires=["scipy", "numpy"],
-    install_requires=["scipy", "numpy", "scikit-learn", "networkx", "nglpy"],
+    install_requires=requirements,
     python_requires=">=2.7, <4",
     ext_modules=[
-        Extension(
-            "_topology",
-            FILES,
-            extra_compile_args=["-O3", "-march=native"],
-            **extra_args
-        )
+        Extension("_topology",
+                  FILES,
+                  extra_compile_args=["-O3",
+                                      "-march=native",
+                                      *extra_compile_args])
     ],
 )
