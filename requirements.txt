@@ -1,5 +1,5 @@
 scipy>=1.3.2,<2.0
-numpy==1.16.4,<2.0
+numpy>=1.17.4,<2.0
 scikit-learn>=0.21.2,<1.0
 networkx>=2.4,<3.0
 nglpy>=0.0.2,<1.0
