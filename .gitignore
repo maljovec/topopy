@@ -21,3 +21,5 @@ topopy.egg-info/*
 .coverage
 
 .ipynb_checkpoints
+docs/_build
+

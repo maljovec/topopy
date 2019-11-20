@@ -17,10 +17,22 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+from mock import Mock
+import os
+import subprocess
+import sys
+sys.path.insert(0, os.path.abspath('..'))
 
+
+# Mock things for readthedoc build
+class MyMock(Mock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MyMock()
+
+
+MOCK_MODULES = ['_topology']
+sys.modules.update((mod_name, MyMock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ------------------------------------------------
 
@@ -31,7 +43,9 @@
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.napoleon',
+              'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -166,3 +180,6 @@ texinfo_documents = [
         "Miscellaneous",
     )
 ]
+
+os.chdir('..')
+subprocess.call('make')

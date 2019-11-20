@@ -12,6 +12,7 @@ Welcome to topopy's documentation!
 
    install.rst
    usage.rst
+   api.rst
    license.rst
 
 Indices and tables
