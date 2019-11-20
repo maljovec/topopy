@@ -107,13 +107,13 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Sorting Nodes: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         self.sortedNodes = sorted(enumerate(self.Y),
                                   key=operator.itemgetter(1))
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def _identifyBranches(self):
@@ -124,7 +124,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Identifying branches: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         seen = set()
         self.branches = set()
@@ -143,7 +143,7 @@ class ContourTree(TopologicalObject):
                 self.branches.add(e2)
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def _identifySuperGraph(self):
@@ -158,7 +158,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Condensing Graph: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         G = nx.DiGraph()
         G.add_edges_from(self.edges)
@@ -234,7 +234,7 @@ class ContourTree(TopologicalObject):
         self.superArcs = G.edges()
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def get_seeds(self, threshold):
@@ -285,7 +285,7 @@ class ContourTree(TopologicalObject):
         """
         if self.debug:
             sys.stdout.write("Networkx Tree construction: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         nxTree = nx.DiGraph()
         nxTree.add_edges_from(thisTree.edges)
@@ -317,7 +317,7 @@ class ContourTree(TopologicalObject):
                 nxTree.add_edge(startNode, endNode)
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
         return nxTree
@@ -336,7 +336,7 @@ class ContourTree(TopologicalObject):
         """
         if self.debug:
             sys.stdout.write("Processing Tree: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         # Get all of the leaf nodes that are not branches in the other
         # tree
@@ -443,5 +443,5 @@ class ContourTree(TopologicalObject):
             #     sys.stdout.write(myMessage+'\n')
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))

@@ -94,7 +94,7 @@ class MorseComplex(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Decomposition: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         edges = mapIntSetInt()
         for key, items in self.graph.full_graph().items():
@@ -135,7 +135,7 @@ class MorseComplex(TopologicalObject):
         self.max_indices = list(self.base_partitions.keys())
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def build_for_morse_smale_complex(self, morse_smale_complex, negate=False):
@@ -160,7 +160,7 @@ class MorseComplex(TopologicalObject):
 
         if self.debug:
             sys.stdout.write(complex_type + " Decomposition: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         morse_complex = MorseComplexFloat(
             vectorFloat(X.flatten()),
@@ -208,7 +208,7 @@ class MorseComplex(TopologicalObject):
         self.max_indices = list(self.base_partitions.keys())
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def save(self, filename=None):

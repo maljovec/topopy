@@ -91,7 +91,7 @@ class MergeTree(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Merge Tree Computation: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         self.__tree = MergeTreeFloat(
             vectorFloat(self.Xnorm.flatten()),
@@ -104,7 +104,7 @@ class MergeTree(TopologicalObject):
         self._internal_build()
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def build_for_contour_tree(self, contour_tree, negate=False):
@@ -116,7 +116,7 @@ class MergeTree(TopologicalObject):
             if negate:
                 tree_type = "Split"
             sys.stdout.write("{} Tree Computation: ".format(tree_type))
-            start = time.clock()
+            start = time.perf_counter()
 
         Y = contour_tree.Y
         if negate:
@@ -131,5 +131,5 @@ class MergeTree(TopologicalObject):
         )
         self._internal_build()
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))

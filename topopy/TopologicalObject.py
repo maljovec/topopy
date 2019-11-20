@@ -195,12 +195,12 @@ class TopologicalObject(object):
 
         if self.debug:
             sys.stdout.write("Graph Preparation: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         self.graph.build(self.Xnorm)
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def load_data_and_build(self, filename, delimiter=","):

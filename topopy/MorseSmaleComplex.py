@@ -94,7 +94,7 @@ class MorseSmaleComplex(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Decomposition: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         stableManifolds = MorseComplex(debug=self.debug)
         unstableManifolds = MorseComplex(debug=self.debug)
@@ -128,7 +128,7 @@ class MorseSmaleComplex(TopologicalObject):
             )[0]
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def save(self, filename=None):
