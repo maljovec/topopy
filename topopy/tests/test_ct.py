@@ -3,6 +3,7 @@
     topopy.ContourTree and by proxy topopy.MergeTree
 """
 from unittest import TestCase
+import nglpy as ngl
 import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
@@ -36,7 +37,8 @@ class TestCT(TestCase):
         # __init__
         # build
         # __set_data
-        self.ct = topopy.ContourTree(debug=False, max_neighbors=10)
+        self.graph = ngl.EmptyRegionGraph(max_neighbors=10)
+        self.ct = topopy.ContourTree(graph=self.graph, debug=False)
         self.ct.build(self.X, self.Y)
 
     def test_debug(self):
@@ -48,12 +50,12 @@ class TestCT(TestCase):
         sys.stdout = open(test_file, "w")
 
         self.ct = topopy.ContourTree(
-            debug=True, short_circuit=True, max_neighbors=10
+            debug=True, short_circuit=True, graph=self.graph
         )
         self.ct.build(self.X, self.Y)
 
         self.ct = topopy.ContourTree(
-            debug=True, short_circuit=False, max_neighbors=10
+            debug=True, short_circuit=False, graph=self.graph
         )
         self.ct.build(self.X, self.Y)
 
@@ -115,7 +117,7 @@ class TestCT(TestCase):
         Test the build process of the ContourTree
         """
         self.setup()
-        self.ct = topopy.ContourTree(short_circuit=False, max_neighbors=10)
+        self.ct = topopy.ContourTree(graph=self.graph, short_circuit=False)
         self.ct.build(self.X, self.Y)
 
         self.assertEqual(
