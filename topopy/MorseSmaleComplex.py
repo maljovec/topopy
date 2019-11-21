@@ -390,23 +390,35 @@ class MorseSmaleComplex(TopologicalObject):
         return labels[indices]
 
     def get_current_labels(self):
-        """ Returns a list of tuples that specifies the min-max index
-            labels associated to each input sample
-            @ Out, a list of tuples that are each a pair of non-negative
-            integers specifying the min-flow and max-flow indices
-            associated to each input sample at the current level of
+        """ Returns a list of tuples that specifies the min-max index labels
+        associated to each input sample
+
+        Returns
+        -------
+        list of tuple(int, int)
+            a list of non-negative integer tuples specifying the min-max index
+            labels associated to each input sample at the current level of
             persistence
+
         """
         partitions = self.get_partitions(self.persistence)
         return partitions.keys()
 
     def get_sample_size(self, key=None):
         """ Returns the number of samples in the input data
-            @ In, key, an optional 2-tuple specifying a min-max id pair
-            used for determining which partition size should be
-            returned. If not specified then the size of the entire data
-            set will be returned.
-            @ Out, an integer specifying the number of samples.
+
+        Parameters
+        ----------
+        key : int
+            An optional integer specifying a max id used for determining which
+            partition size should be returned. If not specified then the size of
+            the entire data set will be returned.
+
+        Returns
+        -------
+        int
+            An integer specifying the number of samples.
+
         """
         if key is None:
             return len(self.Y)
@@ -414,13 +426,20 @@ class MorseSmaleComplex(TopologicalObject):
             return len(self.get_partitions(self.persistence)[key])
 
     def get_classification(self, idx):
-        """ Given an index, this function will report whether that
-            sample is a local minimum, a local maximum, or a regular
-            point.
-            @ In, idx, a non-negative integer less than the sample size
-            of the input data.
-            @ Out, a string specifying the classification type of the
-            input sample: will be 'maximum,' 'minimum,' or 'regular.'
+        """ Given an index, this function will report whether that sample is a
+        local minimum, a local maximum, or a regular point.
+
+        Parameters
+        ----------
+        idx : int
+            A non-negative integer less than the sample size of the input data.
+
+        Returns
+        -------
+        str
+            A string specifying the classification type of the input sample:
+            will be 'maximum,' 'minimum,' or 'regular.'
+
         """
         if idx in self.min_indices:
             return "minimum"
@@ -429,10 +448,13 @@ class MorseSmaleComplex(TopologicalObject):
         return "regular"
 
     def to_json(self):
-        """ Writes the complete Morse-Smale merge hierarchy to a string
-            object.
-            @ Out, a string object storing the entire merge hierarchy of
-            all minima and maxima.
+        """ Writes the complete Morse-Smale complex merge hierarchy to a string
+
+        Returns
+        -------
+        str
+            A string storing the entire merge hierarchy of all minima and maxima
+
         """
         capsule = {}
         capsule["Hierarchy"] = []
