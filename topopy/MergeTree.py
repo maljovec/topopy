@@ -40,6 +40,14 @@ class MergeTree(TopologicalObject):
         aggregator=None,
         debug=False,
     ):
+        """ Empties all internal storage containers
+
+
+        Returns
+        -------
+        None
+
+        """
         super(MergeTree, self).__init__(
             graph=graph,
             gradient=gradient,

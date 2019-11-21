@@ -12,31 +12,65 @@ import nglpy as ngl
 class TopologicalObject(object):
     """ A base class for housing common interactions between Morse and
         Morse-Smale complexes, and Contour and Merge Trees
+
+    Parameters
+    ----------
+    graph : nglpy.Graph
+        A graph object used for determining neighborhoods in gradient estimation
+    gradient : str
+        An optional string specifying the type of gradient estimator to use.
+        Currently the only available option is 'steepest'.
+    normalization : str
+        An optional string specifying whether the inputs/output should be
+        scaled before computing. Currently, two modes are supported 'zscore'
+        and 'feature'. 'zscore' will ensure the data has a mean of zero and a
+        standard deviation of 1 by subtracting the mean and dividing by the
+        variance. 'feature' scales the data into the unit hypercube.
+    aggregator : str
+        An optional string that specifies what type of aggregation to do when
+        duplicates are found in the domain space. Default value is None meaning
+        the code will error if duplicates are identified.
+    debug : bool
+        An optional boolean flag for whether debugging output should be enabled.
+    short_circuit : bool
+        An optional boolean flag for whether the contour tree should be short
+        circuited. Enabling this will speed up the processing by bypassing the
+        fully augmented search and only focusing on partially augmented split
+        and join trees
+
     """
 
     precision = 16
 
     @staticmethod
     def aggregate_duplicates(X, Y, aggregator="mean", precision=precision):
-        """ A function that will attempt to collapse duplicates in
-            domain space, X, by aggregating values over the range space,
-            Y.
-            @ In, X, an m-by-n array of values specifying m
-            n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-            responses corresponding to the m samples specified by X
-            @ In, aggregator, an optional string or callable object that
-            specifies what type of aggregation to do when duplicates are
-            found in the domain space. Default value is mean meaning the
-            code will calculate the mean range value over each of the
-            unique, duplicated samples.
-            @ In, precision, an optional positive integer specifying how
-            many digits numbers should be rounded to in order to
-            determine if they are unique or not.
-            @ Out, (unique_X, aggregated_Y), a tuple where the first
-            value is an m'-by-n array specifying the unique domain
-            samples and the second value is an m' vector specifying the
-            associated range values. m' <= m.
+        """ A function that will attempt to collapse duplicates in domain
+            space, X, by aggregating values over the range space, Y.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            An m-by-n array of values specifying m n-dimensional samples
+        Y : np.array
+            A m vector of values specifying the output responses corresponding
+            to the m samples specified by X
+        aggregator : str
+            An optional string or callable object that specifies what type of
+            aggregation to do when duplicates are found in the domain space.
+            Default value is mean meaning the code will calculate the mean range
+            value over each of the unique, duplicated samples.
+        precision : int
+            An optional positive integer specifying how many digits numbers
+            should be rounded to in order to determine if they are unique or
+            not.
+
+        Returns
+        -------
+        tuple(np.ndarray, np.array)
+            A tuple where the first value is an m'-by-n array specifying the
+            unique domain samples and the second value is an m' vector
+            specifying the associated range values. m' <= m.
+
         """
         if callable(aggregator):
             pass
@@ -102,26 +136,6 @@ class TopologicalObject(object):
         aggregator=None,
         debug=False,
     ):
-        """ Initialization method that takes at minimum a set of input
-            points and corresponding output responses.
-            @ In, graph, an ngl.Graph object to use for neighborhoods
-            @ In, gradient, an optional string specifying the type of
-            gradient estimator to use. Currently the only available
-            option is 'steepest'
-            @ In, normalization, an optional string specifying whether
-            the inputs/output should be scaled before computing.
-            Currently, two modes are supported 'zscore' and 'feature'.
-            'zscore' will ensure the data has a mean of zero and a
-            standard deviation of 1 by subtracting the mean and dividing
-            by the variance. 'feature' scales the data into the unit
-            hypercube.
-            @ In, aggregator, an optional string that specifies what
-            type of aggregation to do when duplicates are found in the
-            domain space. Default value is None meaning the code will
-            error if duplicates are identified.
-            @ In, debug, an optional boolean flag for whether debugging
-            output should be enabled.
-        """
         super(TopologicalObject, self).__init__()
         self.reset()
 
@@ -134,8 +148,13 @@ class TopologicalObject(object):
         self.aggregator = aggregator
 
     def reset(self):
-        """
-            Empties all internal storage containers
+        """ Empties all internal storage containers
+
+
+        Returns
+        -------
+        None
+
         """
         self.X = []
         self.Y = []
@@ -178,13 +197,26 @@ class TopologicalObject(object):
     def build(self, X, Y, w=None):
         """ Assigns data to this object and builds the requested topological
             structure
-            @ In, X, an m-by-n array of values specifying m
-            n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-            responses corresponding to the m samples specified by X
-            @ In, w, an optional m vector of values specifying the
-            weights associated to each of the m samples used. Default of
-            None means all points will be equally weighted
+
+        Uses an internal graph given in the constructor to build a topological
+        object on the passed in data. Weights are currently ignored.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            An m-by-n array of values specifying m n-dimensional samples
+        Y : np.array
+            An m vector of values specifying the output responses corresponding
+            to the m samples specified by X
+        w : np.array
+            An optional m vector of values specifying the weights associated to
+            each of the m samples used. Default of None means all points will be
+            equally weighted
+
+        Returns
+        -------
+        None
+
         """
         self.reset()
 
@@ -205,9 +237,19 @@ class TopologicalObject(object):
 
     def load_data_and_build(self, filename, delimiter=","):
         """ Convenience function for directly working with a data file.
-            This opens a file and reads the data into an array, sets the
-            data as an nparray and list of dimnames
-            @ In, filename, string representing the data file
+
+        This opens a file and reads the data into an array, sets the data as an
+        nparray and list of dimnames
+
+        Parameters
+        ----------
+        filename : str
+            string representing the data file
+
+        Returns
+        -------
+        None
+
         """
         data = np.genfromtxt(
             filename, dtype=float, delimiter=delimiter, names=True
@@ -220,14 +262,24 @@ class TopologicalObject(object):
         self.build(X=X, Y=Y)
 
     def get_normed_x(self, rows=None, cols=None):
-        """ Returns the normalized input data requested by the user
-            @ In, rows, a list of non-negative integers specifying the
-            row indices to return
-            @ In, cols, a list of non-negative integers specifying the
-            column indices to return
-            @ Out, a matrix of floating point values specifying the
-            normalized data values used in internal computations
-            filtered by the three input parameters.
+        """ Returns the normalized input data requested by the user.
+
+
+        Parameters
+        ----------
+        rows : list of int
+            A list of non-negative integers specifying the row indices to return
+        cols : list of int
+            A list of non-negative integers specifying the column indices to
+            return
+
+        Returns
+        -------
+        np.ndarray
+            A matrix of floating point values specifying the normalized data
+            values used in internal computations filtered by the three input
+            parameters.
+
         """
         if rows is None:
             rows = list(range(0, self.get_sample_size()))
@@ -243,12 +295,22 @@ class TopologicalObject(object):
 
     def get_x(self, rows=None, cols=None):
         """ Returns the input data requested by the user
-            @ In, rows, a list of non-negative integers specifying the
-            row indices to return
-            @ In, cols, a list of non-negative integers specifying the
-            column indices to return
-            @ Out, a matrix of floating point values specifying the
-            input data values filtered by the two input parameters.
+
+
+        Parameters
+        ----------
+        rows : list of int
+            A list of non-negative integers specifying the row indices to return
+        cols : list of int
+            A list of non-negative integers specifying the column indices to
+            return
+
+        Returns
+        -------
+        np.ndarray
+            A matrix of floating point values specifying the input data values
+            filtered by the two input parameters.
+
         """
         if rows is None:
             rows = list(range(0, self.get_sample_size()))
@@ -266,10 +328,18 @@ class TopologicalObject(object):
 
     def get_y(self, indices=None):
         """ Returns the output data requested by the user
-            @ In, indices, a list of non-negative integers specifying
-            the row indices to return
-            @ Out, an nparray of floating point values specifying the output
-            data values filtered by the indices input parameter.
+
+        Parameters
+        ----------
+        indices : list of int
+            A list of non-negative integers specifying the row indices to return
+
+        Returns
+        -------
+        np.array
+            An array of floating point values specifying the output data values
+            filtered by the indices input parameter.
+
         """
         if indices is None:
             indices = list(range(0, self.get_sample_size()))
@@ -284,11 +354,18 @@ class TopologicalObject(object):
 
     def get_weights(self, indices=None):
         """ Returns the weights requested by the user
-            @ In, indices, a list of non-negative integers specifying
-            the row indices to return
-            @ Out, a list of floating point values specifying the
-            weights associated to the input data rows filtered by the
-            indices input parameter.
+
+        Parameters
+        ----------
+        indices : list of int
+            A list of non-negative integers specifying the row indices to return
+
+        Returns
+        -------
+        np.array
+            An array of floating point values specifying the weights associated
+            to the input data rows filtered by the indices input parameter.
+
         """
         if indices is None:
             indices = list(range(0, self.get_sample_size()))
@@ -301,34 +378,60 @@ class TopologicalObject(object):
 
     def get_sample_size(self):
         """ Returns the number of samples in the input data
-            @ Out, an integer specifying the number of samples.
+
+
+        Returns
+        -------
+        int
+            Integer specifying the number of samples.
+
         """
         return len(self.Y)
 
     def get_dimensionality(self):
-        """ Returns the dimensionality of the input space of the input
-            data
-            @ Out, an integer specifying the dimensionality of the input
-            samples.
+        """ Returns the dimensionality of the input space of the input data
+
+
+        Returns
+        -------
+        int
+            Integer  specifying the dimensionality of the input samples.
+
         """
         return self.X.shape[1]
 
     def get_neighbors(self, idx):
         """ Returns a list of neighbors for the specified index
-            @ In, an integer specifying the query point
-            @ Out, a integer list of neighbors indices
+
+
+        Parameters
+        ----------
+        idx : int
+            An integer specifying the query point
+
+        Returns
+        -------
+        list of int
+            Integer list of neighbors indices
+
         """
         return self.graph.neighbors(int(idx))
 
     def check_duplicates(self):
-        """ Function to test whether duplicates exist in the input or
-            output space. First, if an aggregator function has been
-            specified, the domain space duplicates will be consolidated
-            using the function to generate a new range value for that
-            shared point. Otherwise, it will raise a ValueError.
-            The function will raise a warning if duplicates exist in the
-            output space
-            @Out, None
+        """ Function to test whether duplicates exist in the input or output
+        space.
+
+        First, if an aggregator function has been specified, the domain space
+        duplicates will be consolidated using the function to generate a new
+        range value for that shared point. Otherwise, it will raise a
+        ValueError. The function will raise a warning if duplicates exist in the
+        output space
+
+
+        Returns
+        -------
+        None
+
         """
 
         if self.aggregator is not None:

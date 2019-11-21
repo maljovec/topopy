@@ -12,6 +12,33 @@ from . import TopologicalObject
 
 class ContourTree(TopologicalObject):
     """ A class for computing a contour tree from two merge trees
+
+
+    Parameters
+    ----------
+    graph : nglpy.Graph
+        A graph object used for determining neighborhoods in gradient estimation
+    gradient : str
+        An optional string specifying the type of gradient estimator to use.
+        Currently the only available option is 'steepest'.
+    normalization : str
+        An optional string specifying whether the inputs/output should be
+        scaled before computing. Currently, two modes are supported 'zscore'
+        and 'feature'. 'zscore' will ensure the data has a mean of zero and a
+        standard deviation of 1 by subtracting the mean and dividing by the
+        variance. 'feature' scales the data into the unit hypercube.
+    aggregator : str
+        An optional string that specifies what type of aggregation to do when
+        duplicates are found in the domain space. Default value is None meaning
+        the code will error if duplicates are identified.
+    debug : bool
+        An optional boolean flag for whether debugging output should be enabled.
+    short_circuit : bool
+        An optional boolean flag for whether the contour tree should be short
+        circuited. Enabling this will speed up the processing by bypassing the
+        fully augmented search and only focusing on partially augmented split
+        and join trees
+
     """
 
     def __init__(
@@ -23,27 +50,6 @@ class ContourTree(TopologicalObject):
         debug=False,
         short_circuit=True,
     ):
-        """ Initialization method
-            @ In, graph, an ngl.Graph object to use for neighborhoods
-            @ In, gradient, an optional string specifying the type of
-            gradient estimator to use. Currently the only available
-            option is 'steepest'
-            @ In, normalization, an optional string specifying whether
-            the inputs/output should be scaled before computing.
-            Currently, two modes are supported 'zscore' and 'feature'.
-            'zscore' will ensure the data has a mean of zero and a
-            standard deviation of 1 by subtracting the mean and dividing
-            by the variance. 'feature' scales the data into the unit
-            hypercube.
-            @ In, aggregator, an optional string that specifies what
-            type of aggregation to do when duplicates are found in the
-            domain space. Default value is None meaning the code will
-            error if duplicates are identified.
-            @ In, debug, an optional boolean flag for whether debugging
-            output should be enabled.
-            @ In, short_circuit, an optional boolean flag for whether the
-            contour tree should be short circuited (TODO: fix description).
-        """
         super(ContourTree, self).__init__(
             graph=graph,
             gradient=gradient,
@@ -54,8 +60,13 @@ class ContourTree(TopologicalObject):
         self.short_circuit = short_circuit
 
     def reset(self):
-        """
-            Empties all internal storage containers
+        """ Empties all internal storage containers
+
+
+        Returns
+        -------
+        None
+
         """
         super(ContourTree, self).reset()
         self.edges = []
@@ -66,15 +77,27 @@ class ContourTree(TopologicalObject):
         self.superArcs = []
 
     def build(self, X, Y, w=None):
-        """ Assigns data to this object and builds the Morse-Smale
-            Complex
-            @ In, X, an m-by-n array of values specifying m
-            n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-            responses corresponding to the m samples specified by X
-            @ In, w, an optional m vector of values specifying the
-            weights associated to each of the m samples used. Default of
-            None means all points will be equally weighted
+        """ Assigns data to this object and builds the Contour Tree
+
+        Uses an internal graph given in the constructor to build a contour tree
+        on the passed in data. Weights are currently ignored.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            An m-by-n array of values specifying m n-dimensional samples
+        Y : np.array
+            An m vector of values specifying the output responses corresponding
+            to the m samples specified by X
+        w : np.array
+            An optional m vector of values specifying the weights associated to
+            each of the m samples used. Default of None means all points will be
+            equally weighted
+
+        Returns
+        -------
+        None
+
         """
         super(ContourTree, self).build(X, Y, w)
 
@@ -238,10 +261,22 @@ class ContourTree(TopologicalObject):
             sys.stdout.write("%f s\n" % (end - start))
 
     def get_seeds(self, threshold):
-        """ Returns a list of seed points for isosurface extraction
-            given a threshold value
-            @ In, threshold, float, the isovalue for which we want to
-                identify seed points for isosurface extraction
+        """ Returns a list of seed points for isosurface extraction given a
+        threshold value
+
+        Parameters
+        ----------
+        threshold : float
+            The isovalue for which we want to identify seed points for
+            isosurface extraction
+
+        Returns
+        -------
+        list of int
+            A list of integers representing seed points in the data held by
+            this object. There will be one seed point for each connected
+            component of the isosurface defined by the given threshold value.
+
         """
         seeds = []
         for e1, e2 in self.superArcs:
