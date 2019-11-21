@@ -11,6 +11,37 @@ from . import TopologicalObject
 
 class MorseComplex(TopologicalObject):
     """ A wrapper class for the C++ approximate Morse complex Object
+
+    Parameters
+    ----------
+    graph : nglpy.Graph
+        A graph object used for determining neighborhoods in gradient estimation
+    gradient : str
+        An optional string specifying the type of gradient estimator to use.
+        Currently the only available option is 'steepest'.
+    normalization : str
+        An optional string specifying whether the inputs/output should be
+        scaled before computing. Currently, two modes are supported 'zscore'
+        and 'feature'. 'zscore' will ensure the data has a mean of zero and a
+        standard deviation of 1 by subtracting the mean and dividing by the
+        variance. 'feature' scales the data into the unit hypercube.
+    simplification : str
+        An optional string specifying how we will compute the simplification
+        hierarchy. Currently, three modes are supported 'difference',
+        'probability' and 'count'. 'difference' will take the function value
+        difference of the extrema and its closest function valued neighboring
+        saddle (standard persistence simplification), 'probability' will augment
+        this value by multiplying the probability of the extremum and its
+        saddle, and count will order the simplification by the size (number of
+        points) in each manifold such that smaller features will be absorbed
+        into neighboring larger features first.
+    aggregator : str
+        An optional string that specifies what type of aggregation to do when
+        duplicates are found in the domain space. Default value is None meaning
+        the code will error if duplicates are identified.
+    debug : bool
+        An optional boolean flag for whether debugging output should be enabled.
+
     """
 
     def __init__(
@@ -22,37 +53,6 @@ class MorseComplex(TopologicalObject):
         aggregator=None,
         debug=False,
     ):
-        """ Initialization method that takes at minimum a set of input
-            points and corresponding output responses.
-            @ In, graph, an ngl.Graph object to use for neighborhoods
-            @ In, gradient, an optional string specifying the type of
-            gradient estimator to use. Currently the only available
-            option is 'steepest'
-            @ In, normalization, an optional string specifying whether
-            the inputs/output should be scaled before computing.
-            Currently, two modes are supported 'zscore' and 'feature'.
-            'zscore' will ensure the data has a mean of zero and a
-            standard deviation of 1 by subtracting the mean and dividing
-            by the variance. 'feature' scales the data into the unit
-            hypercube.
-            @ In, simplification, an optional string specifying how we
-            will compute the simplification hierarchy. Currently, three
-            modes are supported 'difference', 'probability' and 'count'.
-            'difference' will take the function value difference of the
-            extrema and its closest function valued neighboring saddle
-            (standard persistence simplification), 'probability' will
-            augment this value by multiplying the probability of the
-            extremum and its saddle, and count will order the
-            simplification by the size (number of points) in each
-            manifold such that smaller features will be absorbed into
-            neighboring larger features first.
-            @ In, aggregator, an optional string that specifies what
-            type of aggregation to do when duplicates are found in the
-            domain space. Default value is None meaning the code will
-            error if duplicates are identified.
-            @ In, debug, an optional boolean flag for whether debugging
-            output should be enabled.
-        """
         super(MorseComplex, self).__init__(
             graph=graph,
             gradient=gradient,
@@ -63,8 +63,13 @@ class MorseComplex(TopologicalObject):
         self.simplification = simplification
 
     def reset(self):
-        """
-            Empties all internal storage containers
+        """ Empties all internal storage containers
+
+
+        Returns
+        -------
+        None
+
         """
         super(MorseComplex, self).reset()
 
@@ -78,17 +83,27 @@ class MorseComplex(TopologicalObject):
         self.persistence = 0.
 
     def build(self, X, Y, w=None):
-        """ Assigns data to this object and builds the Morse-Smale
-            Complex
-            @ In, X, an m-by-n array of values specifying m
-            n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-            responses corresponding to the m samples specified by X
-            @ In, w, an optional m vector of values specifying the
-            weights associated to each of the m samples used. Default of
-            None means all points will be equally weighted
-            @ In, edges, an optional list of custom edges to use as a
-            starting point for pruning, or in place of a computed graph.
+        """ Assigns data to this object and builds the Morse Complex
+
+        Uses an internal graph given in the constructor to build a Morse complex
+        on the passed in data. Weights are currently ignored.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            An m-by-n array of values specifying m n-dimensional samples
+        Y : np.array
+            An m vector of values specifying the output responses corresponding
+            to the m samples specified by X
+        w : np.array
+            An optional m vector of values specifying the weights associated to
+            each of the m samples used. Default of None means all points will be
+            equally weighted
+
+        Returns
+        -------
+        None
+
         """
         super(MorseComplex, self).build(X, Y, w)
 
@@ -138,7 +153,7 @@ class MorseComplex(TopologicalObject):
             end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
-    def build_for_morse_smale_complex(self, morse_smale_complex, negate=False):
+    def _build_for_morse_smale_complex(self, morse_smale_complex, negate=False):
         Y = morse_smale_complex.Y
         X = morse_smale_complex.Xnorm
         N = len(Y) - 1
@@ -213,9 +228,17 @@ class MorseComplex(TopologicalObject):
 
     def save(self, filename=None):
         """ Saves a constructed Morse Complex in json file
-            @ In, filename, a filename for storing the
-            hierarchical merging of features and the base level
-            partitions of the data
+
+        Parameters
+        ----------
+        filename : str
+            A filename for storing the hierarchical merging of features and the
+            base level partitions of the data
+
+        Returns
+        -------
+        None
+
         """
         if filename is None:
             filename = "morse_complex.json"
@@ -240,23 +263,35 @@ class MorseComplex(TopologicalObject):
     def get_merge_sequence(self):
         """ Returns a data structure holding the ordered merge sequence
             of extrema simplification
-            @ Out, a dictionary of tuples where the key is the dying
-            extrema and the tuple is the the persistence, parent index,
-            and the saddle index associated to the dying index, in that
-            order.
+
+        Returns
+        -------
+        dict of int: tuple(float, int, int)
+            A dictionary of tuples where the key is the dying extrema and the
+            tuple is the the persistence, parent index, and the saddle index
+            associated to the dying index, in that order.
+
         """
         return self.merge_sequence
 
     def get_partitions(self, persistence=None):
-        """ Returns the partitioned data based on a specified
-            persistence level.
-            @ In, persistence, a floating point value specifying the
-            size of the smallest feature we want to track.
+        """ Returns the partitioned data based on a specified persistence level
+
+
+        Parameters
+        ----------
+        persistence : float
+            A floating point value specifying the size of the smallest feature
+            we want to track.
             Default = None means consider all features.
-            @ Out, a dictionary lists where each key is a integer
-            specifying the index of the maximum. Each entry will hold a
-            list of indices specifying points that are associated to
-            this maximum.
+
+        Returns
+        -------
+        dict of int: list of int
+            A dictionary lists where each key is a integer specifying the index
+            of the extremum. Each entry will hold a list of indices specifying
+            points that are associated to this extremum.
+
         """
         if persistence is None:
             persistence = self.persistence
@@ -285,27 +320,48 @@ class MorseComplex(TopologicalObject):
         return partitions
 
     def get_persistence(self):
-        """ Sets the persistence simplfication level to be
-            used for representing this Morse-Smale complex
-            @ Out, floating point value specifying the current
-            persistence setting.
+        """ Retrieves the persistence simplfication level being used for this
+        complex
+
+        Returns
+        -------
+        float
+            Floating point value specifying the current persistence setting
+
         """
         return self.persistence
 
     def set_persistence(self, p):
-        """ Sets the persistence simplfication level to be
-            used for representing this Morse-Smale complex
-            @ In, p, a floating point value that will set the
-            persistence value
+        """ Sets the persistence simplfication level to be used for representing
+        this complex
+
+        Parameters
+        ----------
+        p : float
+            A floating point value specifying the internally held size of the
+            smallest feature we want to track.
+
+        Returns
+        -------
+        None
+
         """
         self.persistence = p
 
     def get_label(self, indices=None):
-        """ Returns the label index requested by the user
-            @ In, indices, a list of non-negative integers specifying
-            the row indices to return
-            @ Out, a list of integers specifying the maximum index of
-            the specified rows.
+        """ Returns the label indices requested by the user
+
+        Parameters
+        ----------
+        indices : list of int
+            A list of non-negative integers specifying the row indices to return
+
+        Returns
+        -------
+        list of int
+            A list of integers specifying the extremum index of the specified
+            rows.
+
         """
         if indices is None:
             indices = list(range(0, self.get_sample_size()))
