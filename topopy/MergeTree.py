@@ -7,7 +7,29 @@ from . import TopologicalObject
 
 
 class MergeTree(TopologicalObject):
-    """ A wrapper class for the C++ merge tree data structure
+    """A wrapper class for the C++ merge tree data structure.
+
+
+    Parameters
+    ----------
+    graph : nglpy.Graph
+        A graph object used for determining neighborhoods in gradient estimation
+    gradient : str
+        An optional string specifying the type of gradient estimator to use.
+        Currently the only available option is 'steepest'.
+    normalization : str
+        An optional string specifying whether the inputs/output should be
+        scaled before computing. Currently, two modes are supported 'zscore'
+        and 'feature'. 'zscore' will ensure the data has a mean of zero and a
+        standard deviation of 1 by subtracting the mean and dividing by the
+        variance. 'feature' scales the data into the unit hypercube.
+    aggregator : str
+        An optional string that specifies what type of aggregation to do when
+        duplicates are found in the domain space. Default value is None meaning
+        the code will error if duplicates are identified.
+    debug : bool
+        An optional boolean flag for whether debugging output should be enabled.
+
     """
 
     def __init__(
@@ -18,25 +40,6 @@ class MergeTree(TopologicalObject):
         aggregator=None,
         debug=False,
     ):
-        """ Initialization method
-            @ In, graph, an ngl.Graph object to use for neighborhoods
-            @ In, gradient, an optional string specifying the type of
-            gradient estimator to use. Currently the only available
-            option is 'steepest'
-            @ In, normalization, an optional string specifying whether
-            the inputs/output should be scaled before computing.
-            Currently, two modes are supported 'zscore' and 'feature'.
-            'zscore' will ensure the data has a mean of zero and a
-            standard deviation of 1 by subtracting the mean and dividing
-            by the variance. 'feature' scales the data into the unit
-            hypercube.
-            @ In, aggregator, an optional string that specifies what
-            type of aggregation to do when duplicates are found in the
-            domain space. Default value is None meaning the code will
-            error if duplicates are identified.
-            @ In, debug, an optional boolean flag for whether debugging
-            output should be enabled.
-        """
         super(MergeTree, self).__init__(
             graph=graph,
             gradient=gradient,
@@ -78,14 +81,27 @@ class MergeTree(TopologicalObject):
         self.leaves.remove(self.root)
 
     def build(self, X, Y, w=None):
-        """ Assigns data to this object and builds the Merge Tree
-            @ In, X, an m-by-n array of values specifying m
-            n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-            responses corresponding to the m samples specified by X
-            @ In, w, an optional m vector of values specifying the
-            weights associated to each of the m samples used. Default of
-            None means all points will be equally weighted
+        """Assigns data to this object and builds the Merge Tree.
+
+        Uses an internal graph given in the constructor to build a merge tree
+        on the passed in data. Weights are currently ignored.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            An m-by-n array of values specifying m n-dimensional samples
+        Y : np.array
+            An m vector of values specifying the output responses corresponding
+            to the m samples specified by X
+        w : np.array
+            An optional m vector of values specifying the weights associated to
+            each of the m samples used. Default of None means all points will be
+            equally weighted
+
+        Returns
+        -------
+        None
+
         """
         super(MergeTree, self).build(X, Y, w)
 
@@ -107,7 +123,7 @@ class MergeTree(TopologicalObject):
             end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
-    def build_for_contour_tree(self, contour_tree, negate=False):
+    def _build_for_contour_tree(self, contour_tree, negate=False):
         """ A helper function that will reduce duplication of data by
             reusing the parent contour tree's parameters and data
         """
