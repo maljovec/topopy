@@ -1,6 +1,6 @@
-"""Topopy - Topological constructs for Python.
+"""TopoPy - Topological constructs for Python.
 
-topopy is a Python package for constructing approximate topological constructs
+TopoPy is a Python package for constructing approximate topological constructs
 in arbitrary dimensions using a neighborhood graph structure for approximating
 local gradient.
 
