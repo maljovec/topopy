@@ -83,8 +83,8 @@ class ContourTree(TopologicalObject):
         joinTree = MergeTree(debug=self.debug)
         splitTree = MergeTree(debug=self.debug)
 
-        joinTree.build_for_contour_tree(self, True)
-        splitTree.build_for_contour_tree(self, False)
+        joinTree._build_for_contour_tree(self, True)
+        splitTree._build_for_contour_tree(self, False)
 
         self.augmentedEdges = dict(joinTree.augmentedEdges)
         self.augmentedEdges.update(dict(splitTree.augmentedEdges))
