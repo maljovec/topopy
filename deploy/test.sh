@@ -4,7 +4,7 @@ set -x
 
 # Append the version number with this git commit hash
 GIT_HASH=$(git rev-parse --short HEAD)
-gawk -i -v hash=$GIT_HASH '/^__version__ = \"/{ sub(/"$/,"-"hash"&") }1' topopy/__init__.py
+awk -v hash=$GIT_HASH '/^__version__ = \"/{ sub(/"$/,"-"hash"&") }1' topopy/__init__.py > tmp && mv tmp topopy/__init__.py
 TEMP_VERSION=$(grep  '__version__ = ' topopy/__init__.py | cut -d = -f 2)
 echo $TEMP_VERSION
 
