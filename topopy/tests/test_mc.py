@@ -3,6 +3,7 @@
     topopy.MorseComplex
 """
 from unittest import TestCase
+import nglpy as ngl
 import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
@@ -24,6 +25,7 @@ class TestMC(TestCase):
         """
         self.X = generate_test_grid_2d(40)
         self.Y = gerber(self.X)
+        self.graph = ngl.EmptyRegionGraph(max_neighbors=10)
 
         self.norm_x = {}
         scaler = sklearn.preprocessing.MinMaxScaler()
@@ -37,7 +39,7 @@ class TestMC(TestCase):
         # __init__
         # build
         # __set_data
-        self.test_object = topopy.MorseComplex(debug=False, max_neighbors=10)
+        self.test_object = topopy.MorseComplex(debug=False, graph=self.graph)
         self.test_object.build(self.X, self.Y)
 
         gold_path = os.path.join("topopy", "tests", "mc_gold.json")
@@ -55,7 +57,7 @@ class TestMC(TestCase):
         test_file = "mc_test_debug.txt"
         sys.stdout = open(test_file, "w")
 
-        self.test_object = topopy.MorseComplex(debug=True, max_neighbors=10)
+        self.test_object = topopy.MorseComplex(debug=True, graph=self.graph)
         self.test_object.build(self.X, self.Y)
 
         sys.stdout.close()

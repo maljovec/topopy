@@ -6,79 +6,67 @@ import warnings
 
 import networkx as nx
 
-from . import MergeTree
-from . import TopologicalObject
+from .MergeTree import MergeTree
+from .TopologicalObject import TopologicalObject
 
 
 class ContourTree(TopologicalObject):
     """ A class for computing a contour tree from two merge trees
+
+
+    Parameters
+    ----------
+    graph : nglpy.Graph
+        A graph object used for determining neighborhoods in gradient estimation
+    gradient : str
+        An optional string specifying the type of gradient estimator to use.
+        Currently the only available option is 'steepest'.
+    normalization : str
+        An optional string specifying whether the inputs/output should be
+        scaled before computing. Currently, two modes are supported 'zscore'
+        and 'feature'. 'zscore' will ensure the data has a mean of zero and a
+        standard deviation of 1 by subtracting the mean and dividing by the
+        variance. 'feature' scales the data into the unit hypercube.
+    aggregator : str
+        An optional string that specifies what type of aggregation to do when
+        duplicates are found in the domain space. Default value is None meaning
+        the code will error if duplicates are identified.
+    debug : bool
+        An optional boolean flag for whether debugging output should be enabled.
+    short_circuit : bool
+        An optional boolean flag for whether the contour tree should be short
+        circuited. Enabling this will speed up the processing by bypassing the
+        fully augmented search and only focusing on partially augmented split
+        and join trees
+
     """
 
     def __init__(
         self,
-        graph="beta skeleton",
+        graph=None,
         gradient="steepest",
-        max_neighbors=-1,
-        beta=1.0,
         normalization=None,
-        connect=False,
         aggregator=None,
         debug=False,
         short_circuit=True,
     ):
-        """ Initialization method
-            @ In, graph, an optional string specifying the type of
-            neighborhood graph to use. Default is 'beta skeleton,' but
-            other valid types are: 'delaunay,' 'relaxed beta skeleton,'
-            'none', or 'approximate knn'
-            @ In, gradient, an optional string specifying the type of
-            gradient estimator to use. Currently the only available
-            option is 'steepest'
-            @ In, max_neighbors, an optional integer value specifying
-            the maximum number of k-nearest neighbors used to begin a
-            neighborhood search. In the case of graph='[relaxed] beta
-            skeleton', we will begin with the specified approximate knn
-            graph and prune edges that do not satisfy the empty region
-            criteria.
-            @ In, beta, an optional floating point value between 0 and
-            2. This value is only used when graph='[relaxed] beta
-            skeleton' and specifies the radius for the empty region
-            graph computation (1=Gabriel graph, 2=Relative neighbor
-            graph)
-            @ In, normalization, an optional string specifying whether
-            the inputs/output should be scaled before computing.
-            Currently, two modes are supported 'zscore' and 'feature'.
-            'zscore' will ensure the data has a mean of zero and a
-            standard deviation of 1 by subtracting the mean and dividing
-            by the variance. 'feature' scales the data into the unit
-            hypercube.
-            @ In, connect, an optional boolean flag for whether the
-            algorithm should enforce the data to be a single connected
-            component.
-            @ In, aggregator, an optional string that specifies what
-            type of aggregation to do when duplicates are found in the
-            domain space. Default value is None meaning the code will
-            error if duplicates are identified.
-            @ In, debug, an optional boolean flag for whether debugging
-            output should be enabled.
-            @ In, short_circuit, an optional boolean flag for whether the
-            contour tree should be short circuited (TODO: fix description).
-        """
         super(ContourTree, self).__init__(
             graph=graph,
             gradient=gradient,
-            max_neighbors=max_neighbors,
-            beta=beta,
             normalization=normalization,
-            connect=connect,
             aggregator=aggregator,
             debug=debug,
         )
         self.short_circuit = short_circuit
 
     def reset(self):
-        """
-            Empties all internal storage containers
+        """ Empties all internal storage containers
+
+
+        Returns
+        -------
+        None
+
         """
         super(ContourTree, self).reset()
         self.edges = []
@@ -88,28 +76,38 @@ class ContourTree(TopologicalObject):
         self.superNodes = []
         self.superArcs = []
 
-    def build(self, X, Y, w=None, edges=None):
-        """ Assigns data to this object and builds the Morse-Smale
-            Complex
-            @ In, X, an m-by-n array of values specifying m
-            n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-            responses corresponding to the m samples specified by X
-            @ In, w, an optional m vector of values specifying the
-            weights associated to each of the m samples used. Default of
-            None means all points will be equally weighted
-            @ In, edges, an optional list of custom edges to use as a
-            starting point for pruning, or in place of a computed graph.
+    def build(self, X, Y, w=None):
+        """ Assigns data to this object and builds the Contour Tree
+
+        Uses an internal graph given in the constructor to build a contour tree
+        on the passed in data. Weights are currently ignored.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            An m-by-n array of values specifying m n-dimensional samples
+        Y : np.array
+            An m vector of values specifying the output responses corresponding
+            to the m samples specified by X
+        w : np.array
+            An optional m vector of values specifying the weights associated to
+            each of the m samples used. Default of None means all points will be
+            equally weighted
+
+        Returns
+        -------
+        None
+
         """
-        super(ContourTree, self).build(X, Y, w, edges)
+        super(ContourTree, self).build(X, Y, w)
 
         # Build the join and split trees that we will merge into the
         # contour tree
         joinTree = MergeTree(debug=self.debug)
         splitTree = MergeTree(debug=self.debug)
 
-        joinTree.build_for_contour_tree(self, True)
-        splitTree.build_for_contour_tree(self, False)
+        joinTree._build_for_contour_tree(self, True)
+        splitTree._build_for_contour_tree(self, False)
 
         self.augmentedEdges = dict(joinTree.augmentedEdges)
         self.augmentedEdges.update(dict(splitTree.augmentedEdges))
@@ -132,13 +130,13 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Sorting Nodes: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         self.sortedNodes = sorted(enumerate(self.Y),
                                   key=operator.itemgetter(1))
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def _identifyBranches(self):
@@ -149,7 +147,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Identifying branches: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         seen = set()
         self.branches = set()
@@ -168,7 +166,7 @@ class ContourTree(TopologicalObject):
                 self.branches.add(e2)
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def _identifySuperGraph(self):
@@ -183,7 +181,7 @@ class ContourTree(TopologicalObject):
 
         if self.debug:
             sys.stdout.write("Condensing Graph: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         G = nx.DiGraph()
         G.add_edges_from(self.edges)
@@ -259,14 +257,26 @@ class ContourTree(TopologicalObject):
         self.superArcs = G.edges()
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def get_seeds(self, threshold):
-        """ Returns a list of seed points for isosurface extraction
-            given a threshold value
-            @ In, threshold, float, the isovalue for which we want to
-                identify seed points for isosurface extraction
+        """ Returns a list of seed points for isosurface extraction given a
+        threshold value
+
+        Parameters
+        ----------
+        threshold : float
+            The isovalue for which we want to identify seed points for
+            isosurface extraction
+
+        Returns
+        -------
+        list of int
+            A list of integers representing seed points in the data held by
+            this object. There will be one seed point for each connected
+            component of the isosurface defined by the given threshold value.
+
         """
         seeds = []
         for e1, e2 in self.superArcs:
@@ -310,7 +320,7 @@ class ContourTree(TopologicalObject):
         """
         if self.debug:
             sys.stdout.write("Networkx Tree construction: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         nxTree = nx.DiGraph()
         nxTree.add_edges_from(thisTree.edges)
@@ -342,7 +352,7 @@ class ContourTree(TopologicalObject):
                 nxTree.add_edge(startNode, endNode)
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
         return nxTree
@@ -361,7 +371,7 @@ class ContourTree(TopologicalObject):
         """
         if self.debug:
             sys.stdout.write("Processing Tree: ")
-            start = time.clock()
+            start = time.perf_counter()
 
         # Get all of the leaf nodes that are not branches in the other
         # tree
@@ -468,5 +478,5 @@ class ContourTree(TopologicalObject):
             #     sys.stdout.write(myMessage+'\n')
 
         if self.debug:
-            end = time.clock()
+            end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))

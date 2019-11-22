@@ -8,8 +8,11 @@ import platform
 requirements = open('requirements.txt').read().strip().split('\n')
 
 extra_compile_args = ["-O3", "-march=native", ]
+extra_link_args = []
+
 if platform.system() == 'Darwin':
     extra_compile_args.append('-stdlib=libc++')
+    extra_link_args.append('-stdlib=libc++')
 
 
 def get_property(prop, project):
@@ -80,6 +83,7 @@ setup(
     ext_modules=[
         Extension("_topology",
                   FILES,
-                  extra_compile_args=extra_compile_args)
+                  extra_compile_args=extra_compile_args,
+                  extra_link_args=extra_link_args)
     ],
 )

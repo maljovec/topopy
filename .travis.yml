@@ -2,21 +2,22 @@ language: python
 addons:
   apt_packages:
     - swig
-install: make && pip install coveralls
+install: make && pip install coveralls mypy flake8 twine
 python:
   # - "3.2" # see https://github.com/travis-ci/travis-ci/issues/4866
   # - "3.3"
   # - "3.4"
-  - "3.5"
+  # - "3.5"
   - "3.6"
   - "3.7"
   # - "3.8"
   # - "nightly"
   # PyPy versions commented out since scipy does not play well with pypy
-  # - "pypy2.7"
-  # - "pypy3.5"
-# command to install dependencies
-script: coverage run --source topopy setup.py test
+  # - "pypy3.6"
+  # - "pypy3.7"
+  # - "pypy3.8"
+script:
+  - ". travis.sh"
 after_success:
   - coveralls
 branches:

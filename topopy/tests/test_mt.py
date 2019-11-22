@@ -3,6 +3,7 @@
     topopy.MergeTree
 """
 from unittest import TestCase
+import nglpy as ngl
 import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
@@ -23,6 +24,7 @@ class TestMT(TestCase):
         """
         self.X = generate_test_grid_2d(40)
         self.Y = gerber(self.X)
+        self.graph = ngl.EmptyRegionGraph(max_neighbors=10)
 
         self.norm_x = {}
         scaler = sklearn.preprocessing.MinMaxScaler()
@@ -40,7 +42,7 @@ class TestMT(TestCase):
         test_file = "mt_test_debug.txt"
         sys.stdout = open(test_file, "w")
 
-        mt = topopy.MergeTree(debug=True, max_neighbors=10)
+        mt = topopy.MergeTree(debug=True, graph=self.graph)
         mt.build(self.X, self.Y)
 
         sys.stdout.close()
@@ -62,7 +64,7 @@ class TestMT(TestCase):
         """
         self.setup()
 
-        mt = topopy.MergeTree(debug=False, max_neighbors=10)
+        mt = topopy.MergeTree(debug=False, graph=self.graph)
         mt.build(self.X, self.Y)
 
         self.assertEqual(

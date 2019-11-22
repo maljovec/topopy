@@ -1,9 +1,9 @@
-"""
-The Topology module includes the approximate Morse-Smale complex
-(MorseSmaleComplex) and Merge Tree computation.
+"""TopoPy - Topological constructs for Python.
 
-Created on January 11, 2016
-@author: maljovec
+TopoPy is a Python package for constructing approximate topological constructs
+in arbitrary dimensions using a neighborhood graph structure for approximating
+local gradient.
+
 """
 
 from __future__ import absolute_import
@@ -24,4 +24,4 @@ __all__ = [
     "MergeTree",
     "ContourTree",
 ]
-__version__ = "0.1.1"
+__version__ = "1.0.0"

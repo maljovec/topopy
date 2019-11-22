@@ -3,6 +3,7 @@
     topopy.TopologicalObject
 """
 from unittest import TestCase
+import nglpy as ngl
 import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
@@ -24,6 +25,7 @@ class TestTO(TestCase):
         """
         self.X = generate_test_grid_2d(10)
         self.Y = gerber(self.X)
+        self.graph = ngl.EmptyRegionGraph(max_neighbors=10)
 
         self.norm_x = {}
         scaler = sklearn.preprocessing.MinMaxScaler()
@@ -37,7 +39,7 @@ class TestTO(TestCase):
         # __init__
         # build
         # __set_data
-        self.to = topopy.TopologicalObject(debug=False, max_neighbors=10)
+        self.to = topopy.TopologicalObject(debug=False, graph=self.graph)
         self.to.build(self.X, self.Y)
 
     def test_aggregation(self):
@@ -166,7 +168,8 @@ class TestTO(TestCase):
 
         to = topopy.TopologicalObject()
         self.assertRaises(ValueError, to.build, **{"X": X, "Y": Y})
-        to = topopy.TopologicalObject(aggregator="mean", max_neighbors=10)
+        graph = ngl.EmptyRegionGraph(max_neighbors=10)
+        to = topopy.TopologicalObject(aggregator="mean", graph=graph)
         to.build(X, Y)
         warnings.filterwarnings("always")
 
@@ -186,7 +189,7 @@ class TestTO(TestCase):
         test_file = "to_test_debug.txt"
         sys.stdout = open(test_file, "w")
 
-        self.to = topopy.TopologicalObject(debug=True, max_neighbors=10)
+        self.to = topopy.TopologicalObject(debug=True, graph=self.graph)
         self.to.build(self.X, self.Y)
         sys.stdout.close()
 
@@ -214,7 +217,7 @@ class TestTO(TestCase):
         self.setup()
 
         for norm, X in self.norm_x.items():
-            to = topopy.TopologicalObject(normalization=norm, max_neighbors=10)
+            to = topopy.TopologicalObject(normalization=norm, graph=self.graph)
             to.build(self.X, self.Y)
 
             # Test single column extraction
@@ -423,11 +426,6 @@ class TestTO(TestCase):
         self.assertEqual(
             [],
             self.to.Xnorm,
-            "reset should clear all internal storage of the to.",
-        )
-        self.assertEqual(
-            None,
-            self.to.graph_rep,
             "reset should clear all internal storage of the to.",
         )
 

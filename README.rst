@@ -82,8 +82,9 @@ Example Usage
 
 ::
 
-    import topopy
+    import nglpy as ngl
     import numpy as np
+    import topopy
 
     def hill(_x):
         _x = np.atleast_2d(_x)
@@ -93,11 +94,11 @@ Example Usage
 
     X = np.random.rand(100,2)
     Y = hill(X)
+    graph = ngl.EmptyRegionGraph(beta=1.0, relaxed=False, p=2.0)
 
-    msc = topopy.MorseSmaleComplex(graph='beta skeleton',
+    msc = topopy.MorseSmaleComplex(graph=graph,
                                    gradient='steepest',
-                                   normalization='feature',
-                                   connect=True)
+                                   normalization='feature')
     msc.build(X, Y)
     msc.get_partitions()
 

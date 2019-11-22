@@ -3,6 +3,7 @@
     topopy.MorseSmaleComplex and by proxy the topopy.MorseComplex
 """
 from unittest import TestCase
+import nglpy as ngl
 import numpy as np
 import topopy
 from .test_functions import gerber, generate_test_grid_2d
@@ -31,6 +32,7 @@ class TestMSC(TestCase):
         """
         self.X = generate_test_grid_2d(40)
         self.Y = gerber(self.X)
+        self.graph = ngl.EmptyRegionGraph(max_neighbors=10)
 
         self.norm_x = {}
         scaler = sklearn.preprocessing.MinMaxScaler()
@@ -45,7 +47,7 @@ class TestMSC(TestCase):
         # build
         # __set_data
         self.test_object = topopy.MorseSmaleComplex(
-            debug=False, max_neighbors=10
+            debug=False, graph=self.graph
         )
         self.test_object.build(self.X, self.Y)
 
@@ -65,7 +67,7 @@ class TestMSC(TestCase):
         sys.stdout = open(test_file, "w")
 
         self.test_object = topopy.MorseSmaleComplex(
-            debug=True, max_neighbors=10
+            debug=True, graph=self.graph
         )
         self.test_object.build(self.X, self.Y)
 
@@ -635,13 +637,9 @@ class TestMSC(TestCase):
         self.Y = gerber(self.X)
 
         self.test_object = topopy.MorseSmaleComplex(
-            graph="beta skeleton",
             gradient="steepest",
-            max_neighbors=-1,
-            beta=1.0,
             normalization=None,
             simplification="difference",
-            connect=False,
             aggregator=None,
             debug=False,
         )
