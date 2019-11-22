@@ -16,6 +16,6 @@ make
 python setup.py sdist
 
 # Test the upload
-twine upload --repository-url https://test.pypi.org/legacy/ -u __twine__ -p $PYPI_TOKEN --non-interactive dist/topopy-${TEMP_VERSION}.tar.gz
+twine upload --repository-url https://test.pypi.org/legacy/ -u __token__ -p ${PYPI_TOKEN} --non-interactive dist/topopy-${TEMP_VERSION}.tar.gz
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple topopy==TEMP_VERSION
 python -c "import topopy"
