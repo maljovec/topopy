@@ -17,5 +17,10 @@ python setup.py sdist
 
 # Test the upload
 twine upload --repository-url https://test.pypi.org/legacy/ -u __token__ -p ${PYPI_TOKEN} --non-interactive dist/topopy-${TEMP_VERSION}.tar.gz
+
+#Give it some time to register internally before trying to install it
+sleep 60
+
+# Now install and run it
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple topopy==${TEMP_VERSION}
 python -c "import topopy"
