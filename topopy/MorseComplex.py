@@ -6,7 +6,7 @@ import json
 import numpy as np
 
 from .topology import MorseComplexFloat, vectorFloat, mapIntSetInt
-from . import TopologicalObject
+from .TopologicalObject import TopologicalObject
 
 
 class MorseComplex(TopologicalObject):
@@ -375,7 +375,6 @@ class MorseComplex(TopologicalObject):
         partitions = self.get_partitions(self.persistence)
         labels = self.X.shape[0] * [None]
         for label, partition_indices in partitions.items():
-            partIndices = partitions[label]
             for idx in np.intersect1d(partition_indices, indices):
                 labels[idx] = label
 

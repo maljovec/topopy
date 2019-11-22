@@ -5,8 +5,8 @@ import json
 
 import numpy as np
 
-from . import TopologicalObject
-from . import MorseComplex
+from .TopologicalObject import TopologicalObject
+from .MorseComplex import MorseComplex
 
 
 class MorseSmaleComplex(TopologicalObject):

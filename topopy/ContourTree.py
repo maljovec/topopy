@@ -6,8 +6,8 @@ import warnings
 
 import networkx as nx
 
-from . import MergeTree
-from . import TopologicalObject
+from .MergeTree import MergeTree
+from .TopologicalObject import TopologicalObject
 
 
 class ContourTree(TopologicalObject):

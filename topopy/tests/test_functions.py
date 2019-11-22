@@ -507,6 +507,7 @@ def gerber2(_x):
         + (1. / 1.) * np.exp(-((y - .75) ** 2) / 0.01)
     )
 
+
 def gerber_different_heights(_x):
     x, y = unpack2D(_x)
     return (

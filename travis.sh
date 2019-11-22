@@ -1,8 +1,8 @@
 set -e
 set -x
 
-# mypy topopy
-# flake8
+mypy topopy
+flake8
 coverage run --source topopy setup.py test
 deploy/test.sh
 

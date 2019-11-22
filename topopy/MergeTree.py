@@ -1,9 +1,9 @@
 import sys
 import time
 
-from .topology import MergeTreeFloat, vectorFloat, vectorString
+from .topology import MergeTreeFloat, vectorFloat
 
-from . import TopologicalObject
+from .TopologicalObject import TopologicalObject
 
 
 class MergeTree(TopologicalObject):
