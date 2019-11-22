@@ -9,6 +9,7 @@ set -x
 GIT_HASH=$(git rev-parse --short HEAD | tr 'abcdefghijklmnopqrstuvwxyz' '12345678901234567890123456')
 awk -v hash=$GIT_HASH '/^__version__ = \"/{ sub(/"$/,".dev"hash"&") }1' topopy/__init__.py > tmp && mv tmp topopy/__init__.py
 TEMP_VERSION=$(grep  '__version__ = ' topopy/__init__.py | cut -d = -f 2 | sed "s/\"//g" | sed 's/^[ \t]*//;s/[ \t]*$//')
+TEMP_VERSION=$(expr TEMP_VERSION)
 echo $TEMP_VERSION
 
 # Build the project
