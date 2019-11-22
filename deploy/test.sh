@@ -1,9 +1,12 @@
 #!/bin/bash
+set -e
+set -x
 
 # Append the version number with this git commit hash
 GIT_HASH=$(git rev-parse --short HEAD)
 awk -v hash=$GIT_HASH '/^__version__ = \"/{ sub(/"$/,"-"hash"&") }1' topopy/__init__.py > topopy/__init__.py
 TEMP_VERSION=$(grep  '__version__ = ' topopy/__init__.py | cut -d = -f 2)
+echo $TEMP_VERSION
 
 # Build the project
 make
