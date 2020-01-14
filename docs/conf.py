@@ -17,7 +17,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-from mock import Mock
+from unittest.mock import Mock
 import os
 import subprocess
 import sys
@@ -31,7 +31,7 @@ class MyMock(Mock):
         return MyMock()
 
 
-MOCK_MODULES = ['_topology']
+MOCK_MODULES = ['_topology', 'numpy', 'scipy']
 sys.modules.update((mod_name, MyMock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ------------------------------------------------
