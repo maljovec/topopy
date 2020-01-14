@@ -31,7 +31,7 @@ class MyMock(Mock):
         return MyMock()
 
 
-MOCK_MODULES = ['_topology', 'numpy', 'scipy']
+MOCK_MODULES = ['_topology', 'numpy', 'networkx', 'nglpy', 'scipy', 'sklearn']
 sys.modules.update((mod_name, MyMock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ------------------------------------------------
