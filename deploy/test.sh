@@ -7,6 +7,8 @@ set -x
 # all letters with numbers, this should still be unique enough to not collide
 # before the version number increases.
 GIT_HASH=$(git rev-parse --short HEAD | tr 'abcdefghijklmnopqrstuvwxyz' '12345678901234567890123456')
+# Remove leading zeros
+GIT_HASH=$((10#$GIT_HASH))
 awk -v hash=$GIT_HASH '/^__version__ = \"/{ sub(/"$/,".dev"hash"&") }1' topopy/__init__.py > tmp && mv tmp topopy/__init__.py
 TEMP_VERSION=$(grep  '__version__ = ' topopy/__init__.py | cut -d = -f 2 | sed "s/\"//g" | sed 's/^[ \t]*//;s/[ \t]*$//')
 TEMP_VERSION=$(expr $TEMP_VERSION)
