@@ -10,6 +10,7 @@
 #include <time.h>
 #include <cstring>
 #include <cmath>
+#include <iterator>
 
 int followChain(int i, std::map<int,int> merge)
 {
