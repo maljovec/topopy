@@ -79,7 +79,7 @@ setup(
     ],
     setup_requires=["scipy", "numpy"],
     install_requires=requirements,
-    python_requires=">=2.7, <4",
+    python_requires=">=3, <4",
     ext_modules=[
         Extension("_topology",
                   FILES,
