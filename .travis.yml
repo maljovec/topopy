@@ -4,13 +4,10 @@ addons:
     - swig
 install: make && pip install coveralls mypy flake8 twine
 python:
-  # - "3.2" # see https://github.com/travis-ci/travis-ci/issues/4866
-  # - "3.3"
-  # - "3.4"
-  # - "3.5"
   - "3.6"
   - "3.7"
-  # - "3.8"
+  - "3.8"
+  - "3.9"
   # - "nightly"
   # PyPy versions commented out since scipy does not play well with pypy
   # - "pypy3.6"
