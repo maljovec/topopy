@@ -12,7 +12,7 @@
 #include <cmath>
 #include <iterator>
 
-int followChain(int i, std::map<int,int> merge)
+int followChain(int i, std::map<int,int> &merge)
 {
   while(merge[i] != i)
     i = merge[i];
