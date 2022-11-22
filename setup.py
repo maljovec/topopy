@@ -33,7 +33,6 @@ setup(
     + "approximate topological structures using a "
     + "neighborhood graph.",
     test_suite="topopy.tests",
-    setup_requires=["scipy", "numpy"],
     python_requires=">=2.7, <4",
     ext_modules=[
         Extension(
