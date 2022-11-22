@@ -1,28 +1,32 @@
 """
       Setup script for topopy
 """
-from setuptools import setup, Extension
-import re
 import platform
+import re
 
-requirements = open('requirements.txt').read().strip().split('\n')
+from setuptools import Extension, setup
 
-extra_compile_args = ["-O3", "-march=native", ]
+requirements = open("requirements.txt").read().strip().split("\n")
+
+extra_compile_args = [
+    "-O3",
+    "-march=native",
+]
 extra_link_args = []
 
-if platform.system() == 'Darwin':
-    extra_compile_args.append('-stdlib=libc++')
-    extra_link_args.append('-stdlib=libc++')
+if platform.system() == "Darwin":
+    extra_compile_args.append("-stdlib=libc++")
+    extra_link_args.append("-stdlib=libc++")
 
 
 def get_property(prop, project):
     """
-        Helper function for retrieving properties from a project's
-        __init__.py file
-        @In, prop, string representing the property to be retrieved
-        @In, project, string representing the project from which we will
-        retrieve the property
-        @Out, string, the value of the found property
+    Helper function for retrieving properties from a project's
+    __init__.py file
+    @In, prop, string representing the property to be retrieved
+    @In, project, string representing the project from which we will
+    retrieve the property
+    @Out, string, the value of the found property
     """
     result = re.search(
         r'{}\s*=\s*[\'"]([^\'"]*)[\'"]'.format(prop),
@@ -55,9 +59,7 @@ setup(
     license="BSD",
     test_suite="topopy.tests",
     url="https://github.com/maljovec/topopy",
-    download_url="https://github.com/maljovec/topopy/archive/"
-    + VERSION
-    + ".tar.gz",
+    download_url="https://github.com/maljovec/topopy/archive/" + VERSION + ".tar.gz",
     keywords=[
         "topological data analysis",
         "computational topology",
@@ -81,9 +83,11 @@ setup(
     install_requires=requirements,
     python_requires=">=2.7, <4",
     ext_modules=[
-        Extension("_topology",
-                  FILES,
-                  extra_compile_args=extra_compile_args,
-                  extra_link_args=extra_link_args)
+        Extension(
+            "_topology",
+            FILES,
+            extra_compile_args=extra_compile_args,
+            extra_link_args=extra_link_args,
+        )
     ],
 )

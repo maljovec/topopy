@@ -2,15 +2,15 @@ import sys
 import time
 import warnings
 
+import nglpy as ngl
 import numpy as np
 import sklearn.preprocessing
 
-import nglpy as ngl
 # import nglpy_cuda as ngl
 
 
 class TopologicalObject(object):
-    """ A base class for housing common interactions between Morse and
+    """A base class for housing common interactions between Morse and
         Morse-Smale complexes, and Contour and Merge Trees
 
     Parameters
@@ -44,7 +44,7 @@ class TopologicalObject(object):
 
     @staticmethod
     def aggregate_duplicates(X, Y, aggregator="mean", precision=precision):
-        """ A function that will attempt to collapse duplicates in domain
+        """A function that will attempt to collapse duplicates in domain
             space, X, by aggregating values over the range space, Y.
 
         Parameters
@@ -148,7 +148,7 @@ class TopologicalObject(object):
         self.aggregator = aggregator
 
     def reset(self):
-        """ Empties all internal storage containers
+        """Empties all internal storage containers
 
 
         Returns
@@ -163,15 +163,15 @@ class TopologicalObject(object):
         self.Xnorm = []
 
     def __set_data(self, X, Y, w=None):
-        """ Internally assigns the input data and normalizes it
-            according to the user's specifications
-            @ In, X, an m-by-n array of values specifying m
-            n-dimensional samples
-            @ In, Y, a m vector of values specifying the output
-            responses corresponding to the m samples specified by X
-            @ In, w, an optional m vector of values specifying the
-            weights associated to each of the m samples used. Default of
-            None means all points will be equally weighted
+        """Internally assigns the input data and normalizes it
+        according to the user's specifications
+        @ In, X, an m-by-n array of values specifying m
+        n-dimensional samples
+        @ In, Y, a m vector of values specifying the output
+        responses corresponding to the m samples specified by X
+        @ In, w, an optional m vector of values specifying the
+        weights associated to each of the m samples used. Default of
+        None means all points will be equally weighted
         """
         self.X = X
         self.Y = Y
@@ -195,7 +195,7 @@ class TopologicalObject(object):
             self.Xnorm = np.array(self.X)
 
     def build(self, X, Y, w=None):
-        """ Assigns data to this object and builds the requested topological
+        """Assigns data to this object and builds the requested topological
             structure
 
         Uses an internal graph given in the constructor to build a topological
@@ -236,7 +236,7 @@ class TopologicalObject(object):
             sys.stdout.write("%f s\n" % (end - start))
 
     def load_data_and_build(self, filename, delimiter=","):
-        """ Convenience function for directly working with a data file.
+        """Convenience function for directly working with a data file.
 
         This opens a file and reads the data into an array, sets the data as an
         nparray and list of dimnames
@@ -251,9 +251,7 @@ class TopologicalObject(object):
         None
 
         """
-        data = np.genfromtxt(
-            filename, dtype=float, delimiter=delimiter, names=True
-        )
+        data = np.genfromtxt(filename, dtype=float, delimiter=delimiter, names=True)
         data = data.view(np.float64).reshape(data.shape + (-1,))
 
         X = data[:, 0:-1]
@@ -262,7 +260,7 @@ class TopologicalObject(object):
         self.build(X=X, Y=Y)
 
     def get_normed_x(self, rows=None, cols=None):
-        """ Returns the normalized input data requested by the user.
+        """Returns the normalized input data requested by the user.
 
 
         Parameters
@@ -294,7 +292,7 @@ class TopologicalObject(object):
         return retValue[:, cols]
 
     def get_x(self, rows=None, cols=None):
-        """ Returns the input data requested by the user
+        """Returns the input data requested by the user
 
 
         Parameters
@@ -327,7 +325,7 @@ class TopologicalObject(object):
         return retValue[:, cols]
 
     def get_y(self, indices=None):
-        """ Returns the output data requested by the user
+        """Returns the output data requested by the user
 
         Parameters
         ----------
@@ -353,7 +351,7 @@ class TopologicalObject(object):
         return self.Y[indices]
 
     def get_weights(self, indices=None):
-        """ Returns the weights requested by the user
+        """Returns the weights requested by the user
 
         Parameters
         ----------
@@ -377,7 +375,7 @@ class TopologicalObject(object):
         return self.w[indices]
 
     def get_sample_size(self):
-        """ Returns the number of samples in the input data
+        """Returns the number of samples in the input data
 
 
         Returns
@@ -389,7 +387,7 @@ class TopologicalObject(object):
         return len(self.Y)
 
     def get_dimensionality(self):
-        """ Returns the dimensionality of the input space of the input data
+        """Returns the dimensionality of the input space of the input data
 
 
         Returns
@@ -401,7 +399,7 @@ class TopologicalObject(object):
         return self.X.shape[1]
 
     def get_neighbors(self, idx):
-        """ Returns a list of neighbors for the specified index
+        """Returns a list of neighbors for the specified index
 
 
         Parameters
@@ -418,7 +416,7 @@ class TopologicalObject(object):
         return self.graph.neighbors(int(idx))
 
     def check_duplicates(self):
-        """ Function to test whether duplicates exist in the input or output
+        """Function to test whether duplicates exist in the input or output
         space.
 
         First, if an aggregator function has been specified, the domain space

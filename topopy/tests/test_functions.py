@@ -1,21 +1,21 @@
-import random
+import copy
 import math
+import random
+
 import numpy as np
 import scipy
-import copy
 
 
 def generate_test_grid_2d(resolution=40):
-    """
-    """
-    x, y = np.mgrid[0:1:(resolution * 1j), 0:1:(resolution * 1j)]
+    """ """
+    x, y = np.mgrid[0 : 1 : (resolution * 1j), 0 : 1 : (resolution * 1j)]
     return np.vstack([x.ravel(), y.ravel()]).T
 
 
 def unpack2D(_x):
     """
-        Helper function for splitting 2D data into x and y component to
-        make equations simpler
+    Helper function for splitting 2D data into x and y component to
+    make equations simpler
     """
     _x = np.atleast_2d(_x)
     x = _x[:, 0]
@@ -39,11 +39,11 @@ def torusPolyGeneratorF(x, n):
 
 
 def torusPolyGeneratorG(x, y, n):
-    return torusPolyGeneratorF(x, n) + y ** 2
+    return torusPolyGeneratorF(x, n) + y**2
 
 
 def doubleTorus(x, y, n=2, r=0.1, sgn=1):
-    return sgn * np.sqrt(r ** 2 - torusPolyGeneratorG(x, y, n) ** 2)
+    return sgn * np.sqrt(r**2 - torusPolyGeneratorG(x, y, n) ** 2)
 
 
 # def torusPolyGeneratorF(x, y):
@@ -105,7 +105,7 @@ def hinge(_x):
 
 def hill(_x):
     x, y = unpack2D(_x)
-    return np.exp(-((x - .55) ** 2 + (y - .75) ** 2) / .125) + 0.01 * (x + y)
+    return np.exp(-((x - 0.55) ** 2 + (y - 0.75) ** 2) / 0.125) + 0.01 * (x + y)
 
 
 def hill_sided(_x):
@@ -115,7 +115,7 @@ def hill_sided(_x):
     sigma_1 = 1.25
     sigma_2 = 0.05
     amplitude_1 = 3.0
-    amplitude_2 = 1.
+    amplitude_2 = 1.0
     eps = 0.01
     blend_rate = 20
 
@@ -124,22 +124,22 @@ def hill_sided(_x):
     alpha_x = scipy.special.expit(blend_rate * delta_x)
     # alpha_y = scipy.special.expit(blend_rate*delta_y)
 
-    common_numerator = delta_x ** 2 + delta_y ** 2
+    common_numerator = delta_x**2 + delta_y**2
     offset = eps * (x + y)
     h1 = amplitude_1 * np.exp(-common_numerator / sigma_1) + offset
     h2 = amplitude_2 * np.exp(-common_numerator / sigma_2) + offset
     # h3 = alpha_y*h1 + (1 - alpha_y)*h2
     # return alpha_x*h1 + (1. - alpha_x)*h3
-    return alpha_x * h1 + (1. - alpha_x) * h2
+    return alpha_x * h1 + (1.0 - alpha_x) * h2
 
 
 def gerber(_x):
     x, y = unpack2D(_x)
     return (
-        (1. / 1.) * np.exp(-((x - .25) ** 2) / 0.09)
-        + (1. / 1.) * np.exp(-((y - .25) ** 2) / 0.09)
-        + (1. / 3.) * np.exp(-((x - .75) ** 2) / 0.01)
-        + (1. / 2.) * np.exp(-((y - .75) ** 2) / 0.01)
+        (1.0 / 1.0) * np.exp(-((x - 0.25) ** 2) / 0.09)
+        + (1.0 / 1.0) * np.exp(-((y - 0.25) ** 2) / 0.09)
+        + (1.0 / 3.0) * np.exp(-((x - 0.75) ** 2) / 0.01)
+        + (1.0 / 2.0) * np.exp(-((y - 0.75) ** 2) / 0.01)
     )
 
 
@@ -154,10 +154,10 @@ def goldsteinPrice(_x):
     ya = 4 * y - 2
 
     term1 = 1 + (xa + ya + 1) ** 2 * (
-        19 - 14 * xa + 3 * (xa ** 2) - 14 * ya + 6 * xa * ya + 3 * (ya ** 2)
+        19 - 14 * xa + 3 * (xa**2) - 14 * ya + 6 * xa * ya + 3 * (ya**2)
     )
     term2 = 30 + (2 * xa - 3 * ya) ** 2 * (
-        18 - 32 * xa + 12 * (xa ** 2) + 48 * ya - 36 * xa * ya + 27 * (ya ** 2)
+        18 - 32 * xa + 12 * (xa**2) + 48 * ya - 36 * xa * ya + 27 * (ya**2)
     )
 
     return term1 * term2
@@ -165,28 +165,22 @@ def goldsteinPrice(_x):
 
 def ridge(_x):
     x, y = unpack2D(_x)
-    theta = math.pi / 3.
-    sigx = .05
-    sigy = .04
-    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (
-        2 * sigy ** 2
-    )
-    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (
-        4 * sigy ** 2
-    )
-    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (
-        2 * sigy ** 2
-    )
+    theta = math.pi / 3.0
+    sigx = 0.05
+    sigy = 0.04
+    a = np.cos(theta) ** 2 / (2 * sigx**2) + np.sin(theta) ** 2 / (2 * sigy**2)
+    b = np.sin(2 * theta) / (4 * sigx**2) + np.sin(2 * theta) / (4 * sigy**2)
+    c = np.sin(theta) ** 2 / (2 * sigx**2) + np.cos(theta) ** 2 / (2 * sigy**2)
 
     return 0.01 * y + 0.5 * (
-        np.exp(-((x - .75) ** 2) / 0.01)
+        np.exp(-((x - 0.75) ** 2) / 0.01)
         + np.exp(-((x) ** 2 + (y - 1) ** 2) / 0.1)
         + np.exp(-((x) ** 2 + (y) ** 2) / 0.005)
         - np.exp(
             -(
-                a * (x - .25) ** 2
-                + 2 * b * (x - .25) * (y - .25)
-                + c * (y - .25) ** 2
+                a * (x - 0.25) ** 2
+                + 2 * b * (x - 0.25) * (y - 0.25)
+                + c * (y - 0.25) ** 2
             )
         )
     )
@@ -194,29 +188,19 @@ def ridge(_x):
 
 def ridge2(_x):
     x, y = unpack2D(_x)
-    theta = math.pi / 3.
-    sigx = .05
-    sigy = .04
-    a = np.cos(theta) ** 2 / (2 * sigx ** 2) + np.sin(theta) ** 2 / (
-        2 * sigy ** 2
-    )
-    b = np.sin(2 * theta) / (4 * sigx ** 2) + np.sin(2 * theta) / (
-        4 * sigy ** 2
-    )
-    c = np.sin(theta) ** 2 / (2 * sigx ** 2) + np.cos(theta) ** 2 / (
-        2 * sigy ** 2
-    )
+    theta = math.pi / 3.0
+    sigx = 0.05
+    sigy = 0.04
+    a = np.cos(theta) ** 2 / (2 * sigx**2) + np.sin(theta) ** 2 / (2 * sigy**2)
+    b = np.sin(2 * theta) / (4 * sigx**2) + np.sin(2 * theta) / (4 * sigy**2)
+    c = np.sin(theta) ** 2 / (2 * sigx**2) + np.cos(theta) ** 2 / (2 * sigy**2)
 
     return 0.01 * y + 0.5 * (
-        np.exp(-(((x - .75) ** 2) / 0.01 + ((y - .5) ** 2) / 0.4))
-        + np.exp(-((x - .1) ** 2 + (y - 1) ** 2) / 0.1)
-        + np.exp(-((x - .1) ** 2 + (y - .1) ** 2) / 0.005)
+        np.exp(-(((x - 0.75) ** 2) / 0.01 + ((y - 0.5) ** 2) / 0.4))
+        + np.exp(-((x - 0.1) ** 2 + (y - 1) ** 2) / 0.1)
+        + np.exp(-((x - 0.1) ** 2 + (y - 0.1) ** 2) / 0.005)
         - np.exp(
-            -(
-                a * (x - .3) ** 2
-                + 2 * b * (x - .3) * (y - .25)
-                + c * (y - .25) ** 2
-            )
+            -(a * (x - 0.3) ** 2 + 2 * b * (x - 0.3) * (y - 0.25) + c * (y - 0.25) ** 2)
         )
     )
 
@@ -225,11 +209,11 @@ def test(_x):
     x, y = unpack2D(_x)
     x = 0.25 * x
     y = 0.25 * y
-    return (1. / 2.) * (
-        np.exp(-((x - .25) ** 2) / 0.09)
-        + np.exp(-((y - .25) ** 2) / 0.09)
-        + np.exp(-((x - .75) ** 2) / 0.01)
-        + np.exp(-((y - .75) ** 2) / 0.01)
+    return (1.0 / 2.0) * (
+        np.exp(-((x - 0.25) ** 2) / 0.09)
+        + np.exp(-((y - 0.25) ** 2) / 0.09)
+        + np.exp(-((x - 0.75) ** 2) / 0.01)
+        + np.exp(-((y - 0.75) ** 2) / 0.01)
     )
 
 
@@ -303,7 +287,7 @@ def himmelblau(_x):
     x = 12 * _x[0] - 6
     y = 12 * _x[1] - 6
 
-    return (x ** 2 + y - 11) ** 2 + (x + y ** 2 - 7) ** 2
+    return (x**2 + y - 11) ** 2 + (x + y**2 - 7) ** 2
 
 
 def checkerBoard(_x):
@@ -319,7 +303,7 @@ def checkerBoard(_x):
     periodicTerm = 1
     for i in range(d):
         sgn = np.cos(x[i] * math.pi) / abs(np.cos(x[i] * math.pi))
-        periodicTerm *= sgn * abs(np.cos(x[i] * math.pi)) ** (1 / 7.)
+        periodicTerm *= sgn * abs(np.cos(x[i] * math.pi)) ** (1 / 7.0)
     return periodicTerm
 
 
@@ -350,7 +334,7 @@ def decay(_x):
         dist += x[i] ** 2
     dist = np.sqrt(dist)
     if dist <= 1:
-        return 0.1 + (1 - dist ** 3) ** 3 + eps
+        return 0.1 + (1 - dist**3) ** 3 + eps
     else:
         return 0.1 + eps
 
@@ -502,17 +486,17 @@ def rosenbrock2(_x):
 def gerber2(_x):
     x, y = unpack2D(_x)
     return (
-        (1. / 2.) * np.exp(-((x - .25) ** 2) / 0.09)
-        + (3. / 4.) * np.exp(-((x - .75) ** 2) / 0.01)
-        + (1. / 1.) * np.exp(-((y - .75) ** 2) / 0.01)
+        (1.0 / 2.0) * np.exp(-((x - 0.25) ** 2) / 0.09)
+        + (3.0 / 4.0) * np.exp(-((x - 0.75) ** 2) / 0.01)
+        + (1.0 / 1.0) * np.exp(-((y - 0.75) ** 2) / 0.01)
     )
 
 
 def gerber_different_heights(_x):
     x, y = unpack2D(_x)
     return (
-        (1. / 1.) * np.exp(-((x - .25) ** 2) / 0.09)
-        + (1. / 4.) * np.exp(-((y - .25) ** 2) / 0.09)
-        + (1. / 3.) * np.exp(-((x - .75) ** 2) / 0.01)
-        + (1. / 2.) * np.exp(-((y - .75) ** 2) / 0.01)
+        (1.0 / 1.0) * np.exp(-((x - 0.25) ** 2) / 0.09)
+        + (1.0 / 4.0) * np.exp(-((y - 0.25) ** 2) / 0.09)
+        + (1.0 / 3.0) * np.exp(-((x - 0.75) ** 2) / 0.01)
+        + (1.0 / 2.0) * np.exp(-((y - 0.75) ** 2) / 0.01)
     )

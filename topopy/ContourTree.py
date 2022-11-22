@@ -1,17 +1,17 @@
-import sys
-import numpy as np
-import time
 import operator
+import sys
+import time
 import warnings
 
 import networkx as nx
+import numpy as np
 
 from .MergeTree import MergeTree
 from .TopologicalObject import TopologicalObject
 
 
 class ContourTree(TopologicalObject):
-    """ A class for computing a contour tree from two merge trees
+    """A class for computing a contour tree from two merge trees
 
 
     Parameters
@@ -60,7 +60,7 @@ class ContourTree(TopologicalObject):
         self.short_circuit = short_circuit
 
     def reset(self):
-        """ Empties all internal storage containers
+        """Empties all internal storage containers
 
 
         Returns
@@ -77,7 +77,7 @@ class ContourTree(TopologicalObject):
         self.superArcs = []
 
     def build(self, X, Y, w=None):
-        """ Assigns data to this object and builds the Contour Tree
+        """Assigns data to this object and builds the Contour Tree
 
         Uses an internal graph given in the constructor to build a contour tree
         on the passed in data. Weights are currently ignored.
@@ -132,17 +132,16 @@ class ContourTree(TopologicalObject):
             sys.stdout.write("Sorting Nodes: ")
             start = time.perf_counter()
 
-        self.sortedNodes = sorted(enumerate(self.Y),
-                                  key=operator.itemgetter(1))
+        self.sortedNodes = sorted(enumerate(self.Y), key=operator.itemgetter(1))
 
         if self.debug:
             end = time.perf_counter()
             sys.stdout.write("%f s\n" % (end - start))
 
     def _identifyBranches(self):
-        """ A helper function for determining all of the branches in the
-            tree. This should be called after the tree has been fully
-            constructed and its nodes and edges are populated.
+        """A helper function for determining all of the branches in the
+        tree. This should be called after the tree has been fully
+        constructed and its nodes and edges are populated.
         """
 
         if self.debug:
@@ -170,13 +169,13 @@ class ContourTree(TopologicalObject):
             sys.stdout.write("%f s\n" % (end - start))
 
     def _identifySuperGraph(self):
-        """ A helper function for determining the condensed
-            representation of the tree. That is, one that does not hold
-            all of the internal nodes of the graph. The results will be
-            stored in ContourTree.superNodes and ContourTree.superArcs.
-            These two can be used to potentially speed up queries by
-            limiting the searching on the graph to only nodes on these
-            super arcs.
+        """A helper function for determining the condensed
+        representation of the tree. That is, one that does not hold
+        all of the internal nodes of the graph. The results will be
+        stored in ContourTree.superNodes and ContourTree.superArcs.
+        These two can be used to potentially speed up queries by
+        limiting the searching on the graph to only nodes on these
+        super arcs.
         """
 
         if self.debug:
@@ -217,10 +216,7 @@ class ContourTree(TopologicalObject):
                 # Trace down to a non-internal node
 
                 lower_link = list(G.in_edges(node))[0][0]
-                while (
-                    G.in_degree(lower_link) == 1
-                    and G.out_degree(lower_link) == 1
-                ):
+                while G.in_degree(lower_link) == 1 and G.out_degree(lower_link) == 1:
                     new_lower_link = list(G.in_edges(lower_link))[0][0]
                     G.add_edge(new_lower_link, node)
                     G.remove_node(lower_link)
@@ -232,10 +228,7 @@ class ContourTree(TopologicalObject):
 
                 # Trace up to a non-internal node
                 upper_link = list(G.out_edges(node))[0][1]
-                while (
-                    G.in_degree(upper_link) == 1
-                    and G.out_degree(upper_link) == 1
-                ):
+                while G.in_degree(upper_link) == 1 and G.out_degree(upper_link) == 1:
                     new_upper_link = list(G.out_edges(upper_link))[0][1]
                     G.add_edge(node, new_upper_link)
                     G.remove_node(upper_link)
@@ -261,7 +254,7 @@ class ContourTree(TopologicalObject):
             sys.stdout.write("%f s\n" % (end - start))
 
     def get_seeds(self, threshold):
-        """ Returns a list of seed points for isosurface extraction given a
+        """Returns a list of seed points for isosurface extraction given a
         threshold value
 
         Parameters
@@ -306,17 +299,17 @@ class ContourTree(TopologicalObject):
         return seeds
 
     def _construct_nx_tree(self, thisTree, thatTree=None):
-        """ A function for creating networkx instances that can be used
-            more efficiently for graph manipulation than the MergeTree
-            class.
-            @ In, thisTree, a MergeTree instance for which we will
-                construct a networkx graph
-            @ In, thatTree, a MergeTree instance optionally used to
-                speed up the processing by bypassing the fully augmented
-                search and only focusing on the partially augmented
-                split and join trees
-            @ Out, nxTree, a networkx.Graph instance matching the
-                details of the input tree.
+        """A function for creating networkx instances that can be used
+        more efficiently for graph manipulation than the MergeTree
+        class.
+        @ In, thisTree, a MergeTree instance for which we will
+            construct a networkx graph
+        @ In, thatTree, a MergeTree instance optionally used to
+            speed up the processing by bypassing the fully augmented
+            search and only focusing on the partially augmented
+            split and join trees
+        @ Out, nxTree, a networkx.Graph instance matching the
+            details of the input tree.
         """
         if self.debug:
             sys.stdout.write("Networkx Tree construction: ")
@@ -358,16 +351,16 @@ class ContourTree(TopologicalObject):
         return nxTree
 
     def _process_tree(self, thisTree, thatTree):
-        """ A function that will process either a split or join tree
-            with reference to the other tree and store it as part of
-            this CT instance.
-            @ In, thisTree, a networkx.Graph instance representing a
-                merge tree for which we will process all of its leaf
-                nodes into this CT object
-            @ In, thatTree, a networkx.Graph instance representing the
-                opposing merge tree which will need to be updated as
-                nodes from thisTree are processed
-            @ Out, None
+        """A function that will process either a split or join tree
+        with reference to the other tree and store it as part of
+        this CT instance.
+        @ In, thisTree, a networkx.Graph instance representing a
+            merge tree for which we will process all of its leaf
+            nodes into this CT object
+        @ In, thatTree, a networkx.Graph instance representing the
+            opposing merge tree which will need to be updated as
+            nodes from thisTree are processed
+        @ Out, None
         """
         if self.debug:
             sys.stdout.write("Processing Tree: ")
@@ -398,8 +391,7 @@ class ContourTree(TopologicalObject):
             edges = list(thisTree.out_edges(v))
             if len(edges) != 1:
                 warnings.warn(
-                    "The node {} should have a single emanating "
-                    "edge.\n".format(v)
+                    "The node {} should have a single emanating " "edge.\n".format(v)
                 )
             e1 = edges[0][0]
             e2 = edges[0][1]
@@ -462,8 +454,7 @@ class ContourTree(TopologicalObject):
                     [
                         v
                         for v in thisTree.nodes()
-                        if thisTree.in_degree(v) == 0
-                        and thatTree.in_degree(v) < 2
+                        if thisTree.in_degree(v) == 0 and thatTree.in_degree(v) < 2
                     ]
                 )
             else:

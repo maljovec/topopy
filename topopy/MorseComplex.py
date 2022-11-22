@@ -1,16 +1,16 @@
-import sys
-import time
 import collections
 import json
+import sys
+import time
 
 import numpy as np
 
-from .topology import MorseComplexFloat, vectorFloat, mapIntSetInt
 from .TopologicalObject import TopologicalObject
+from .topology import MorseComplexFloat, mapIntSetInt, vectorFloat
 
 
 class MorseComplex(TopologicalObject):
-    """ A wrapper class for the C++ approximate Morse complex Object
+    """A wrapper class for the C++ approximate Morse complex Object
 
     Parameters
     ----------
@@ -63,7 +63,7 @@ class MorseComplex(TopologicalObject):
         self.simplification = simplification
 
     def reset(self):
-        """ Empties all internal storage containers
+        """Empties all internal storage containers
 
 
         Returns
@@ -80,10 +80,10 @@ class MorseComplex(TopologicalObject):
         self.max_indices = []
 
         # State properties
-        self.persistence = 0.
+        self.persistence = 0.0
 
     def build(self, X, Y, w=None):
-        """ Assigns data to this object and builds the Morse Complex
+        """Assigns data to this object and builds the Morse Complex
 
         Uses an internal graph given in the constructor to build a Morse complex
         on the passed in data. Weights are currently ignored.
@@ -227,7 +227,7 @@ class MorseComplex(TopologicalObject):
             sys.stdout.write("%f s\n" % (end - start))
 
     def save(self, filename=None):
-        """ Saves a constructed Morse Complex in json file
+        """Saves a constructed Morse Complex in json file
 
         Parameters
         ----------
@@ -261,7 +261,7 @@ class MorseComplex(TopologicalObject):
     #         self.w = np.ones(len(self.Y))*1.0/float(len(self.Y))
 
     def get_merge_sequence(self):
-        """ Returns a data structure holding the ordered merge sequence
+        """Returns a data structure holding the ordered merge sequence
             of extrema simplification
 
         Returns
@@ -275,7 +275,7 @@ class MorseComplex(TopologicalObject):
         return self.merge_sequence
 
     def get_partitions(self, persistence=None):
-        """ Returns the partitioned data based on a specified persistence level
+        """Returns the partitioned data based on a specified persistence level
 
 
         Parameters
@@ -320,7 +320,7 @@ class MorseComplex(TopologicalObject):
         return partitions
 
     def get_persistence(self):
-        """ Retrieves the persistence simplfication level being used for this
+        """Retrieves the persistence simplfication level being used for this
         complex
 
         Returns
@@ -332,7 +332,7 @@ class MorseComplex(TopologicalObject):
         return self.persistence
 
     def set_persistence(self, p):
-        """ Sets the persistence simplfication level to be used for representing
+        """Sets the persistence simplfication level to be used for representing
         this complex
 
         Parameters
@@ -349,7 +349,7 @@ class MorseComplex(TopologicalObject):
         self.persistence = p
 
     def get_label(self, indices=None):
-        """ Returns the label indices requested by the user
+        """Returns the label indices requested by the user
 
         Parameters
         ----------
@@ -384,7 +384,7 @@ class MorseComplex(TopologicalObject):
         return labels[indices]
 
     def get_current_labels(self):
-        """ Returns a list of tuples that specifies the extremum index labels
+        """Returns a list of tuples that specifies the extremum index labels
         associated to each input sample
 
         Returns
@@ -398,7 +398,7 @@ class MorseComplex(TopologicalObject):
         return partitions.keys()
 
     def get_sample_size(self, key=None):
-        """ Returns the number of samples in the input data
+        """Returns the number of samples in the input data
 
         Parameters
         ----------
@@ -419,7 +419,7 @@ class MorseComplex(TopologicalObject):
             return len(self.get_partitions(self.persistence)[key])
 
     def get_classification(self, idx):
-        """ Given an index, this function will report whether that sample is a
+        """Given an index, this function will report whether that sample is a
         local maximum or a regular point.
 
         Parameters
@@ -439,7 +439,7 @@ class MorseComplex(TopologicalObject):
         return "regular"
 
     def to_json(self):
-        """ Writes the complete Morse complex merge hierarchy to a string
+        """Writes the complete Morse complex merge hierarchy to a string
 
         Returns
         -------

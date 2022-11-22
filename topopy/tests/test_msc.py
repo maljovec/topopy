@@ -2,15 +2,18 @@
     This module will test the basic functionalities of
     topopy.MorseSmaleComplex and by proxy the topopy.MorseComplex
 """
+import json
+import os
+import sys
 from unittest import TestCase
+
 import nglpy as ngl
 import numpy as np
-import topopy
-from .test_functions import gerber, generate_test_grid_2d
 import sklearn
-import json
-import sys
-import os
+
+import topopy
+
+from .test_functions import generate_test_grid_2d, gerber
 
 
 class TestMSC(TestCase):
@@ -46,9 +49,7 @@ class TestMSC(TestCase):
         # __init__
         # build
         # __set_data
-        self.test_object = topopy.MorseSmaleComplex(
-            debug=False, graph=self.graph
-        )
+        self.test_object = topopy.MorseSmaleComplex(debug=False, graph=self.graph)
         self.test_object.build(self.X, self.Y)
 
         gold_path = os.path.join("topopy", "tests", "msc_gold.json")
@@ -66,9 +67,7 @@ class TestMSC(TestCase):
         test_file = "msc_test_debug.txt"
         sys.stdout = open(test_file, "w")
 
-        self.test_object = topopy.MorseSmaleComplex(
-            debug=True, graph=self.graph
-        )
+        self.test_object = topopy.MorseSmaleComplex(debug=True, graph=self.graph)
         self.test_object.build(self.X, self.Y)
 
         sys.stdout.close()
@@ -152,8 +151,7 @@ class TestMSC(TestCase):
             },
             set(self.test_object.get_current_labels()),
             "The base "
-            "partition labels returned from "
-            + "get_current_labels does not match.",
+            "partition labels returned from " + "get_current_labels does not match.",
         )
 
         self.test_object.set_persistence(self.test_object.persistences[-1])
@@ -161,8 +159,7 @@ class TestMSC(TestCase):
             {(1599, 410)},
             set(self.test_object.get_current_labels()),
             "The base "
-            "partition labels returned from "
-            + "get_current_labels does not match.",
+            "partition labels returned from " + "get_current_labels does not match.",
         )
 
     def test_get_label(self):
@@ -185,9 +182,7 @@ class TestMSC(TestCase):
         )
 
         gold_labels = np.array([[0, 410], [0, 410]])
-        test_labels = np.array(
-            self.test_object.get_label([0, 1]).flatten().tolist()
-        )
+        test_labels = np.array(self.test_object.get_label([0, 1]).flatten().tolist())
         np.testing.assert_array_equal(
             gold_labels,
             test_labels,
@@ -528,9 +523,7 @@ class TestMSC(TestCase):
             if merge["Persistence"] < test_p:
                 if merge["Surviving"] not in merge_pattern:
                     merge_pattern[merge["Surviving"]] = merge["Surviving"]
-                merge_pattern[merge["Dying"]] = merge_pattern[
-                    merge["Surviving"]
-                ]
+                merge_pattern[merge["Dying"]] = merge_pattern[merge["Surviving"]]
 
         gold_msc_partitions = {}
         gold_stable_partitions = {}
@@ -597,8 +590,7 @@ class TestMSC(TestCase):
         self.assertEqual(
             {},
             partitions,
-            "Requesting partitions on an unbuilt object should return "
-            "an empty dict",
+            "Requesting partitions on an unbuilt object should return " "an empty dict",
         )
 
     def test_unstructured(self):
@@ -631,7 +623,7 @@ class TestMSC(TestCase):
                 [1, 0.75],
                 [0.75, 1],
                 [0.25, 1],
-                [0.75, 0.6]
+                [0.75, 0.6],
             ]
         )
         self.Y = gerber(self.X)

@@ -1,17 +1,78 @@
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "topopy"
+authors = [
+    {name = "Dan Maljovec", email = "maljovec002@gmail.com"},
+]
+readme = "README.rst"
+classifiers = [
+	"Development Status :: 3 - Alpha",
+	"Intended Audience :: Science/Research",
+	"License :: OSI Approved :: BSD License",
+	"Programming Language :: C++",
+	"Programming Language :: Python :: 3",
+	"Topic :: Scientific/Engineering :: Mathematics",
+]
+keywords = [
+        "geometry",
+        "neighborhood",
+        "empty region graph",
+        "neighborhood graph library",
+        "beta skeleton",
+        "relative neighbor",
+        "Gabriel graph",
+    ]
+requires-python = ">=3.7"
+dynamic = ["version", "description"]
+dependencies = [
+    "scipy",
+    "numpy",
+	"scikit-learn",
+	"pyDOE",
+	"ghalton<0.6.2"
+]
+
+[project.urls]
+Documentation = "https://topopy.readthedocs.io/en/latest/"
+Source = "https://github.com/maljovec/topopy"
+
+[tool.bandit]
+skips = ["B101"]
+exclude_dirs = ["tests", ".tox", ".venv"]
+
 [tool.black]
-line-length = 80
-py36 = false
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+line-length = 88
+target-version = ['py37']
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+ignore_missing_imports = true
+show_error_codes = true
+show_error_context = true
+show_traceback = true
+strict = false
+strict_optional = false
+implicit_reexport = true
+allow_redefinition = true
+files = "topopy"
+
+[tool.pytest.ini_options]
+addopts = [
+	"--ignore", "setup.py",
+	"--tb", "native",
+	"--strict-markers",
+	"--durations=20",
+	"--cov-report", "term-missing",
+	"--cov=topopy",
+]
+testpaths = ["tests"]
+
+[tool.setuptools_scm]

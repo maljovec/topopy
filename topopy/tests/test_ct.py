@@ -2,14 +2,17 @@
     This module will test the basic functionalities of
     topopy.ContourTree and by proxy topopy.MergeTree
 """
+import os
+import sys
 from unittest import TestCase
+
 import nglpy as ngl
 import numpy as np
-import topopy
-from .test_functions import gerber, generate_test_grid_2d
 import sklearn
-import sys
-import os
+
+import topopy
+
+from .test_functions import generate_test_grid_2d, gerber
 
 
 class TestCT(TestCase):
@@ -49,14 +52,10 @@ class TestCT(TestCase):
         test_file = "ct_test_debug.txt"
         sys.stdout = open(test_file, "w")
 
-        self.ct = topopy.ContourTree(
-            debug=True, short_circuit=True, graph=self.graph
-        )
+        self.ct = topopy.ContourTree(debug=True, short_circuit=True, graph=self.graph)
         self.ct.build(self.X, self.Y)
 
-        self.ct = topopy.ContourTree(
-            debug=True, short_circuit=False, graph=self.graph
-        )
+        self.ct = topopy.ContourTree(debug=True, short_circuit=False, graph=self.graph)
         self.ct.build(self.X, self.Y)
 
         sys.stdout.close()
@@ -108,8 +107,7 @@ class TestCT(TestCase):
         self.assertEqual(
             23,
             len(self.ct.superArcs),
-            "The 2D Gerber test function should have 23 "
-            + "arcs in its contour tree.",
+            "The 2D Gerber test function should have 23 " + "arcs in its contour tree.",
         )
 
     def test_no_short_circuit(self):
@@ -129,8 +127,7 @@ class TestCT(TestCase):
         self.assertEqual(
             70,
             len(self.ct.superArcs),
-            "The 2D Gerber test function should have 70 "
-            + "arcs in its contour tree.",
+            "The 2D Gerber test function should have 70 " + "arcs in its contour tree.",
         )
 
     def test_get_seeds(self):
