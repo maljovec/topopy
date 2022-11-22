@@ -33,7 +33,7 @@ dependencies = [
 	"numpy>=1.17.4,<2.0",
 	"scikit-learn>=1.0,<2.0",
 	"networkx>=2.4,<3.0",
-	"nglpy>=1.0.6,<2.0",
+	"nglpy>=1.1.0,<2.0",
 ]
 
 [project.urls]
