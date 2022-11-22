@@ -60,6 +60,7 @@ jobs:
         run: |
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           make
+          python -m pip install setuptools_scm[toml]>=6.2
           python setup.py sdist -d wheelhouse
       - run: |
           mv artifact/*.whl ./
