@@ -365,7 +365,7 @@ class MorseComplex(TopologicalObject):
         """
         if indices is None:
             indices = list(range(0, self.get_sample_size()))
-        elif isinstance(indices, collections.Iterable):
+        elif isinstance(indices, collections.abc.Iterable):
             indices = sorted(list(set(indices)))
         else:
             indices = [indices]

@@ -205,18 +205,6 @@ def ridge2(_x):
     )
 
 
-def test(_x):
-    x, y = unpack2D(_x)
-    x = 0.25 * x
-    y = 0.25 * y
-    return (1.0 / 2.0) * (
-        np.exp(-((x - 0.25) ** 2) / 0.09)
-        + np.exp(-((y - 0.25) ** 2) / 0.09)
-        + np.exp(-((x - 0.75) ** 2) / 0.01)
-        + np.exp(-((y - 0.75) ** 2) / 0.01)
-    )
-
-
 def salomon(_x):
     x = copy.deepcopy(_x)
     if isinstance(x, np.ndarray) and x.ndim > 1:
