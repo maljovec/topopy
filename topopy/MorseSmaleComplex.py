@@ -1,16 +1,16 @@
-import sys
-import time
 import collections
 import json
+import sys
+import time
 
 import numpy as np
 
-from .TopologicalObject import TopologicalObject
 from .MorseComplex import MorseComplex
+from .TopologicalObject import TopologicalObject
 
 
 class MorseSmaleComplex(TopologicalObject):
-    """ A wrapper class for the C++ approximate Morse-Smale complex Object
+    """A wrapper class for the C++ approximate Morse-Smale complex Object
 
     Parameters
     ----------
@@ -63,7 +63,7 @@ class MorseSmaleComplex(TopologicalObject):
         self.simplification = simplification
 
     def reset(self):
-        """ Empties all internal storage containers
+        """Empties all internal storage containers
 
 
         Returns
@@ -81,10 +81,10 @@ class MorseSmaleComplex(TopologicalObject):
         self.max_indices = []
 
         # State properties
-        self.persistence = 0.
+        self.persistence = 0.0
 
     def build(self, X, Y, w=None):
-        """ Assigns data to this object and builds the Morse-Smale Complex
+        """Assigns data to this object and builds the Morse-Smale Complex
 
         Uses an internal graph given in the constructor to build a Morse-Smale
         complex on the passed in data. Weights are currently ignored.
@@ -148,7 +148,7 @@ class MorseSmaleComplex(TopologicalObject):
             sys.stdout.write("%f s\n" % (end - start))
 
     def save(self, filename=None):
-        """ Saves a constructed Morse-Smale Complex in json file
+        """Saves a constructed Morse-Smale Complex in json file
 
         Parameters
         ----------
@@ -182,7 +182,7 @@ class MorseSmaleComplex(TopologicalObject):
     #         self.w = np.ones(len(self.Y))*1.0/float(len(self.Y))
 
     def get_merge_sequence(self):
-        """ Returns a data structure holding the ordered merge sequence
+        """Returns a data structure holding the ordered merge sequence
             of extrema simplification
 
         Returns
@@ -196,7 +196,7 @@ class MorseSmaleComplex(TopologicalObject):
         return self.merge_sequence
 
     def get_partitions(self, persistence=None):
-        """ Returns the partitioned data based on a specified persistence level
+        """Returns the partitioned data based on a specified persistence level
 
 
         Parameters
@@ -248,7 +248,7 @@ class MorseSmaleComplex(TopologicalObject):
         return partitions
 
     def get_stable_manifolds(self, persistence=None):
-        """ Returns the partitioned data based on a specified persistence level
+        """Returns the partitioned data based on a specified persistence level
 
 
         Parameters
@@ -287,7 +287,7 @@ class MorseSmaleComplex(TopologicalObject):
         return partitions
 
     def get_unstable_manifolds(self, persistence=None):
-        """ Returns the partitioned data based on a specified persistence level
+        """Returns the partitioned data based on a specified persistence level
 
 
         Parameters
@@ -326,7 +326,7 @@ class MorseSmaleComplex(TopologicalObject):
         return partitions
 
     def get_persistence(self):
-        """ Retrieves the persistence simplfication level being used for this
+        """Retrieves the persistence simplfication level being used for this
         complex
 
         Returns
@@ -338,7 +338,7 @@ class MorseSmaleComplex(TopologicalObject):
         return self.persistence
 
     def set_persistence(self, p):
-        """ Sets the persistence simplfication level to be used for representing
+        """Sets the persistence simplfication level to be used for representing
         this complex
 
         Parameters
@@ -355,7 +355,7 @@ class MorseSmaleComplex(TopologicalObject):
         self.persistence = p
 
     def get_label(self, indices=None):
-        """ Returns the label pair indices requested by the user
+        """Returns the label pair indices requested by the user
 
         Parameters
         ----------
@@ -371,7 +371,7 @@ class MorseSmaleComplex(TopologicalObject):
         """
         if indices is None:
             indices = list(range(0, self.get_sample_size()))
-        elif isinstance(indices, collections.Iterable):
+        elif isinstance(indices, collections.abc.Iterable):
             indices = sorted(list(set(indices)))
         else:
             indices = [indices]
@@ -390,7 +390,7 @@ class MorseSmaleComplex(TopologicalObject):
         return labels[indices]
 
     def get_current_labels(self):
-        """ Returns a list of tuples that specifies the min-max index labels
+        """Returns a list of tuples that specifies the min-max index labels
         associated to each input sample
 
         Returns
@@ -405,7 +405,7 @@ class MorseSmaleComplex(TopologicalObject):
         return partitions.keys()
 
     def get_sample_size(self, key=None):
-        """ Returns the number of samples in the input data
+        """Returns the number of samples in the input data
 
         Parameters
         ----------
@@ -426,7 +426,7 @@ class MorseSmaleComplex(TopologicalObject):
             return len(self.get_partitions(self.persistence)[key])
 
     def get_classification(self, idx):
-        """ Given an index, this function will report whether that sample is a
+        """Given an index, this function will report whether that sample is a
         local minimum, a local maximum, or a regular point.
 
         Parameters
@@ -448,7 +448,7 @@ class MorseSmaleComplex(TopologicalObject):
         return "regular"
 
     def to_json(self):
-        """ Writes the complete Morse-Smale complex merge hierarchy to a string
+        """Writes the complete Morse-Smale complex merge hierarchy to a string
 
         Returns
         -------

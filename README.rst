@@ -5,23 +5,37 @@ topopy
 
 .. image:: https://img.shields.io/pypi/v/topopy.svg
         :target: https://pypi.python.org/pypi/topopy
-        :alt: PyPI
+        :alt: Latest Version on PyPI
+.. image:: https://img.shields.io/pypi/dm/topopy.svg?label=PyPI%20downloads
+        :target: https://pypi.org/project/topopy/
+        :alt: PyPI downloads
 
-.. image:: https://travis-ci.org/maljovec/topopy.svg?branch=master
-        :target: https://travis-ci.org/maljovec/topopy
-        :alt: Build Status
+.. image:: https://github.com/maljovec/topopy/actions/workflows/quality.yaml/badge.svg?branch=main
+        :target: https://github.com/maljovec/topopy/actions
+        :alt: Code Quality Test Results
+.. image:: https://github.com/maljovec/topopy/actions/workflows/test.yaml/badge.svg?branch=main
+        :target: https://github.com/maljovec/topopy/actions
+        :alt: Test Suite Results
 
-.. image:: https://coveralls.io/repos/github/maljovec/topopy/badge.svg?branch=master
-        :target: https://coveralls.io/github/maljovec/topopy?branch=master
-        :alt: Coverage Status
-
+.. image:: https://www.codefactor.io/repository/github/maljovec/topopy/badge
+        :target: https://www.codefactor.io/repository/github/maljovec/topopy
+        :alt: CodeFactor
+.. image:: https://coveralls.io/repos/github/maljovec/topopy/badge.svg?branch=main
+        :target: https://coveralls.io/github/maljovec/topopy?branch=main
+        :alt: Coveralls
 .. image:: https://readthedocs.org/projects/topopy/badge/?version=latest
         :target: https://topopy.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
+        :alt: ReadTheDocs
 .. image:: https://pyup.io/repos/github/maljovec/topopy/shield.svg
         :target: https://pyup.io/repos/github/maljovec/topopy/
         :alt: Pyup
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+        :target: https://github.com/psf/black
+        :alt: This code is formatted in black
+.. image:: https://img.shields.io/badge/License-BSD_3--Clause-blue.svg
+        :target: https://opensource.org/licenses/BSD-3-Clause
+        :alt: BSD 3-Clause License
 
 .. end_badges
 

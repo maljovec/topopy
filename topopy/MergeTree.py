@@ -1,9 +1,8 @@
 import sys
 import time
 
-from .topology import MergeTreeFloat, vectorFloat
-
 from .TopologicalObject import TopologicalObject
+from .topology import MergeTreeFloat, vectorFloat
 
 
 class MergeTree(TopologicalObject):
@@ -40,7 +39,7 @@ class MergeTree(TopologicalObject):
         aggregator=None,
         debug=False,
     ):
-        """ Empties all internal storage containers
+        """Empties all internal storage containers
 
 
         Returns
@@ -57,9 +56,9 @@ class MergeTree(TopologicalObject):
         )
 
     def _internal_build(self):
-        """ This function assumes the self.__tree object has been setup,
-            though it doesn't care how. It will then setup all python
-            side data structures to be used for querying this object.
+        """This function assumes the self.__tree object has been setup,
+        though it doesn't care how. It will then setup all python
+        side data structures to be used for querying this object.
         """
         self.nodes = self.__tree.Nodes()
         self.edges = self.__tree.Edges()
@@ -132,8 +131,8 @@ class MergeTree(TopologicalObject):
             sys.stdout.write("%f s\n" % (end - start))
 
     def _build_for_contour_tree(self, contour_tree, negate=False):
-        """ A helper function that will reduce duplication of data by
-            reusing the parent contour tree's parameters and data
+        """A helper function that will reduce duplication of data by
+        reusing the parent contour tree's parameters and data
         """
         if self.debug:
             tree_type = "Join"

@@ -2,15 +2,18 @@
     This module will test the basic functionalities of
     topopy.MorseComplex
 """
+import json
+import os
+import sys
 from unittest import TestCase
+
 import nglpy as ngl
 import numpy as np
-import topopy
-from .test_functions import gerber, generate_test_grid_2d
 import sklearn
-import json
-import sys
-import os
+
+import topopy
+
+from .test_functions import generate_test_grid_2d, gerber
 
 
 class TestMC(TestCase):
@@ -147,9 +150,7 @@ class TestMC(TestCase):
         )
 
         gold_labels = np.array([410, 410])
-        test_labels = np.array(
-            self.test_object.get_label([0, 1]).flatten().tolist()
-        )
+        test_labels = np.array(self.test_object.get_label([0, 1]).flatten().tolist())
         np.testing.assert_array_equal(
             gold_labels,
             test_labels,
@@ -210,16 +211,13 @@ class TestMC(TestCase):
         np.testing.assert_array_equal(
             equal_weights,
             test_weights,
-            "User should be able to filter the rows retrieved from "
-            "get_weights.",
+            "User should be able to filter the rows retrieved from " "get_weights.",
         )
 
         test_weights = self.test_object.get_weights([])
 
         np.testing.assert_array_equal(
-            [],
-            test_weights,
-            "An empty query should return empty results."
+            [], test_weights, "An empty query should return empty results."
         )
 
     def test_load_data_and_build(self):
@@ -346,8 +344,7 @@ class TestMC(TestCase):
         self.assertDictEqual(
             self.gold,
             test_json,
-            "save does not reproduce the same results as the gold custom "
-            "json file.",
+            "save does not reproduce the same results as the gold custom " "json file.",
         )
         os.remove("test.json")
 
@@ -425,9 +422,7 @@ class TestMC(TestCase):
             if merge["Persistence"] < test_p:
                 if merge["Surviving"] not in merge_pattern:
                     merge_pattern[merge["Surviving"]] = merge["Surviving"]
-                merge_pattern[merge["Dying"]] = merge_pattern[
-                    merge["Surviving"]
-                ]
+                merge_pattern[merge["Dying"]] = merge_pattern[merge["Surviving"]]
 
         gold_stable_partitions = {}
         for i, max_label in enumerate(self.gold["Partitions"]):

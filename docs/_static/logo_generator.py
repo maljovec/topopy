@@ -13,12 +13,8 @@ set3_cmap = matplotlib.cm.get_cmap("Set3")
 unique_colors = 12
 set3 = []
 for i in range(unique_colors):
-    set3.append(
-        [float(i) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))]
-    )
-    set3.append(
-        [float(i + 1) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))]
-    )
+    set3.append([float(i) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))])
+    set3.append([float(i + 1) / unique_colors, "rgb({}, {}, {})".format(*set3_cmap(i))])
 
 
 def color_msc(X, Y, p):
@@ -41,14 +37,14 @@ def color_msc(X, Y, p):
     return C
 
 
-def bump(x, y, amplitude=1. / 4., cx=0.5, cy=0.5):
+def bump(x, y, amplitude=1.0 / 4.0, cx=0.5, cy=0.5):
     return amplitude * np.exp(-((x - cx) ** 2 + (y - cy) ** 2) / 0.001)
 
 
 def unpack2D(_x):
     """
-        Helper function for splitting 2D data into x and y component to make
-        equations simpler
+    Helper function for splitting 2D data into x and y component to make
+    equations simpler
     """
     _x = np.atleast_2d(_x)
     x = _x[:, 0]
@@ -77,40 +73,40 @@ def df(_x):
     covars.append(
         np.array(
             [
-                [6.861127634772008044e+00, 5.713205235351410671e+00],
-                [5.713205235351410671e+00, 1.182733672915492917e+01],
+                [6.861127634772008044e00, 5.713205235351410671e00],
+                [5.713205235351410671e00, 1.182733672915492917e01],
             ]
         )
     )
     covars.append(
         np.array(
             [
-                [1.832786696485626265e+01, 8.906194773508316231e+00],
-                [8.906194773508316231e+00, 1.072361068483539803e+01],
+                [1.832786696485626265e01, 8.906194773508316231e00],
+                [8.906194773508316231e00, 1.072361068483539803e01],
             ]
         )
     )
     covars.append(
         np.array(
             [
-                [5.039436493504411807e+00, 4.461204945275424549e+00],
-                [4.461204945275424549e+00, 1.137522966049168183e+01],
+                [5.039436493504411807e00, 4.461204945275424549e00],
+                [4.461204945275424549e00, 1.137522966049168183e01],
             ]
         )
     )
     covars.append(
         np.array(
             [
-                [2.087529540101837000e+01, 7.181066748222261431e+00],
-                [7.181066748222261431e+00, 8.028676705850410045e+00],
+                [2.087529540101837000e01, 7.181066748222261431e00],
+                [7.181066748222261431e00, 8.028676705850410045e00],
             ]
         )
     )
     covars.append(
         np.array(
             [
-                [4.053108367744338913e+00, 2.245412739483759967e+00],
-                [2.245412739483759967e+00, 1.817496301681578785e+01],
+                [4.053108367744338913e00, 2.245412739483759967e00],
+                [2.245412739483759967e00, 1.817496301681578785e01],
             ]
         )
     )
@@ -124,12 +120,12 @@ def df(_x):
     x, y = unpack2D(_x)
     return (
         min_dist
-        + bump(x, y, amplitude=1., cx=1, cy=1)
-        + bump(x, y, amplitude=1., cx=0, cy=0.6)
-        + bump(x, y, amplitude=1., cx=0.7, cy=0.0)
-        + bump(x, y, amplitude=1., cx=0.494987, cy=0.581399)
-        + bump(x, y, amplitude=1., cx=1, cy=0.41)
-        + bump(x, y, amplitude=1., cx=1, cy=0.0)
+        + bump(x, y, amplitude=1.0, cx=1, cy=1)
+        + bump(x, y, amplitude=1.0, cx=0, cy=0.6)
+        + bump(x, y, amplitude=1.0, cx=0.7, cy=0.0)
+        + bump(x, y, amplitude=1.0, cx=0.494987, cy=0.581399)
+        + bump(x, y, amplitude=1.0, cx=1, cy=0.41)
+        + bump(x, y, amplitude=1.0, cx=1, cy=0.0)
     )
 
 
@@ -155,9 +151,7 @@ def dxdy(x, foo=test_function):
     return grad_x / mag * step_size
 
 
-x, y = np.mgrid[
-    min_x:max_x:(resolution * 1j), min_x:max_x:(resolution * 1j)
-]
+x, y = np.mgrid[min_x : max_x : (resolution * 1j), min_x : max_x : (resolution * 1j)]
 X = np.vstack([x.ravel(), y.ravel()]).T
 
 Z = np.empty(X.shape[0])
@@ -183,12 +177,12 @@ for key in msc.get_partitions().keys():
 
 json_object = json.loads(msc.to_json())
 for merge in json_object["Hierarchy"]:
-    if p <= merge['Persistence']:
-        saddles.append(merge['Saddle'])
+    if p <= merge["Persistence"]:
+        saddles.append(merge["Saddle"])
         if saddles[-1] not in saddle_ptrs:
             saddle_ptrs[saddles[-1]] = []
-        saddle_ptrs[saddles[-1]].append(merge['Dying'])
-        saddle_ptrs[saddles[-1]].append(merge['Surviving'])
+        saddle_ptrs[saddles[-1]].append(merge["Dying"])
+        saddle_ptrs[saddles[-1]].append(merge["Surviving"])
 
 saddles.remove(129428)
 saddles.remove(188237)
@@ -207,9 +201,7 @@ print("Extract Extrema and Color: {} s".format(end - start))
 start = time.time()
 plt.figure(num=None, figsize=(8, 8), dpi=100, facecolor="w")
 
-plt.scatter(
-    X[:, 0], X[:, 1], c=C, cmap=set3_cmap, zorder=1, s=1, marker=","
-)
+plt.scatter(X[:, 0], X[:, 1], c=C, cmap=set3_cmap, zorder=1, s=1, marker=",")
 
 
 def trace_path(current_x, sgn=1):
@@ -308,9 +300,7 @@ plt.contourf(
     vmax=np.max(Z),
     zorder=2,
 )
-plt.contour(
-    x, y, z, colors="k", alpha=0.5, linewidths=lws, zorder=3
-)
+plt.contour(x, y, z, colors="k", alpha=0.5, linewidths=lws, zorder=3)
 
 print(saddles)
 

@@ -1,3 +1,10 @@
+[paths]
+source =
+    topopy/
+    /Users/runner/work/topopy/topopy/topopy/
+    /home/runner/work/topopy/topopy/topopy/
+    D:\a\topopy\topopy\topopy\
+
 [run]
 branch = True
 omit =

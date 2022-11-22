@@ -205,4 +205,3 @@ std::map< std::pair<int, int>, std::vector<int> > MergeTree<T>::AugmentedEdges()
 
 template class MergeTree<double>;
 template class MergeTree<float>;
-
