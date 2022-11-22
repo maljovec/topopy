@@ -1,0 +1,46 @@
+name: Test
+on: [push]
+jobs:
+  tests:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        minor_version: [7, 8, 9, 10, 11]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.${{ matrix.minor_version }}
+      - name: update pip
+        run: |
+          pip install -U wheel
+          pip install -U setuptools
+          python -m pip install -U pip
+      - run: pip install tox
+      - run: make
+      - run: tox -e py3${{ matrix.minor_version }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage.${{ matrix.os }}.py3${{ matrix.minor_version }}
+          path: ./.coverage.py3${{ matrix.minor_version }}
+  coverage:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v3
+        with:
+          path: .
+      - run: pip install coverage
+      - run: |
+          coverage combine coverage*/
+          coverage report --fail-under=95
+          coverage lcov
+      - name: publish coverage to Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage.lcov
