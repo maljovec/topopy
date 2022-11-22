@@ -22,4 +22,4 @@ topopy.egg-info/*
 
 .ipynb_checkpoints
 docs/_build
-
+.python-version

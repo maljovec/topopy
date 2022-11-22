@@ -8,14 +8,15 @@ local gradient.
 
 from __future__ import absolute_import
 
+from .ContourTree import ContourTree
+from .MergeTree import MergeTree
+from .MorseComplex import MorseComplex
+from .MorseSmaleComplex import MorseSmaleComplex
+
 # These lines ensure that we do not have to do something like:
 # 'from contrib.MorseSmaleComplex import MorseSmaleComplex' outside of
 # this submodule
 from .TopologicalObject import TopologicalObject
-from .MorseComplex import MorseComplex
-from .MorseSmaleComplex import MorseSmaleComplex
-from .MergeTree import MergeTree
-from .ContourTree import ContourTree
 
 __all__ = [
     "TopologicalObject",
